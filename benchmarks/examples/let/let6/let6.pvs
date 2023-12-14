@@ -1,0 +1,15 @@
+let6: THEORY BEGIN
+
+
+  f(X : real): real
+  = X * 2
+
+  g(X,Y: real) : real
+  = LET A = X+Y,
+        B = f(A),
+        C = A + B IN
+    C + B
+
+
+END let6
+

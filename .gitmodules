@@ -1,0 +1,3 @@
+[submodule "deps/precisa"]
+	path = deps/precisa
+	url = https://github.com/nasa/PRECiSA.git

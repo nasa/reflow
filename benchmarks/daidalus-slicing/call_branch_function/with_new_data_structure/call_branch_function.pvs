@@ -1,0 +1,11 @@
+call_branch_function: THEORY
+BEGIN
+
+
+sat(x, thr: real): real =
+    IF x - thr < 0 THEN x ELSE thr ENDIF
+
+sat_1(x, thr: real): real =
+    sat(x + 1, thr)
+
+END call_branch_function

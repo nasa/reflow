@@ -1,0 +1,44 @@
+wcv_detection_taumod_a: THEORY
+BEGIN
+    %IMPORTING wcv
+    %%%%%%%%%%%%%%%%%% begin wcv file %%%%%%%%%%%%%%%%%%%%%%%
+     tcoa(sz,vz:real): real = IF (sz*vz < 0) THEN -(sz/vz)
+                       ELSE -1
+		       ENDIF
+
+    tcpa(sx,vx,sy,vy:real) : real =
+    IF (vx*vx + vy*vy >0) THEN
+    -(sx*vx + sy*vy)/(vx*vx + vy*vy)
+    ELSE 0
+    ENDIF
+
+    taumod(sx,vx,sy,vy,DTHR:real) : real =
+    IF (sx*vx)+(sy*vy) < 0
+    THEN (DTHR*DTHR - (sx*sx + sy*sy))/(sx*vx + sy*vy)
+    ELSE -1
+    ENDIF
+
+    horizontal_wcv(sx,sy,vx,vy, DTHR,TTHR:real): bool =
+    LET tc = tcpa(sx,vx,sy,vy),
+        tm = taumod(sx,vx,sy,vy,DTHR) IN
+    (sx*sx) + (sy*sy) - DTHR*DTHR <= 0
+    OR
+    (((sx+tc*vx)*(sx+tc*vx) + (sy+tc*vy)*(sy+tc*vy)) - DTHR * DTHR <= 0  AND
+    0 <= tm AND tm - TTHR <= 0)
+
+    vertical_WCV(sz,vz,ZTHR,TCOA:real): bool =
+    abs(sz) - ZTHR <= 0 OR
+    (0 <= tcoa(sz,vz) AND tcoa(sz,vz) - TCOA <= 0)
+
+    WCV(sx,sy,sz,vx,vy,vz,DTHR,TTHR,ZTHR,TCOA:real): bool =
+    horizontal_wcv(sx,sy,vx,vy,DTHR,TTHR)
+    AND
+    vertical_WCV(sz,vz,ZTHR,TCOA)
+
+     %%%%%%%%%%%%%%%%%% end wcv file %%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+
+ END wcv_detection_taumod_a

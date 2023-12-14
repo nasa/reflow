@@ -1,0 +1,24 @@
+Abs: THEORY
+ BEGIN
+  IMPORTING Real
+  % do not edit above this line
+  
+  % Why3 abs_sum
+  abs_sum: LEMMA FORALL (x:real, y:real): (abs((x + y)) <= (abs(x) + abs(y)))
+  
+  % Why3 abs_prod
+  abs_prod: LEMMA FORALL (x:real, y:real): (abs((x * y)) = (abs(x) * abs(y)))
+  
+  % Why3 triangular_inequality
+  triangular_inequality: LEMMA FORALL (x:real, y:real, z:real):
+    (abs((x - z)) <= (abs((x - y)) + abs((y - z))))
+  
+  % Obsolete chunk abs_le
+  % abs_le: LEMMA FORALL (x:real, y:real): (abs1(x) <= y) <=> (((-y) <= x) AND
+  %   (x <= y))
+  
+  % Obsolete chunk abs_pos
+  % abs_pos: LEMMA FORALL (x:real): (abs1(x) >= 0)
+  
+ END Abs
+ 

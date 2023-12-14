@@ -1,0 +1,25 @@
+Square: THEORY
+ BEGIN
+  IMPORTING real@Real
+  IMPORTING real@Square
+  % do not edit above this line
+  % surround new declarations you insert below with blank lines
+  
+  % Why3 unit
+  unit: TYPE+ = []
+  
+  % Obsolete chunk sqrt_lin1
+  % sqrt_lin1: LEMMA FORALL (x:real): (1 <  x) => (real@Square.sqrt(x) <  x)
+  
+  % Obsolete chunk sqrt_lin0
+  % sqrt_lin0: LEMMA FORALL (x:real): ((0 <  x) AND (x <  1)) =>
+  %   (x <  real@Square.sqrt(x))
+  
+  % Obsolete chunk sqrt_0
+  % sqrt_0: LEMMA (real@Square.sqrt(0) = 0)
+  
+  % Obsolete chunk sqrt_1
+  % sqrt_1: LEMMA (real@Square.sqrt(1) = 1)
+  
+ END Square
+ 

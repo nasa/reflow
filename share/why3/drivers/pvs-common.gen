@@ -1,0 +1,383 @@
+
+unknown "unfinished" "\"\\0\""
+unknown "untried" "\"\\0\""
+valid "succeeded"
+time "why3cpulimit time : %s s"
+
+(* this tranformation expands simple user definitions, but we need them to match proof steps*)
+(* transformation "inline_trivial" *)
+
+transformation "eliminate_builtin"
+
+(* PVS does not support mutual recursion *)
+transformation "eliminate_mutual_recursion"
+(* though we could do better, we only use recursion on one argument *)
+transformation "eliminate_non_struct_recursion"
+
+transformation "eliminate_literal"
+transformation "eliminate_epsilon"
+
+(* PVS only has simple patterns *)
+transformation "compile_match"
+transformation "eliminate_projections"
+
+transformation "simplify_formula"
+
+(* #TODO @M3 I added this, double check if its really helpful. *)
+transformation "eliminate_let" 
+
+theory BuiltIn
+  syntax type   int   "int"
+  syntax type   real  "real"
+  syntax predicate  (=)   "(%1 = %2)"
+end
+
+theory HighOrd
+  syntax type (->) "[%1 -> %2]"
+  syntax function (@) "%1(%2)"
+end
+
+theory map.Map
+  syntax function get  "%1(%2)"
+  syntax function ([]) "%1(%2)"
+
+  syntax function set    "(%1 WITH [(%2) |-> %3])"
+  syntax function ([<-]) "(%1 WITH [(%2) |-> %3])"
+end
+
+theory Bool
+  syntax type bool   "bool"
+
+  syntax function True  "TRUE"
+  syntax function False "FALSE"
+end
+
+theory bool.Bool
+
+  syntax function andb  "(%1 AND %2)"
+  syntax function orb   "(%1 OR %2)"
+  syntax function xorb  "(%1 XOR %2)"
+  syntax function notb  "(NOT %1)"
+  syntax function implb "(%1 => %2)"
+
+end
+
+theory int.Int
+
+  syntax function zero "0"
+  syntax function one  "1"
+
+  syntax function ( + ) "(%1 + %2)"
+  syntax function ( - ) "(%1 - %2)"
+  syntax function ( * ) "(%1 * %2)"
+  syntax function (-_)  "(-%1)"
+
+  syntax predicate (<=) "(%1 <= %2)"
+  syntax predicate (<)  "(%1 <  %2)"
+  syntax predicate (>=) "(%1 >= %2)"
+  syntax predicate (>)  "(%1 >  %2)"
+
+  remove prop MulComm.Comm
+  remove prop MulAssoc.Assoc
+  remove prop Unit_def_l
+  remove prop Unit_def_r
+  remove prop Inv_def_l
+  remove prop Inv_def_r
+  remove prop Assoc
+  remove prop Mul_distr_l
+  remove prop Mul_distr_r
+  remove prop Comm
+  remove prop Unitary
+  remove prop Refl
+  remove prop Trans
+  remove prop Antisymm
+  remove prop Total
+  remove prop NonTrivialRing
+  remove prop CompatOrderAdd
+  remove prop CompatOrderMult
+  remove prop ZeroLessOne
+
+end
+
+theory int.Abs
+
+  syntax function abs "abs(%1)"
+
+  remove prop Abs_pos
+
+end
+
+theory int.MinMax
+
+  syntax function min "min(%1, %2)"
+  syntax function max "max(%1, %2)"
+
+end
+
+theory real.Real
+
+  syntax function zero "0"
+  syntax function one  "1"
+
+  syntax function ( + ) "(%1 + %2)"
+  syntax function ( - ) "(%1 - %2)"
+  syntax function (-_)  "(-%1)"
+  syntax function ( * ) "(%1 * %2)"
+  (* / and inv are defined in the realization *)
+
+  (*  syntax function (/)  "(%1 / %2)" *)
+  syntax function (/)  "reals@reals_safe_ops.div_safe(%1,%2)"
+
+  syntax predicate (<=) "(%1 <= %2)"
+  syntax predicate (<)  "(%1 <  %2)"
+  syntax predicate (>=) "(%1 >= %2)"
+  syntax predicate (>)  "(%1 >  %2)"
+
+  remove prop MulComm.Comm
+  remove prop MulAssoc.Assoc
+  remove prop Unit_def_l
+  remove prop Unit_def_r
+  remove prop Inv_def_l
+  remove prop Inv_def_r
+  remove prop Assoc
+  remove prop Mul_distr_l
+  remove prop Mul_distr_r
+  remove prop Comm
+  remove prop Unitary
+  remove prop Inverse
+  remove prop NonTrivialRing
+  remove prop CompatOrderAdd
+  remove prop CompatOrderMult
+  remove prop ZeroLessOne
+  remove prop Refl
+  remove prop Trans
+  remove prop Antisymm
+  remove prop Total
+  remove prop assoc_mul_div
+  remove prop assoc_div_mul
+  remove prop assoc_div_div
+
+end
+
+theory real.MinMax
+  syntax function min "min(%1, %2)"
+  syntax function max "max(%1, %2)"
+
+  remove prop Max_l
+  remove prop Min_r
+  remove prop Max_comm
+  remove prop Min_comm
+  remove prop Max_assoc
+  remove prop Min_assoc
+end
+
+theory real.RealInfix
+
+  syntax function (+.)  "(%1 + %2)"
+  syntax function (-.)  "(%1 - %2)"
+  syntax function (-._) "(-%1)"
+  syntax function ( *.) "(%1 * %2)"
+
+(*  syntax function (/.)  "(%1 / %2)" *)
+  syntax function (/.)  "reals@reals_safe_ops.div_safe(%1,%2)"
+  
+(*  syntax function inv   "real@Real.inv(%1)" *)
+
+
+  syntax predicate (<=.) "(%1 <= %2)"
+  syntax predicate (<.)  "(%1 <  %2)"
+  syntax predicate (>=.) "(%1 >= %2)"
+  syntax predicate (>.)  "(%1 >  %2)"
+
+  remove allprops
+
+end
+
+theory real.Abs
+
+  syntax function abs "abs(%1)"
+
+  remove prop Abs_le
+  remove prop Abs_pos
+
+end
+
+theory real.FromInt
+
+  syntax function from_int "(%1 :: real)"
+
+  remove prop Zero
+  remove prop One
+  remove prop Add
+  remove prop Sub
+  remove prop Mul
+  remove prop Neg
+
+end
+
+theory real.PowerReal
+
+  syntax function pow "(%1 ^ %2)"
+
+  remove prop Pow_x_zero
+  remove prop Pow_x_one
+  remove prop Pow_one_y
+
+end
+
+(***
+theory real.Square
+
+  syntax function sqrt "SQRT(%1)"
+
+end
+
+theory real.ExpLog
+
+  syntax function exp "EXP(%1)"
+  syntax function log "LOG(%1)"
+
+end
+
+theory real.Trigonometry
+
+  syntax function cos "COS(%1)"
+  syntax function sin "SIN(%1)"
+
+  syntax function pi "PI"
+
+  syntax function tan "TAN(%1)"
+
+end
+***)
+
+theory option.Option
+  syntax type option "lift[%1]"
+
+  syntax function None "bottom"
+  syntax function Some "up(%1)"
+end
+
+theory list.List
+
+  syntax type list "list[%1]"
+
+  syntax function Nil  "(null :: %t0)"
+  syntax function Cons "cons(%1, %2)"
+
+end
+
+theory list.Length
+  syntax function length "length(%1)"
+  remove prop Length_nonnegative
+  remove prop Length_nil
+end
+
+theory list.Mem
+  syntax predicate mem "member(%1, %2)"
+
+end
+
+theory list.Nth
+  syntax function nth
+    "IF 0 <= %1 AND %1 < length(%2) THEN up(nth(%2, %1)) ELSE bottom ENDIF"
+end
+
+theory list.Append
+  syntax function (++) "append(%1, %2)"
+
+  remove prop Append_assoc
+  remove prop Append_l_nil
+  remove prop Append_length
+  (* FIXME? the following are not part of PVS prelude *)
+  remove prop mem_append
+  remove prop mem_decomp
+end
+
+theory list.Reverse
+  syntax function reverse "reverse(%1)"
+end
+
+theory set.Set
+  syntax type set "set[%1]"
+
+  syntax predicate mem "member(%1, %2)"
+  remove prop      extensionality
+
+  syntax predicate subset "subset?(%1, %2)"
+  remove prop      subset_trans
+
+  syntax function  empty    "(emptyset :: %t0)"
+  syntax predicate is_empty "empty?(%1)"
+  remove prop      is_empty_empty
+
+  syntax function add "add(%1, %2)"
+  syntax function singleton "singleton(%1)"
+
+  syntax function remove "remove(%1, %2)"
+  remove prop     subset_remove
+
+  syntax function union "union(%1, %2)"
+
+  syntax function inter "intersection(%1, %2)"
+
+  syntax function diff "difference(%1, %2)"
+  remove prop     subset_diff
+
+  (* TODO: choose *)
+
+  syntax function all "fullset"
+end
+
+theory set.Fset
+  syntax type fset "finite_set[%1]"
+
+  syntax predicate mem "member(%1, %2)"
+  remove prop      extensionality
+
+  syntax predicate subset "subset?(%1, %2)"
+  remove prop      subset_trans
+
+  syntax function  empty    "(emptyset :: %t0)"
+  syntax predicate is_empty "empty?(%1)"
+  remove prop      is_empty_empty
+  remove prop      empty_is_empty
+  
+  syntax function add "add(%1, %2)"
+  remove prop     add_def
+  syntax function singleton "singleton(%1)"
+
+  syntax function remove "remove(%1, %2)"
+  remove prop     remove_def
+  remove prop     subset_remove
+
+  syntax function union "union(%1, %2)"
+  remove prop     union_def
+
+  syntax function inter "intersection(%1, %2)"
+  remove prop     inter_def
+
+  syntax function diff "difference(%1, %2)"
+  remove prop     diff_def
+  remove prop     subset_diff
+
+  (* TODO: choose *)
+
+  syntax function cardinal "Card(%1)"
+  remove prop     cardinal_nonneg
+  remove prop     cardinal_empty
+  remove prop     cardinal_add
+  remove prop     cardinal_remove
+  remove prop     cardinal_subset
+  remove prop     cardinal1
+
+  (* TODO: nth *)
+end
+
+(* this file has an extension .aux rather than .gen
+   since it should not be distributed *)
+import "pvs-realizations.aux"
+
+(* M3 *)
+import "pvs-nasalib.gen"
+import "pvs-framac.gen"

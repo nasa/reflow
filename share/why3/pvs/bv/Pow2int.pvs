@@ -1,0 +1,15 @@
+Pow2int: THEORY
+ BEGIN
+  IMPORTING int@Int
+  % do not edit above this line
+  % surround new declarations you insert below with blank lines
+  
+  % (M3) Manually added
+  IMPORTING lnexp@lnexp_safe_ops
+  
+  % Why3 unit
+  unit: TYPE+ = []
+  
+  
+ END Pow2int
+ 

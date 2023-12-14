@@ -1,0 +1,43 @@
+functioncall10: THEORY
+BEGIN
+
+    horizontal_WCV_taumod_interval(T, sx, sy, vx, vy, TAUMOD, DTHR: real): bool = DTHR*DTHR <= 0
+    % LET a = sq(vx, vy),
+    %     b = 2 * inner_product(sx, sy, vx, vy) + TAUMOD * sq(vx, vy),
+    %     c = sq(sx, sy) + TAUMOD * inner_product(sx, sy, vx, vy) - DTHR*DTHR,
+    %     theta_d_pos = Theta_D_pos(DTHR, sx, sy, vx, vy) IN
+    %     LET root_neg_var = root_neg(a, b, c) IN
+    %         IF a /= 0 AND sq(sx, sy) - DTHR*DTHR <= 0 THEN
+    %             0 <= min_(T, theta_d_pos)
+    %         ELSIF sq(sx, sy) - DTHR*DTHR <= 0 THEN
+    %             TRUE
+    %         ELSIF inner_product(sx, sy, vx, vy) >= 0 OR discr(a, b, c) < 0 THEN  FALSE
+    %         ELSIF Delta(sx, sy, vx, vy, DTHR) >= 0 AND root_neg_var - T  <= 0 THEN
+    %             max_(0, root_neg_var) - min_(T, theta_d_pos) <= 0
+    %         ELSE FALSE
+    %         ENDIF
+
+    vertical_WCV_exit_minus_entry(B, T, sz, vz, TCOA, ZTHR: real): real = TCOA
+    % IF vz /= 0 THEN
+    %     LET centry = coalt_entry(sz, vz, TCOA, ZTHR),
+    %         cexit = coalt_exit(sz, vz, ZTHR)
+    %     IN  IF T - centry < 0 OR cexit - B < 0 THEN B - T
+    %         ELSE min_(T, cexit) - max_(B, centry)
+    %         ENDIF
+    % ELSIF abs(sz) - ZTHR <= 0 THEN T - B
+    % ELSE B - T
+    % ENDIF
+
+    WCV_interval(B, T, sx, sy, sz, vx, vy, vz, TAUMOD, TCOA, DTHR, TTHR, ZTHR :real): bool =
+    %   LET vexit_minus_ventry = vertical_WCV_exit_minus_entry(B, T, sz, vz, TCOA, ZTHR),
+    %       ventry = vertical_WCV_entry(B, T, sz, vz, TCOA, ZTHR) IN
+    %   LET proj_x = sx + vx * ventry,
+    %       proj_y = sy + vy * ventry IN
+      IF vertical_WCV_exit_minus_entry(B, T, sz, vz, TCOA, ZTHR) < 0 THEN
+        FALSE
+      ELSIF vertical_WCV_exit_minus_entry(B, T, sz, vz, TCOA, ZTHR) > 0 THEN
+        horizontal_WCV_taumod_interval(vertical_WCV_exit_minus_entry(B, T, sz, vz, TCOA, ZTHR), B, B, vx, vy, TAUMOD, DTHR)
+      ELSE FALSE
+      ENDIF
+
+END functioncall10

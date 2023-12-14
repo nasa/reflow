@@ -1,0 +1,55 @@
+Cfloat: THEORY
+ BEGIN
+  IMPORTING int@Int
+  IMPORTING real@Real
+  IMPORTING real@Abs
+  IMPORTING real@FromInt
+  IMPORTING real@Truncate
+  IMPORTING real@Square
+  IMPORTING bv@Pow2int
+  IMPORTING ieee_float@RoundingMode
+  IMPORTING ieee_float@Float32
+  IMPORTING ieee_float@Float64
+  IMPORTING ieee_float@FloatConverter
+  % do not edit above this line
+  % surround new declarations you insert below with blank lines
+  
+  % Why3 string
+  string: TYPE+
+  
+  % Why3 unit
+  unit: TYPE+ = []
+  
+  % Why3 round_float
+  round_float(m:ieee_float@RoundingMode.mode, r:real): single =
+    round_nearest_even_single(round_to_exactly_representable_as_single(m,r))
+  
+  % Why3 round_double
+  round_double(m:ieee_float@RoundingMode.mode, r:real): double =
+    round_nearest_even_double(round_to_exactly_representable_as_double(m,r))
+  
+  % Why3 finite
+  finite(x:real): bool = finite_single?(round_nearest_even_single(x)) AND
+    finite_double?(round_nearest_even_double(x))
+  
+  % Why3 model_f32
+  model_f32(x:single): real
+  
+  % Why3 delta_f32
+  delta_f32(f:single): real = abs((safe_prjct_single(f) - model_f32(f)))
+  
+  % Why3 error_f32
+  error_f32(f:single): real = div_safe(delta_f32(f), abs(model_f32(f)))
+  
+  % Why3 model_f64
+  model_f64(x:double): real
+  
+  % Why3 delta_f64
+  delta_f64(f:double): real = abs((safe_prjct_double(f) - model_f64(f)))
+  
+  % Why3 error_f64
+  error_f64(f:double): real = div_safe(delta_f64(f), abs(model_f64(f)))
+  
+  
+ END Cfloat
+ 

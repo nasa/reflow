@@ -1,0 +1,32 @@
+wcv_detection_taumod_zvz_zv: THEORY
+BEGIN
+
+    % inner product between vectors (sx, sy) and (vx, vy)
+    inner_product(sx, sy, vx, vy: real): real =
+        sx*vx + sy*vy
+
+    % squared norm of vector (sx, sy)
+    sq(sx, sy: real): real =
+        inner_product(sx, sy, sx, sy)
+
+    % Assuming:
+    % 1) vz = 0
+    % 2) nzvx = 0 and nzvy = 0
+    % 3) B < T
+    WCV_interval_zero_vz_zero_velocity(B, T, sx, sy, sz, nzvx, nzvy, pvz, DTHR, ZTHR: real): bool
+    =   abs(sz) - ZTHR <= 0 AND sq(sx, sy) - DTHR*DTHR <= 0
+
+
+    % WCV_detection(sx, sy, sz, vx, vy, vz, B, T: real): bool =
+    %     LET TAUMOD = 1.0, TCOA = 1.0, DTHR = 1.0, TTHR = 1.0, ZTHR = 1.0
+    %     IN
+    %         LET proj_x = sx + vx * B,
+    %             proj_y = sy + vy * B,
+    %             proj_z = sz + vz * B
+    %         IN  IF B - T > 0 THEN WCV_interval(B, T, sx, sy, sz, vx, vy, vz)
+    %             ELSIF (T - B) < 0 THEN FALSE
+    %             ELSE
+    %                 WCV(proj_x, proj_y, proj_z, vx ,vy ,vz , DTHR, TAUMOD, ZTHR, TCOA)
+    %             ENDIF
+
+ END wcv_detection_taumod_zvz_zv

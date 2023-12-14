@@ -1,0 +1,6 @@
+taumod(sx,vx,sy,vy,DTHR) :
+   sx in [1,185200],
+   sy in [1,15240],
+   vx in [1,720],
+   vy in [2,720],
+   DTHR in [670,670]

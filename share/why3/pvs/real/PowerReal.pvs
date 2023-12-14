@@ -1,0 +1,91 @@
+PowerReal: THEORY
+ BEGIN
+  IMPORTING int@Int
+  IMPORTING Real
+  IMPORTING FromInt
+  IMPORTING Square
+  IMPORTING ExpLog
+  % do not edit above this line
+  % surround new declarations you insert below with blank lines
+  
+  % Why3 string
+  string: TYPE+
+  
+  % Why3 unit
+  unit: TYPE+ = []
+  
+  % Why3 pow_def
+  pow_def: LEMMA FORALL (x:real, y:real): (x >  0) =>
+    ((x ^ y) = ExpLog.exp((y * ExpLog.log(x))))
+  
+  % Why3 pow_pos
+  pow_pos: LEMMA FORALL (x:real, y:real): (x >  0) => ((x ^ y) >  0)
+  
+  % Why3 pow_plus
+  pow_plus: LEMMA FORALL (x:real, y:real, z:real): (z >  0) =>
+    ((z ^ (x + y)) = ((z ^ x) * (z ^ y)))
+  
+  % Why3 pow_mult
+  pow_mult: LEMMA FORALL (x:real, y:real, z:real): (x >  0) =>
+    (((x ^ y) ^ z) = (x ^ (y * z)))
+  
+  % Why3 pow_x_two
+  pow_x_two: LEMMA FORALL (x:real): (x >  0) => ((x ^ 2) = Square.sqr(x))
+  
+  % Why3 pow_half
+  pow_half: LEMMA FORALL (x:real): (x >  0) =>
+    ((x ^ (5 / 10)) = Square.sqrt(x))
+  
+  % Why3 power
+  power(x:int, x1:int): int
+  
+  % Why3 power_0
+  power_0: LEMMA FORALL (x:int): (power(x, 0) = 1)
+  
+  % Why3 power_s
+  power_s: LEMMA FORALL (x:int, n:int): (n >= 0) => (power(x,
+    (n + 1)) = (x * power(x, n)))
+  
+  % Why3 power_s_alt
+  power_s_alt: LEMMA FORALL (x:int, n:int): (n >  0) => (power(x,
+    n) = (x * power(x, (n - 1))))
+  
+  % Why3 power_1
+  power_1: LEMMA FORALL (x:int): (power(x, 1) = x)
+  
+  % Why3 power_sum
+  power_sum: LEMMA FORALL (x:int, n:int, m:int): (0 <= n) => ((0 <= m) =>
+    (power(x, (n + m)) = (power(x, n) * power(x, m))))
+  
+  % Why3 power_mult
+  power_mult: LEMMA FORALL (x:int, n:int, m:int): (0 <= n) => ((0 <= m) =>
+    (power(x, (n * m)) = power(power(x, n), m)))
+  
+  % Why3 power_comm1
+  power_comm1: LEMMA FORALL (x:int, y:int): ((x * y) = (y * x)) =>
+    FORALL (n:int): (0 <= n) => ((power(x, n) * y) = (y * power(x, n)))
+  
+  % Why3 power_comm2
+  power_comm2: LEMMA FORALL (x:int, y:int): ((x * y) = (y * x)) =>
+    FORALL (n:int): (0 <= n) => (power((x * y), n) = (power(x, n) * power(y,
+    n)))
+  
+  % Why3 power_non_neg
+  power_non_neg: LEMMA FORALL (x:int, y:int): ((x >= 0) AND (y >= 0)) =>
+    (power(x, y) >= 0)
+  
+  % Why3 power_pos
+  power_pos: LEMMA FORALL (x:int, y:int): ((x >  0) AND (y >= 0)) =>
+    (power(x, y) >  0)
+  
+  % Why3 power_monotonic
+  power_monotonic: LEMMA FORALL (x:int, n:int, m:int): ((0 <  x) AND
+    ((0 <= n) AND (n <= m))) => (power(x, n) <= power(x, m))
+  
+  % Why3 pow_from_int
+  pow_from_int: LEMMA FORALL (x:int, y:int): (0 <  x) => ((0 <= y) =>
+    (((x :: real) ^ (y :: real)) = (power(x, y) :: real)))
+  
+  
+ END PowerReal
+ 

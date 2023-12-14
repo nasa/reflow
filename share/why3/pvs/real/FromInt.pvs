@@ -1,0 +1,29 @@
+FromInt: THEORY
+ BEGIN
+  IMPORTING int@Int
+  IMPORTING Real
+  % do not edit above this line
+  
+  % Obsolete chunk zero
+  % zero: LEMMA (from_int(0) = 0)
+  
+  % Obsolete chunk one
+  % one: LEMMA (from_int(1) = 1)
+  
+  % Obsolete chunk add1
+  % add1: LEMMA FORALL (x:int, y:int):
+  %   (from_int((x + y)) = (from_int(x) + from_int(y)))
+  
+  % Obsolete chunk sub
+  % sub: LEMMA FORALL (x:int, y:int):
+  %   (from_int((x - y)) = (from_int(x) - from_int(y)))
+  
+  % Obsolete chunk mul
+  % mul: LEMMA FORALL (x:int, y:int):
+  %   (from_int((x * y)) = (from_int(x) * from_int(y)))
+  
+  % Obsolete chunk neg
+  % neg: LEMMA FORALL (x:int): (from_int((-x)) = (-from_int(x)))
+  
+ END FromInt
+ 

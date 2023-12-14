@@ -1,0 +1,14 @@
+Abs: THEORY
+ BEGIN
+  IMPORTING Int
+  % do not edit above this line
+  
+  % Why3 abs_le
+  abs_le: LEMMA FORALL (x:int, y:int): (abs(x) <= y) <=> (((-y) <= x) AND
+    (x <= y))
+  
+  % Obsolete chunk abs_pos
+  % abs_pos: LEMMA FORALL (x:int): (abs1(x) >= 0)
+  
+ END Abs
+ 

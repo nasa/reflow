@@ -1,0 +1,38 @@
+%
+% Interface Why3 ieee_float.Float32 with PVS NASALIB/float/single.
+%
+interface__stdlib__ieee_float__float32__nasalib__float__single: THEORY
+BEGIN
+
+  IMPORTING axm_bnd@ieee754_single
+
+  % below is to support fnd_bnd
+
+  % IMPORTING float@single
+
+  % IMPORTING float@extended_float_rounding__nearest_even[radix_,precision_,dExp_]
+
+  % IMPORTING RoundingMode
+
+  % %M3 TODO complete interpretation with additional rounding modes
+  % round_to_exactly_representable_as_single(m: mode, x: real): real
+  % = safe_prjct_single(rnd_ef(x))
+
+  % %M3 TODO complete interpretation with additional rounding modes
+  % add_s(m: mode, X,Y: single): single = add_efs(rnd_ef)(X,Y)
+  % sub_s(m: mode, X,Y: single): single = sub_efs(rnd_ef)(X,Y)
+  % mul_s(m: mode, X,Y: single): single = mul_efs(rnd_ef)(X,Y)
+  % div_s(m: mode, X,Y: single): single = div_efs(rnd_ef)(X,Y)
+  % max_s(m: mode, X,Y: single): single = max_efs(rnd_ef)(X,Y)
+  % min_s(m: mode, X,Y: single): single = min_efs(rnd_ef)(X,Y)
+  % neg_s(m: mode, X: single)  : single = neg_efs(rnd_ef)(X)
+  % abs_s(m: mode, X: single)  : single = abs_efs(rnd_ef)(X)
+  % sqt_s(m: mode, X: single)  : single = sqt_efs(rnd_ef)(X)
+
+  % lt_s(X,Y: single): bool = qlt_efs(X,Y)
+  % le_s(X,Y: single): bool = qle_efs(X,Y)
+  % gt_s(X,Y: single): bool = qgt_efs(X,Y)
+  % ge_s(X,Y: single): bool = qge_efs(X,Y)
+  % eq_s(X,Y: single): bool = qeq_efs(X,Y)
+
+END interface__stdlib__ieee_float__float32__nasalib__float__single

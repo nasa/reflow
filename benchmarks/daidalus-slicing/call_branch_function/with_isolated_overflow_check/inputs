@@ -1,0 +1,3 @@
+sat(x, thr): x in [1, 2], thr in [1, 2]
+
+sat_1(x, thr): x in [1, 2], thr in [1, 2]

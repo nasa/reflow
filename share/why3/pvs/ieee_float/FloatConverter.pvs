@@ -1,0 +1,36 @@
+FloatConverter: THEORY
+ BEGIN
+  IMPORTING int@Int
+  IMPORTING real@Real
+  IMPORTING real@Abs
+  IMPORTING real@FromInt
+  IMPORTING real@Truncate
+  IMPORTING real@Square
+  IMPORTING bv@Pow2int
+  IMPORTING RoundingMode
+  IMPORTING Float32
+  IMPORTING Float64
+  % do not edit above this line
+  % surround new declarations you insert below with blank lines
+  
+  % Why3 unit
+  unit: TYPE+ = []
+  
+  % Obsolete chunk round_double_single
+  % round_double_single: LEMMA FORALL (m1:RoundingMode.mode,
+  %   m2:RoundingMode.mode, x:real): (Float64.round(m1, Float32.round(m2,
+  %   x)) = Float32.round(m2, x))
+  
+  % Obsolete chunk to_float64_exact
+  % to_float64_exact: LEMMA FORALL (m:RoundingMode.mode, x:single):
+  %   is_finite?(x) => (is_finite?(to_float64(m, x)) AND
+  %   (safe_prjct_double(to_float64(m, x)) = safe_prjct_double(x)))
+  
+  % Obsolete chunk to_float32_conv
+  % to_float32_conv: LEMMA FORALL (m:RoundingMode.mode, x:double):
+  %   is_finite?(x) => (Float32.no_overflow(m, safe_prjct_double(x)) =>
+  %   (is_finite?(to_float32(m, x)) AND (safe_prjct_double(to_float32(m,
+  %   x)) = Float32.round(m, safe_prjct_double(x)))))
+  
+ END FloatConverter
+ 

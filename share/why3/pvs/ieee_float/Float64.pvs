@@ -1,0 +1,148 @@
+Float64: THEORY
+ BEGIN
+  IMPORTING int@Int
+  IMPORTING real@Real
+  IMPORTING real@RealInfix
+  IMPORTING real@Abs
+  IMPORTING real@FromInt
+  IMPORTING real@Truncate
+  IMPORTING real@Square
+  IMPORTING bv@Pow2int
+  IMPORTING RoundingMode
+  % do not edit above this line
+  % surround new declarations you insert below with blank lines
+  
+  % Why3 string
+  string: TYPE+
+  
+  %M3: Added by hand
+  IMPORTING interface__stdlib__ieee_float__float64__nasalib__float__double
+  
+  % Why3 unit
+  unit: TYPE+ = []
+  
+  % Why3 tqtaxiom
+  tqtaxiom: LEMMA FORALL (x:double): finite?_double(x) =>
+    (((-179769313486231570814527423731704356798070567525844996598917476803157260780028538760589558632766878171540458953514382464234321326889464182768467546703537516986049910576551282076245490090389328944075868508455133942304583236903222948165808559332123348274797826204144723168738177180919299881250404026184124858368) <= safe_proj_double(x)) AND
+    (safe_proj_double(x) <= 179769313486231570814527423731704356798070567525844996598917476803157260780028538760589558632766878171540458953514382464234321326889464182768467546703537516986049910576551282076245490090389328944075868508455133942304583236903222948165808559332123348274797826204144723168738177180919299881250404026184124858368))
+  
+  % Why3 pow2sb
+  pow2sb: int = 9007199254740992
+  
+  % Why3 max_real
+  max_real: real =
+    (9007199254740991 * 19958403095347198116563727130368385660674512604354575415025472424372118918689640657849579654926357010893424468441924952439724379883935936607391717982848314203200056729510856765175377214443629871826533567445439239933308104551208703888888552684480441575071209068757560416423584952303440099278848)
+  
+  % Why3 fma
+  fma(x:RoundingMode.mode, x1:double, x2:double, x3:double): double
+  
+  % Why3 prefix_dtmn
+  prefix_dtmn(x:double): double = neg_double(x)
+  
+  % Why3 infix_dtpl
+  infix_dtpl(x:double, y:double): double = add_double(x,y)
+  
+  % Why3 infix_dtmn
+  infix_dtmn(x:double, y:double): double = sub_double(x,y)
+  
+  % Why3 infix_dtas
+  infix_dtas(x:double, y:double): double = mul_double(x,y)
+  
+  % Why3 infix_dtsl
+  infix_dtsl(x:double, y:double): double = div_double(x,y)
+  
+  % Why3 roundtointegral
+  roundtointegral(x:RoundingMode.mode, x1:double): double
+  
+  % Why3 infix_dtlseq
+  infix_dtlseq(x:double, y:double): bool = qle_double(x,y)
+  
+  % Why3 infix_dtls
+  infix_dtls(x:double, y:double): bool = qlt_double(x,y)
+  
+  % Why3 infix_dtgteq
+  infix_dtgteq(x:double, y:double): bool = qge_double(x,y)
+  
+  % Why3 infix_dtgt
+  infix_dtgt(x:double, y:double): bool = qgt_double(x,y)
+  
+  % Why3 infix_dteq
+  infix_dteq(x:double, y:double): bool = qeq_double(x,y)
+  
+  % Why3 is_infinite
+  is_infinite(x:double): bool
+  
+  % Why3 is_plus_infinity
+  is_plus_infinity(x:double): bool = is_infinite(x) AND positive?_double(x)
+  
+  % Why3 is_minus_infinity
+  is_minus_infinity(x:double): bool = is_infinite(x) AND negative?_double(x)
+  
+  % Why3 is_plus_zero
+  is_plus_zero(x:double): bool = zero?_double(x) AND positive?_double(x)
+  
+  % Why3 is_minus_zero
+  is_minus_zero(x:double): bool = zero?_double(x) AND negative?_double(x)
+  
+  % Why3 is_not_nan
+  is_not_nan(x:double): bool = finite?_double(x) OR is_infinite(x)
+  
+  % Why3 of_int
+  of_int(x:RoundingMode.mode, x1:int): double
+  
+  % Why3 to_int
+  to_int(x:RoundingMode.mode, x1:double): int
+  
+  % Why3 max_int
+  max_int: int
+  
+  % Why3 emax
+  emax: int = expt_safe(2,(ieee754_double_exponent_size - 1))
+  
+  % Why3 in_range
+  in_range(x:real): bool = ((-max_real) <= x) AND (x <= max_real)
+  
+  % Why3 in_int_range
+  in_int_range(i:int): bool = ((-max_int) <= i) AND (i <= max_int)
+  
+  % Why3 no_overflow
+  no_overflow(m:RoundingMode.mode, x:real): bool =
+    in_range(proj_double(round_double(x)))
+  
+  % Why3 in_safe_int_range
+  in_safe_int_range(i:int): bool = ((-pow2sb) <= i) AND (i <= pow2sb)
+  
+  % Why3 same_sign
+  same_sign(x:double, y:double): bool = (positive?_double(x) AND
+    positive?_double(y)) OR (negative?_double(x) AND negative?_double(y))
+  
+  % Why3 diff_sign
+  diff_sign(x:double, y:double): bool = (positive?_double(x) AND
+    negative?_double(y)) OR (negative?_double(x) AND positive?_double(y))
+  
+  % Why3 product_sign
+  product_sign(z:double, x:double, y:double): bool = (same_sign(x, y) =>
+    positive?_double(z)) AND (diff_sign(x, y) => negative?_double(z))
+  
+  % Why3 same_sign_real
+  same_sign_real(x:double, r:real): bool = (positive?_double(x) AND
+    (r >  0)) OR (negative?_double(x) AND (r <  0))
+  
+  % Why3 is_int
+  is_int(x:double): bool
+  
+  % Obsolete chunk mode
+  % mode: DATATYPE
+  %  BEGIN
+  %   rne: rne?
+  %   rna: rna?
+  %   rtp: rtp?
+  %   rtn: rtn?
+  %   rtz: rtz?
+  %  END mode
+  
+  % Obsolete chunk to_nearest
+  % to_nearest(m:mode): bool = (m = rne) OR (m = rna)
+  
+ END Float64
+ 

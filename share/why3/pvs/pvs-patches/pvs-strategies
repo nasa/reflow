@@ -1,0 +1,1353 @@
+
+;;
+;;
+;;
+
+(defmacro acsl-fp-op-names ()
+  "The list of floating-point operators defined in precisa-prelude.c
+   as defined by the Frama-C/WP translation."
+  '(list "l_dadd" "l_dsub" "l_dmul" "l_ddiv" "l_dneg" "l_dabs"
+	"l_sadd" "l_ssub" "l_smul" "l_sdiv" "l_sneg" "l_sabs"
+	"l_iadd" "l_isub" "l_imul" "l_ineg"))
+
+;;
+;; Known function and lemma names
+;; These names must correspond with the ones in the floating-point formalization to be used.
+(defmacro single-round-fn     () "round_single"   )
+(defmacro single-prjct-fn     () "proj_single"    )
+(defmacro single-isfinite?-fn () "finite?_single" )
+(defmacro single-round-proj-lm () "axm_bnd@single_sem_th.round_proj" )
+
+;;
+
+(defmacro double-round-fn      () "round_double"   )
+(defmacro double-prjct-fn      () "proj_double"    )
+(defmacro double-isfinite?-fn  () "finite?_double" )
+(defmacro double-round-proj-lm () "axm_bnd@double_sem_th.round_proj" )
+
+;; Easy access of correct macro for precision pasing as argument if it is a double
+
+(defmacro prjct-fn (double?)
+  `(if ,double? (double-prjct-fn) (single-prjct-fn)))
+(defmacro round-fn (double?)
+  `(if ,double? (double-round-fn) (single-round-fn)))
+(defmacro isfinite?-fn (double?)
+  `(if ,double? (double-isfinite?-fn) (single-isfinite?-fn)))
+(defmacro round-proj-lm (double?)
+  `(if ,double? (double-round-proj-lm) (single-round-proj-lm)))
+
+(defmacro load-other-strat-files (filename)
+  `(let ((file (merge-pathnames ,filename *load-truename*)))
+     (handler-case (load file)
+       (error (c) (format t "~&Error loading \"~a\".~%" file)))))
+
+(load-other-strat-files "util.lisp")
+
+;; main strategy
+;; It recognizes the VC and applies the specific strategy
+;; @M3 #WIP
+(defstep prove-vc ()
+  (let((structure-ensures-vc-suffix "_structure_ensures")
+       (numeric-ensures-vc-suffix   "_num_ensures")
+       (label-ps (label *ps*)))
+	;; is suffix? a native predicate? <>
+  (if (suffix? numeric-ensures-vc-suffix label-ps)
+      (let((dummy (format t "~&Goal recognized as 'numeric' behavior. ~%Proceeding with specific proof.~%")))
+	(prove-numeric-postcondition$))
+    (if (suffix? "stable_paths_ensures_Why3_PVS_6_0" label-ps)
+	(let ((real-valued-funct-name
+	       (subseq label-ps
+		       0
+		       (- (length label-ps) 34))) ; (length "_stable_paths_ensures_Why3_PVS_6_0")) => 34 
+	      (real-valued-funct-name
+	       (cond ;; ((suffix? "_tauplus_bool" real-valued-funct-name)
+		     ;;  (subseq real-valued-funct-name 0 (- (length real-valued-funct-name) 13)))
+		     ;; ((suffix? "_tauminus_bool" real-valued-funct-name)
+		     ;;  (subseq real-valued-funct-name 0 (- (length real-valued-funct-name) 14)))
+		     (t (subseq real-valued-funct-name 0 (position #\_ real-valued-funct-name :from-end t)))))) 
+	  (let((dummy (format
+		       t "~&Goal recognized as 'stable_paths' behavior for function ~a. ~%Proceeding with specific proof.~%"
+		       real-valued-funct-name)))
+	   (prove-stable-paths-vc$ real-valued-funct-name)))
+      (if (suffix? structure-ensures-vc-suffix label-ps)
+	  (let ((real-valued-funct-name
+		 (subseq label-ps
+			 0
+			 (- (length label-ps) (length structure-ensures-vc-suffix)))) 
+		(real-valued-funct-name
+		 (cond ((suffix? "_tauplus_bool" real-valued-funct-name)
+			(subseq real-valued-funct-name 0 (- (length real-valued-funct-name) 13)))
+		       ((suffix? "_tauminus_bool" real-valued-funct-name)
+			(subseq real-valued-funct-name 0 (- (length real-valued-funct-name) 14)))
+		       (t (subseq real-valued-funct-name 0 (position #\_ real-valued-funct-name :from-end t)))))) 
+	    (let((dummy (format
+			 t
+			 "~&Goal recognized as 'structure' behavior for function ~a. ~%Proceeding with specific proof.~%"
+			 real-valued-funct-name)))
+	      (prove-structure-vc$ real-valued-funct-name)))
+	(printf "Couldn't recognize the verification condition related to this sequent.")))))
+  "This strategy recognizes the kind of VC represented by the current goal and applies the specific proof."
+  "Proving verification condition")
+
+;;
+;; Postcondition for the "structures" behavior
+;;
+
+;; #TODO downgrade to defhelper
+;; @M3 #WIP
+(defstep prove-structure-vc (real-valued-funct-name)
+  (then
+   ;; 1) Install definitions of frama-c literals 
+   (install-all-framac-literals-as-rewritting-rules)
+   ;; 2) Intialize 
+   (initialize-vc-proof)
+   (install-finite?-hypothesis-as-rewritting-rules) ;; @M3 #TODO is this really necessary?
+   ;;
+   ;; #TODO doublecheck this: all structure VC should have a target of this form
+   (match + "safe_proj(%1) = safe_proj(%2(%%))"
+	  step (then (expand "%2")
+		     (let ((acsl-fp-ops (acsl-fp-op-names)))
+		       (rewrite* acsl-fp-ops))))
+   ;; NB: the code above should be enough for non-branching VCs.
+   
+   ;; #TODO from here on, it's old code...
+   (let ((logic-fp-name   (logic-fp-funct-str  real-valued-funct-name))
+	 (pvs-fp-fun-name (fp-valued-funct-str real-valued-funct-name))
+	 (target-fnum (extra-get-fnum (list '~ '+ logic-fp-name))))
+     (if target-fnum
+	 (then
+	  (introduce-fp-valued-version real-valued-funct-name)
+	  (expand pvs-fp-fun-name target-fnum) ;;M3 this one should not fail, if it does, the previous step didn't work, meaning that the logic-fp version could not be replaced with the pvs-fp version of the function.
+
+	  ;; this is just because of how _tau[plus|minus]_structure VCs are being generated
+	  ;; It shouldn't be this way.
+	  (introduce-real-valued-version real-valued-funct-name)
+	  (expand real-valued-funct-name target-fnum)
+	  
+	  ;; This is just because of how _tau[plus|minus]_structure VCs are being generated
+	  ;; If any application of an user-defined symbol appears in the target formula, and
+	  ;; the logical ACSL version of such symbol appears applied as well in a universally
+	  ;; quantified precedent, the precedent is instantiated in order to make its
+	  ;; properties available to prove the target.
+	  (let ((user-defined-ops-in-target
+		 (loop for op ;; M3 remove loop
+		       in 
+		       (remove-if-not 
+				(lambda (op)
+			  		(and (name-expr? op)
+			       		(suffix? "frama_c_wp_precisa/"
+							(namestring(context-path(module(declaration(car(resolutions op)))))))
+			       		(funtype? (type(declaration(car(resolutions op)))))
+			       		(every (lambda(type) (subtype-of? type *real*)) 
+				      		(types(domain(type(declaration(car(resolutions op)))))))))
+			(collect-application-operators (extra-get-expr target-fnum)))
+		       collect op))
+		(forall-fnums (simple-gather-fnums (s-forms (current-goal *ps*))
+						   '- nil (lambda(sform) (forall-expr? (args1(formula sform)))))))
+	    (for-each-value
+	     (let ((user-defined-application (extra-get-expr (list '~ target-fnum (format nil "~a(%%)" op))))
+		   (user-def-bindings        (extract-instantiation user-defined-application)))
+	       (for-each-fnum$
+		(let ((logic-real-application
+		       (extra-get-expr
+			(list '~ fnum (format nil "~a(%%)" (logic-real-funct-str(format nil "~a" op))))))
+		      (fnum-ok? (and logic-real-application (forall-expr? (extra-get-expr fnum)))))
+		  (when fnum-ok?
+		    (let ((logic-real-bindings    (extract-instantiation logic-real-application))
+			  (logic-real-fnum-instantiation
+			   (loop
+			    for ( ud-formal-arg-name . ud-expr ) in user-def-bindings
+			    when (variable?
+				  (cdr(assoc(intern(string-downcase(string ud-formal-arg-name))) logic-real-bindings)))
+			    collect (format nil "~a" ud-expr))))
+		      (instantiate fnum logic-real-fnum-instantiation))))
+		forall-fnums
+;;		:verbose? t
+		))
+	     op
+	     user-defined-ops-in-target
+;;		:verbose? t
+	     ))
+
+	  (let ((no-quant-fnums (simple-gather-fnums
+			 (s-forms (current-goal *ps*))
+			 '*
+			 nil
+			 (lambda(sform) (not (quant-expr? (args1(formula sform))))))))
+	    (then
+	     (replace-ascl-fp-application-by-pvs-counterpart no-quant-fnums)
+	     (replace-called-logic-real-functions no-quant-fnums)))
+
+	  (do-rewrite) ;; apply simplifications on the expanded expression
+
+	  (simplify-integerToDouble)
+	  ;; (translate-acsl-ops)
+	  (canonize-ineqs)
+
+	  (regroup-real-terms-in-error-bound-hyps)
+
+	  ;; An if-then-else in the sequent is reflect of the existence of an if-then-else
+	  ;; in the original program. It can occur in an antecedent, if the C function
+	  ;; returns bool, or in the target consequent otherwise.
+	  ;;(match target-fnum "%{if_}" step (lift-if target-fnum))
+	  ;;M3 it is enough with this? is there a case where I don't want to lift an ITE?
+	  (repeat (lift-if))
+
+	  (then
+	   (float-ineq-to-real-ineq)
+	   (repeat (rewrite "neg_double_prjct"))
+	   (simplify-integerToDouble)
+	   (assert)
+	   (ground)
+	   ;; (rewrite-fp-eqs)
+	   ))
+       (printf "The logic floating-point function ~a does not seem to be in the sequent." logic-fp-name))))
+  "[FramacPVS] This strategy tries to prove structure behavior postconditions on a precisa-generated C program. Assumes that the structure predicate is called PRED-NAME and the target is in TARGET-FNUM."
+  "Proving structure behavior.")
+
+;;
+;;
+;;
+;;
+
+;; TODO change to defhelper
+(defstep translate-acsl-op (op-name &optional (double? t) (arity 2))
+  (let ((acsl-name (format nil "l_~:[s~;d~]~a" double? op-name)))
+    (match$ acsl-name step
+	   (let((nasalib-name (format nil "~a~:[_single~;_double~]" op-name double?))
+		(match-str (format nil "~a(%%)" acsl-name))
+		(case-str
+		 (let ((case-vars (format nil "~{~a~^, ~}"(loop for i upto (- arity 1) collect (format nil "x~a" i)))))
+		   (format nil "FORALL(~a: ~:[single~;double~]): ~a(~a) = ~a(~a)"
+			   case-vars double? acsl-name case-vars nasalib-name case-vars)))
+		(eq-lemma-name (format nil "~a_~a_eq" acsl-name nasalib-name)))
+	     ;;    (match match-str step
+	     (branch (case case-str)
+		     ((then (auto-rewrite -1)(hide -1)(assert))
+		      (then
+		       (hide-all-but 1)
+		       (skeep)
+		       (expand acsl-name)
+		       (assert)
+		       (rewrite eq-lemma-name)
+		       (translate-acsl-ops$) ;; some operators (eg, abs) are defined using other operators
+		       ))))))
+  "Translate one operator, from acsl definition to its corresponding float@ definition." "")
+
+(defstep translate-acsl-ops (&optional (fnum *) (dir nil))
+  (then
+   ;; 1) translate ACSL fp operations to NASALib's
+   ;; (rewrite* (;; operations
+   ;; 	      ;; "Dadd__eq" "Dsub__eq" "Dmul__eq" "Dneg__eq" "Ddiv__eq" ;;TODO this ones are deprecated
+   ;; 	      ;; "double.>="
+   ;; 	      ;; "qle_efd"
+   ;; 	      ;; "qlt_efd"
+   ;; 	      ;; "double_qge_dual"
+   ;; 	      ) :fnums fnum :target-fnums fnum :dir dir)
+   ;; 	      ;; rounding
+   ;; (expand "round_nearest_even_double" fnum)
+   ;; 	      ;; projections
+   ;; (expand "safe_prjct_double" fnum)
+   ;;  (try (rewrite "integerToDouble") (then (rewrite "max_pos_value")(assert)) (skip))
+
+   ;; Some equivalences cannot be proved beforehand because the definitions
+   ;; they should relate are generated by Frama-C/WP in each run. Then, they
+   ;; need to be introduced as part of the strategy.
+   ;; TODO add single precision lemma
+   
+   ;; (match "l_ulp_dp(%%)" step
+   ;; 	  (branch (case "FORALL(r: real): l_ulp_dp(r) = ulp_dp(r)")
+   ;; 		  ((then (auto-rewrite -1)(hide -1)(assert))
+   ;; 		   (then (hide-all-but 1)(skeep)(expand "l_ulp_dp")(rewrite "ulp_dp_eq")))))
+   
+   ;; (translate-acsl-op "add")
+   ;; (translate-acsl-op "sub")
+   ;; (translate-acsl-op "mul")
+   ;; (translate-acsl-op "div")
+   ;; (translate-acsl-op "neg" :arity 1)
+   ;; (translate-acsl-op "abs" :arity 1)
+   ;; (expand "infix_sl")
+   (skip) ;; M3 REMOVE
+   )
+  "" "")
+
+;; @M3 #WIP
+;; #TODO downgrade to defhelper
+(defstep initialize-vc-proof (&optional (fnum 1))
+  (then
+   ;; useful rewritings are installed here.
+   (auto-rewrite 
+    ;; #TODO add single precision version
+    "interval_inclusion"
+    "div_safe_eq"
+    "double.>="
+    "mul_ed_left_0") ;;TODO complete
+   ;; first, the outer-most let bindings and universal quantifications are removed from the sequent.
+   (repeat
+    (then
+     (match fnum "^%{forall}$" step (skeep))
+     (match fnum "^%{let_}$" step (beta))
+     (flatten)))
+   ;; All the VCs output by Frama-C on the code generated by PRECiSA state properties about
+   ;; the result of the program in case that the result is not warning. This simplification
+   ;; is applied on the formulas of the sequent.
+   (expand "/=")
+   ;; Remove infix symbols ;; #TODO #2022 not needed now, infix operators are not supported
+   ;; converts ((-1) * r)) to -r
+   (assert) 
+   )
+  "[FramacPVS] This helper tries to apply the initial simplifications to a verification condition."
+  "Simplifying VC goal")
+
+;;; Strategies to prove Frama-C's verification conditions.
+
+
+;;TODO
+;; (defun find-equivalent-real-term (fp-term real-terms)
+;;   (when real-terms
+;;     (cond ((application? fp-term)
+;; 	   )
+
+;; 	  ((name-epxr? fp-term) (if (name-expr? (car real-terms))
+;; 				    (car real-terms)
+;; 				  ()))
+;; 	  (t nil))
+
+    
+;;     (cond ((id (operator fp-term) 'sub_ed) )))))
+
+(defun regroup-real-term (real-terms)
+  (let((positives nil)
+       (negatives nil))
+    (loop for (real-term . polarity) in real-terms
+	  when (eq polarity '+) do (push real-term positives)
+	  when (eq polarity '-) do (push real-term negatives))
+    (if (and negatives positives)
+	(format nil "((~{(~a)~^+~}) - (~{(~a)~^+~}))" negatives positives)
+      (format nil "~{(~a)~^+~}" (or negatives positives)))))
+
+(defun disaggregate-fp-real-terms (expr &optional (positive? t))
+  "EXPR is an error difference which migth have been reordered by Frama-C.
+   This function returns a list with all the real-valued members of this
+   difference."
+  (cond
+   ((infix-application? expr)
+    (cond ((eq (id (operator expr)) '-)
+	   (multiple-value-bind (fp-expr1 real-exprs1) (disaggregate-fp-real-terms (args1 expr))
+	     (multiple-value-bind (fp-expr2 real-exprs2) (disaggregate-fp-real-terms (args2 expr) nil)
+	       (values (or fp-expr1 fp-expr2) (append real-exprs1 real-exprs2)))))
+	  ((eq (id (operator expr)) '+)
+	   (multiple-value-bind (fp-expr1 real-exprs1) (disaggregate-fp-real-terms (args1 expr))
+	     (multiple-value-bind (fp-expr2 real-exprs2) (disaggregate-fp-real-terms (args2 expr))
+	       (values (or fp-expr1 fp-expr2) (append real-exprs1 real-exprs2)))))
+	  (t (values nil (acons expr (if positive? '+ '-) nil)))))
+   ((and (application? expr)
+	 (or (eq (id (operator expr)) 'safe_prjct_double)
+	     (eq (id (operator expr)) 'safe_prjct_single)))
+    (values expr nil))
+   (t (values nil (acons expr (if positive? '+ '-) nil)))))
+
+;;
+
+;;TODO helper
+(defstep regroup-real-terms-in-error-bound-hyps (&optional (where -))
+  (match where "^abs(%1) <= safe_prjct_double(%err)$" step
+	 (try
+	  (let ((error-bound-form (extra-get-formula $1n))
+		(error-bound-expr (args2 error-bound-form))
+		(error-diff-expr (args1 (args1 error-bound-form)))
+		(case-str
+		 (multiple-value-bind (fp-term real-terms)
+		     (disaggregate-fp-real-terms error-diff-expr)
+		   (format nil "abs(~a - (~a)) <= ~a" fp-term
+			   (regroup-real-term real-terms)
+			   error-bound-expr))))
+	    (then (branch (case case-str) ((let ((fnum (- $1n 1))) (hide fnum)) (assert)))))
+	  (let ((where (if (listp where)
+			   (append '(-^) (mapcar (lambda(n) (- n 1)) (cdr where)) '(-1))
+			 '(-^ -1))))
+	    (regroup-real-terms-in-error-bound-hyps where))
+	  (skip)))
+  "Frama-c could have reorganized terms in error bounds expressions (ie, abs(X-r_X)<= err).
+   This strategy tries to undo such reorganization."
+  "")
+
+;;TODO helper
+(defstep regroup-real-terms-in-error-bound-consequents (&optional (where 1))
+  (match where "^abs(%1) <= %err$" step
+	 (try
+	  (let ((error-bound-form (extra-get-formula $1n))
+		(error-difference (args1(args1 error-bound-form)))
+		(error-bound-expr (args2 error-bound-form))
+		(error-diff-expr (args1 (args1 error-bound-form)))
+		(case-str
+		 (multiple-value-bind (fp-term real-terms)
+		     (disaggregate-fp-real-terms error-diff-expr)
+		   (format nil "(abs(~a) <= ~a) IFF abs(~a - (~a)) <= ~a"
+			   error-difference
+			   error-bound-expr
+			   fp-term
+			   (regroup-real-term real-terms)
+			   error-bound-expr))))
+	    (branch
+	     (case case-str)
+	     ((replace -1 :hide? t)
+	      (assert))))
+	  (skip)
+	  (skip)))
+  "Frama-c could have reorganized terms in error bounds expressions (ie, abs(X-r_X)<= err).
+   This strategy tries to undo such reorganization."
+  "")
+
+;; helper 
+(defstep remove-infix-applications (fnums &optional keep hide)
+  (if (let ((dummy (format t "~%REMOVE ~a ~a ~a~%" fnums keep hide)))
+	fnums)
+      (let ((fnum (pop fnums))
+	    (fnums (remove fnum fnums))
+	    (keep (push fnum keep)))
+	(try
+	 (match 
+	 fnum "^%{infix}$"
+	 step (let ((keep (remove fnum keep))
+		    (hide (push fnum hide)))
+		(remove-infix-applications fnums keep hide)))
+	 (skip)
+	 (remove-infix-applications fnums keep hide)))
+    (let ((fnums (append keep hide)))
+      (then
+       (hide-all-but keep fnums))))
+  ""
+  "")
+
+(defstep prove-stable-paths-vc (real-valued-funct-name)
+  (then
+   (install-all-framac-literals-as-rewritting-rules)
+   (initialize-vc-proof)
+   (install-finite?-hypothesis-as-rewritting-rules)
+   (let ((pred-name (stable-paths-pred-str real-valued-funct-name))
+	 (target-fnum (extra-get-fnum (list '~ + pred-name))))
+     (if target-fnum
+	 (then 
+	  (expand pred-name target-fnum)
+	  ;;
+	  ;; If there's any stable-paths predicate application among the antecedents,
+	  ;; those predicates encapsulate the information about the path stability of
+	  ;; called functions. The following step looks for them, instantiate the
+	  ;; formulas where they appear, and expand the predicate.
+	  (use-stable-paths-hypothesis)
+
+	  (float-ineq-to-real-ineq)
+          ;; Once the stable-paths hypothesis have been instantiated and expanded,
+	  ;; the floating-point expressions are expressed as operations on reals
+	  ;; following the IEEE-754 directives.
+	  (repeat (rewrites ("add_double_def" "sub_double_def" "mul_double_def")))
+	  (repeat (rewrite "neg_double_prjct"))
+	  
+	  ;;
+	  ;; This ground should get rid of every path condition inherited from called
+	  ;; functions.
+					;M3 but also would affect the proof if the top-most expression in the
+					; C program is an ITE
+	  (ground)
+
+	  (then
+	   (replace-concrete-values)
+	   (assert)
+	   (simplify-integerToDouble) ;part2
+	   (assert))
+	  
+	  ;;
+	  ;; An if-then-else in the sequent is reflect of the existence of an if-then-else
+	  ;; in the original program. It can occur in an antecedent, if the C function
+	  ;; returns bool.
+	  ;;M3 it is enough with this? is there a case where I don't want to lift an ITE?
+	  (repeat (lift-if))
+	  ;;
+	  ;; The sequent at this point contains antecedents stating error bounds on the
+	  ;; floating-point expressions used as arguments in the invocation of functions
+	  ;; in the body of program. These bounds can be partial in thes sense that they
+	  ;; are not valid for every possible input. For example, the program
+	  ;;
+	  ;; if (0<X) { f(X*X) } ...
+	  ;;
+	  ;; would produce the restriction
+	  ;;
+	  ;; qlt_ed(0,X) IMPLIES abs() <=
+	  ;;
+	  (repeat (then (split -1)(flatten))) ;;M3 -1 ?
+	  ;;
+	  ;; If some of the branches of the program didn't contain
+	  ;; function calls, for the corresponding proof branches
+	  ;; there's no need to instantiate error bounds.
+	  (finalize                    
+	   (then                       
+	    (canonize-ineqs)
+	    (replace-ascl-fp-application-by-pvs-counterpart)
+	    (replace-called-logic-real-functions)
+	    ;; If the target function is a tau predicate, it's necessary
+	    ;; to expand the definitions of the original predicate.
+	    (let ((test (or
+			 (suffix? "_tauplus" real-valued-funct-name)
+			 (suffix? "_tauminus" real-valued-funct-name))))
+	      (when test
+		(let ((real-predicate-name
+		       (if (suffix? "_tauplus" real-valued-funct-name)
+			   (subseq real-valued-funct-name 0 (- (length real-valued-funct-name) 8))
+			 (subseq real-valued-funct-name 0 (- (length real-valued-funct-name) 9))))
+		      (fp-predicate-name
+		       (format nil "~a_fp"real-predicate-name)))
+		  (then
+		   (expand fp-predicate-name)
+		   (expand real-predicate-name)))))
+
+	    (canonize-ineqs)
+	    (regroup-real-terms-in-error-bound-hyps)
+	    (simplify-integerToDouble)
+	    (simplify-fp-expressions)
+	    ;; (rewrite-fp-eqs)
+	    ;; (assert) ; <- get rids of mul(X,0)
+	    (finalize*
+	     (then
+	      (float-ineq-to-real-ineq)
+	      (repeat (rewrite "neg_double_prjct"))
+	      (simplify-integerToDouble)
+	      (assert)
+	      (ground)
+	      ;; (rewrite-fp-eqs)
+	      ))))
+	  
+	  ;; If there's an universally quantified antecedent, there's a call to another function
+	  ;; in the original program, and such formula contains the information about the stable
+	  ;; paths of the callee.
+	  (repeat
+	   (match - "^%{forall}$" 
+		  step (then 
+			(let((forall-fnum $1n)
+			     (except-forall-ants (cons
+						  '-^
+						  (let ((fnums  (list $1n)))
+						    (loop while (extra-get-fnums (list '~ (cons '-^ fnums)
+                                         "^%{forall}$"))
+							  do (setf
+							      fnums
+							      (append
+							       fnums
+							       (extra-get-fnums (list '~ (cons '-^ fnums)
+                                         "^%{forall}$")))))
+						    fnums)))
+			     (error-bound-form (args1(expression(extra-get-formula $1n)))) ;;M3 MCTMC
+			     (error-bound-expr (args2 error-bound-form))
+			     (error-diff-expr (args1 (args1 error-bound-form)))
+			     (fp-term (multiple-value-bind (fp-term real-terms)
+					  (disaggregate-fp-real-terms error-diff-expr) fp-term))
+			     (fp-str (format nil "~a" fp-term))
+;;			     (dummy (format t "~%[prove-stable-paths-vc] FP-STR ~a ~%" fp-str)) ;debug
+			     ;;			     (dummy (format t "~%[prove-stable-paths-vc] except-forall-ants ~a ~%" except-forall-ants)) ;debug
+			     )
+			  (match except-forall-ants fp-str step
+				 (with-labels (inst? forall-fnum :where $1n :if-match all) "inst")))
+			(assert)
+		       (let ((fnums (extra-get-fnums "inst")))
+			 (remove-infix-applications fnums))
+		       (let ((fnum (extra-get-fnum "inst")))
+			 (match fnum "^%1{name_}(%%)$" step (expand "%1")))
+		       (delabel "inst"))))
+	  (replace-ascl-fp-application-by-pvs-counterpart)
+	  (replace-called-logic-real-functions)
+	  ;; The real-valued version of the guards could be modified by Frama-C/WP. In such case,
+	  ;; we'd have an equivalent form but syntactically different from what we need to instantiate
+	  ;; the lemmas used to close the branches below. 
+	  (branch
+	   (ground)
+	   ((then
+	     (canonize-ineqs)
+	     (regroup-real-terms-in-error-bound-hyps)
+	     (finalize*
+	      (then
+	       (float-ineq-to-real-ineq)
+	       (repeat (rewrite "neg_double_prjct"))
+	       (simplify-integerToDouble)
+	       (assert)
+	       (ground)
+	       ;; (rewrite-fp-eqs)
+	       ))))))
+       (printf "The stable-paths predicate ~a does not seem to be in the sequent." pred-name))))
+  "[FramacPVS] This strategy tries to prove stable-paths behavior postconditions on a precisa-generated C program. Assumes that the stable-paths predicate is called PRED-NAME and the target is in TARGET-FNUM."
+  "Proving stable-paths behavior.")
+
+;; #TODO downgrade to defhelper
+(defstep install-finite?-hypothesis-as-rewritting-rules ()
+  (let ((fnums
+	 (cons
+	  "finite_neg_double"
+	  (simple-gather-fnums
+	   (s-forms (current-goal *ps*))
+	   '-
+	   nil
+	   (lambda (sform) (let ((form (args1(formula sform))))
+			     (and (application? form)
+				  (name-expr? (operator form))
+				  ;; @M3 (2022) now we just have `finite?`, not one for each precision.
+				  ;; (memq (id (operator form)) '(finite_double? finite_single?))
+				  (eq (id (operator form)) 'finite?)
+				  )))))))
+    (auto-rewrite fnums))
+  ""
+  "")
+
+;;
+
+;; if expr is an application, returns a list with the arguments of expr;
+;; otherwise, it returns nil.
+(defun get-args (expr)
+  (when (application? expr)
+    (let ((args (argument expr)))
+      (if (arg-tuple-expr? args)
+	  (exprs args)
+	(list args)))))
+
+(defmacro trans-value-pred-str (real-valued-funct-name)
+  `(format nil "p_~a_trans_value" ,real-valued-funct-name))
+
+(defmacro stable-paths-pred-str (real-valued-funct-name)
+  `(format nil "p_~a_stable_paths" ,real-valued-funct-name))
+
+(defmacro fp-valued-funct-str (real-valued-funct-name)
+  `(format nil "~a_fp" ,real-valued-funct-name))
+
+(defmacro logic-fp-funct-str (real-valued-funct-name)
+    `(format nil "l_~a_fp" (string-downcase ,real-valued-funct-name))); Frama-C downcases the function name
+
+(defmacro logic-real-funct-str (real-valued-funct-name)
+    `(format nil "l_~a" (string-downcase ,real-valued-funct-name))); Frama-C downcases the function name
+
+(defstep instantiate-stable-paths-pred (function-name target-fnum)
+  ;; This strategy constructs the list of arguments to be used to instantiate
+  ;; the formula where the stable paths predicate occurs by inspecting the
+  ;; applications of the real-valued PVS version of the function and its
+  ;; floating-point PVS version. The formula is intended to be quantified only
+  ;; on the real variables that appears in the guard of the original function
+  ;; (which are not necessarily all the arguments of the function).
+  (let ((stable-paths-fnum ;; fnum of the formnula where the stable paths predicate ocurs
+	 (extra-get-fnum `(~ - ,(format nil "~a(%%)" (stable-paths-pred-str function-name)))))
+	;; 
+	(pvs-real-expr     ;; application of the pvs-real version of the function
+	 (extra-get-expr `(~ ,target-fnum ,(format nil "~a(%%)" function-name))))
+	(stable-paths-expr ;; application of the stable paths predicate
+	 (extra-get-expr `(~ - ,(format nil "~a(%%)" (stable-paths-pred-str function-name))))))
+    (if (not pvs-real-expr)
+	(printf "PVS real version of the function (~a) not found in target fnum (~a)." function-name target-fnum)
+      (let ((real-args   ;; arguments (expected to be variables) of application above
+	     (get-args pvs-real-expr))
+	    (pvs-fp-name ;; PVS-fp version of the function
+	     (fp-valued-funct-str function-name))
+	    (pvs-fp-expr ;; application of the mentioned function
+	     (extra-get-expr `(~ ,target-fnum ,(format nil "~a(%%)" pvs-fp-name)))))
+	(if (not pvs-fp-expr)
+	    (printf "PVS floating-point version of the function (~a) not found in target fnum (~a)." pvs-fp-name target-fnum)
+	  (let ((fp-args ;; arguments (expected to be variables) of application above
+		 (get-args pvs-fp-expr))
+		(args (mapcar #'cons fp-args real-args)))
+	    (if (not stable-paths-expr)
+		(printf "Stable paths predicate (~a) cannot be found in the sequent." stable-paths-expr)
+	      (let ((inst-args ;;; arguments for the instantiation of the formula where the stable
+		               ;;; paths predicate occurs.
+		     (loop for a in (get-args stable-paths-expr) 
+			   when (not (eq (id (print-type(type a))) 'real))
+			   collect (cdr (assoc-if (lambda (arg) (eq (id arg) (id a))) args)))))
+		(then
+		 (instantiate stable-paths-fnum inst-args)
+		 (spread
+		  (split stable-paths-fnum)
+		  ((skip)
+		   (then (rewrite "RtoD_DtoR") (assert))))))))))))
+  "" "")
+
+(defstep use-stable-paths-hypothesis ()
+  (for-each-fnum$
+   (let ((names (loop for lname in (remove-if-not
+				    (lambda (name) (and (prefix? "p_" name) (suffix? "_stable_paths" name)))
+				    (mapcar (lambda (op) (format nil "~a" op)) (collect-application-operators (extra-get-expr fnum))))
+		      collect (subseq (subseq lname 2) 0 (- (length (subseq lname 2)) 13))))) ;; (length "p_") -> 2
+     (when names
+       (for-each-value$ (use-stable-paths-hypothesis-for$ fname) fname names)))
+   ;; :verbose? t ;; debug
+   )
+  ""
+  "")
+
+(defstep use-stable-paths-hypothesis-for (function-name)
+  (let (;; 1) find application of logic real function in the sequent
+	;; M3 WHATIF there's more than one?
+	;; M3 WHATIF there's no logic function (maybe I can also look among the consequents if a numeric VC is being proved)?
+	(logic-real-function-application (extra-get-expr
+					  (list '~ '- (format nil "~a(%%)" (logic-real-funct-str function-name)))))
+	;; 2) build mapping relating formal parameter name with actual argument in the application
+        (logic-real-fun-app-binding      (extract-instantiation logic-real-function-application))
+	;; 3) instantiate stable-paths predicate using such mapping.
+	;; M3 WHATIF there's more than one? or the first one is already instantiated?
+	(stable-paths-predicate-name     (stable-paths-pred-str function-name))
+	(stable-paths-predicate-app-fnum (extra-get-fnum
+					     `(~ - ,(format nil "~a(%%)" stable-paths-predicate-name))))
+	(stable-paths-predicate-application (extra-get-expr
+					     `(~
+					       ,stable-paths-predicate-app-fnum
+					       ,(format nil "~a(%%)" (stable-paths-pred-str function-name)))))
+	(stable-paths-pred-binding       (extract-instantiation stable-paths-predicate-application))
+	(stable-paths-form-instantiation (loop
+					  for ( sp-formal-arg-name . sp-formula-var ) in stable-paths-pred-binding
+					  when (variable? sp-formula-var)
+					  collect
+					   (format nil "~a" (cdr(assoc sp-formal-arg-name logic-real-fun-app-binding))))))
+    (then
+     (printf "Instantiating formula ~a with ~a...~%" stable-paths-predicate-app-fnum stable-paths-form-instantiation)
+     (instantiate stable-paths-predicate-app-fnum stable-paths-form-instantiation)
+     (branch
+      (split stable-paths-predicate-app-fnum)
+      ((expand stable-paths-predicate-name :assert? none)
+       (error "[defstep instantiate-stable-paths-predicate-from-logic-real-function-application] This branch should have been closed automatically")))))
+  "Instantiates and expands the stable-paths predicate for the function whose name is provided as parameter."
+  "")
+
+(defun extract-instantiation (application)
+  (let ((resolutions (resolutions (operator application))))
+    (unless resolutions (error "[extract-instantiation] Application ~a has no resolution (no type checked yet?)" application))
+    (when (cdr resolutions) (error "[extract-instantiation] Application ~a is ambiguous (has more than one resolution)" application))
+    (let ((declaration (declaration(car resolutions)))
+	  (actual-args (arguments application)))
+      (if (formals declaration)
+	  (loop for bind in (car(formals declaration))
+		for actual in actual-args
+		collect (cons (id bind) actual))
+	(when actual-args (error "[extract-instantiation] The resolution for the application ~a has no formals but the application has actual parameters." application))))))
+
+;;
+;; Postcondition for "numeric" functions.
+;;
+
+(defstep prove-numeric-postcondition ()
+  (then
+   (install-all-framac-literals-as-rewritting-rules)
+   (initialize-vc-proof)
+   ;; (translate-acsl-ops)
+   (let ((target-fnum (extra-get-fnum '(~ + "^(abs(%% - %fun(%%)) <= %%)$"))))
+     (if target-fnum
+	 (let ((logic-fun-name-expr (extra-get-expr '(~ target-fnum "^(abs(%% - %fun(%%)) <= %%)$")))
+	       (logic-fun-str       (format nil "~a" logic-fun-name-expr)))
+	   (if (prefix? "l_" logic-fun-str)
+	       (let ((fun-name (subseq logic-fun-str 2)))
+		 (then
+		  ;; @M3 the postconditions in "numeric" implementations are expressed
+		  ;;     in such a way that the target formula has the form
+		  ;;
+		  ;;   abs(safe_proj(FLOAT_SKCT) - ACSL_REAL_FUNCT(REAL_SKCT1, ..., REAL_SKCTn)) <= RATIONAL_LITERAL
+		  ;;
+		  ;;     where FLOAT_SKCT is a Skolem constant introduced artificially during
+		  ;;     the generation of the verification condition. Additionally, there is
+		  ;;     an hypothesis as the following
+		  ;;
+		  ;;   safe_proj(ACSL_FP_FUN(FLOAT_SKCT1, ..., FLOAT_SKCTn)) = safe_proj(FLOAT_SKCT)
+		  ;;
+		  ;;     Then following step transforms the target into
+		  ;;
+		  ;;   abs(safe_proj(ACSL_FP_FUN(FLOAT_SKCT1, ..., FLOAT_SKCTn))
+		  ;;       - ACSL_REAL_FUNCT(REAL_SKCT1, ..., REAL_SKCTn))
+		  ;;   <= RATIONAL_LITERAL
+		  ;;
+		  ;;     and introduces (and prove) the hypothesis:
+		  ;;
+		  ;;             finite?(ACSL_FP_FUN(FLOAT_SKCT1, ..., FLOAT_SKCTn))
+		  ;;
+		  (match$ target-fnum "^(abs(safe_proj(%1) - %%) <= %%)$"
+			  step (let ((match-pattern (format nil "^safe_proj(%2) = safe_proj(~a)$" "%1"))
+				     (artificial-fp "%1"))
+				 (match - match-pattern
+					step (then (replace $1n :dir rl)
+						   (spread 
+						    (case "NOT finite?(%2)") 
+						    ((rewrite "axm_bnd@double_sem_th.is_finite_safe_projection" 
+							      :subst ("f1" artificial-fp "f2" "%2"))))))))
+		  ;;
+		  (introduce-real-valued-version$ fun-name)
+		  (introduce-fp-valued-version$ fun-name)
+		  ;;
+		  (use-numerical-bound-for-function$ fun-name)))
+	     (printf "No logical version of the formula has been found in the sequent.")))
+       ;; (printf "No error bound formula found in sequent.")
+       ;; If there's no (abs(%% - %fun(%%)) <= %%) consequent, this could be the numeric
+       ;; behavior of a predicate
+       (let ((info (loop with expr=nil
+			 for fnum in (extra-get-fnums '*)
+			 do (setf expr (extra-get-expr (list '~ fnum "^%(%%)$")))
+			 when (and expr (prefix? "l_" (string(id (operator expr)))))
+			 collect (cons fnum expr))))
+	 (if (= 1 (length info))
+	     (let ((target-fnum (car (car info)))
+		   (logic-pred-application (cdr (car info)))
+		   (forall-fnums (simple-gather-fnums
+				  (s-forms (current-goal *ps*))
+				  '-
+				  nil
+				  (lambda(sform) (forall-expr? (args1(formula sform)))))))
+	       (then
+		;; 1) Instantiate structure hypothesis for this predicate
+		(let ((op (operator logic-pred-application))
+		      (user-def-bindings        (extract-instantiation logic-pred-application)))
+		  (for-each-fnum$
+		   (let ((logic-real-application (extra-get-expr (list '~ fnum (format nil "~a(%%)" op))))
+			 (fnum-ok? logic-real-application))
+		     (when fnum-ok?
+		       (let ((logic-real-bindings    (extract-instantiation logic-real-application))
+			     (logic-real-fnum-instantiation
+			      (loop for ( ud-formal-arg-name . ud-expr ) in user-def-bindings
+				    when (variable? (cdr(assoc (intern(string-downcase(string ud-formal-arg-name))) logic-real-bindings)))
+				    collect (format nil "~a" ud-expr))))
+			 (then
+			  (instantiate fnum logic-real-fnum-instantiation)
+			  (branch
+			   (split fnum)
+			   ((flatten)
+			    (let ((fun-name (subseq (string (id op)) 2)))
+			      (use-numerical-bound-for-guard-expressions$ fun-name))))))))
+		forall-fnums
+		;;		:verbose? t
+		))))
+	   (printf "Ambiguous target ~a." info))
+	 ))))
+  "[FramaCPVS] Proves verification condition generated from the postcondition of the numeric C implementation generated by PRECiSA."
+  "Proving numeric postcondition.")
+
+;; n is the lemma number that should be introduced in this attemp
+(defstep use-numerical-bound-for-function (function-name &optional (n 0))
+  (let ((lemma-name (format nil "~a_fp_c_~a" function-name n)))
+    (try
+     (lemma lemma-name)
+     (then
+      (finalize
+       (then
+	(inst? -1)
+	(branch
+	 (split -1)
+	 ((then
+	   (simplify-integerToDouble)
+	   (finalize (assert))
+	   (finalize 
+	   (let ((target-fnum (extra-get-fnum '(~ + "^(abs(%% - %fun(%%)) <= %%)$"))))
+	     (branch
+	      (instantiate-stable-paths-pred function-name target-fnum)
+	      ((then (let ((stable-paths (stable-paths-pred-str function-name)))
+		       (expand stable-paths))
+		     ;; (translate-acsl-ops)
+		     ;; in case, there are user-defined predicates in the guards
+		     (replace-ascl-fp-application-by-pvs-counterpart)
+		     (replace-called-logic-real-functions)
+		     (assert)
+		     ;; (translate-acsl-ops)
+		     (simplify-integerToDouble)
+		     (real-ineq-to-float-ineq)
+		     (canonize-ineqs)
+		     (ground)
+		     (then (float-ineq-to-real-ineq) (assert))
+		     ;; (rewrite-fp-eqs)
+		     )
+	       (use-numerical-bound-for-guard-expressions function-name))))))))))
+      (let ((next-n (+ n 1))) (use-numerical-bound-for-function$ function-name next-n)))
+     ;; if the proposed lemma does not exist, all the possible lemmas were already tried.
+     (printf "Couldn't match this goal with any numeric bound certificate for ~a." function-name)))
+  "" "")
+
+;;;
+
+
+(defun get-application-sub-expression (expr operator-id)
+  (cond ((application? expr)
+	 (if (and (name-expr? (operator expr)) (eq (id (operator expr)) operator-id))
+	     expr
+	   (loop with result=nil
+		 for arg in (arguments expr)
+		 do (setf result (get-application-sub-expression arg operator-id))
+		 when result
+		 return result)))))
+
+(defun get-instantiation-for-precisa-certificate (cert-fnum target-fnum)
+  "CERT-FNUM fnum of the certificate
+   TARGET-FNUM fnum where the final difference of the certificate can be found."
+  (let ((cert-expr (expression (extra-get-formula cert-fnum)))
+	(target-expr (extra-get-formula target-fnum)))
+    (when (and (ground-arithmetic-term?(args2 (args2 cert-expr)))
+	       (ground-arithmetic-term?(args2 target-expr))
+	       (= (get-arithmetic-value (args2 (args2 cert-expr)))
+		  (get-arithmetic-value (args2 target-expr))))
+      (handler-case
+	  (let ((fp-expr-to-instantiate (get-application-sub-expression (args2 cert-expr)
+									'safe_prjct_double))
+		(fp-ground-expr (get-application-sub-expression target-expr 'safe_prjct_double)))
+	    (let ((fp-insts (suggest-instantiation fp-expr-to-instantiate fp-ground-expr))
+		  (fp-real-map (get-subexpressions-from-error-bounds)))
+	      (loop for (var . fpexpr) in  fp-insts
+		    append (append
+			    (list (format nil "~a" var) (format nil "~a" fpexpr))
+			    (loop for ( fp2 . rexpr) in fp-real-map
+				  when (eq (pvs-sxhash-value fpexpr) (pvs-sxhash-value fp2))
+				  append (list (format nil "r_~a" var) (format nil "~a" rexpr)))))))
+	(error (c) nil)))))
+
+(defun get-subexpressions-from-error-bounds ()
+  "Returns a list of pairs ( FPEXPR . REXPR ), with each pair taken from every antecendent of form: (abs(safe_prjct_double(FPEXPR) - REXPR) <= 1/2 * ulp_dp(REXPR)) occurring in the sequent."
+  (loop with formula=nil
+	for sf in (n-sforms *goal*)
+	do (setf formula (let ((curr-form (formula sf))) (if (negation? curr-form) (args1 curr-form) curr-form)))
+	when (and (application? formula) (name-expr? (operator formula)) (eq '<= (id (operator formula)))
+		  (let ((first-term (args1 formula))) 
+		    (and (application? first-term) (name-expr? (operator first-term)) (eq 'abs (id (operator first-term))))))
+	collect (cons (args1(args1(args1(args1 formula)))) (args2(args1(args1 formula))))))
+
+(defun suggest-instantiation (to-instantiate-expr ground-expr)
+  "Returns error if TO-INSTANTIATE-EXPR and GROUND-EXPR do not have compatible structures."
+  (remove-duplicates (hard-match to-instantiate-expr ground-expr) :key (lambda (p) (id(car p)))))
+
+(defmethod hard-match ((to-instantiate-expr expr) (ground-expr expr))
+  "Returns error if TO-INSTANTIATE-EXPR and GROUND-EXPR do not have compatible structures."
+  nil)
+
+(defmethod hard-match ((to-instantiate-expr name-expr) (ground-expr expr))
+  "Returns error if TO-INSTANTIATE-EXPR and GROUND-EXPR do not have compatible structures."
+  (if (variable? to-instantiate-expr)
+      (list (cons to-instantiate-expr ground-expr))
+    (unless (and (name-expr? ground-expr) (eq (id to-instantiate-expr) (id ground-expr)))
+      (error "[hard match] Incompatible expressions: ~a vs. ~a." to-instantiate-expr ground-expr))))
+
+(defmethod hard-match ((to-instantiate-expr let-expr) (ground-expr expr))
+  "Returns error if TO-INSTANTIATE-EXPR and GROUND-EXPR do not have compatible structures."
+  (hard-match (beta-reduce to-instantiate-expr t) ground-expr))
+
+(defmethod hard-match ((to-instantiate-expr application) (ground-expr application))
+  "Returns error if TO-INSTANTIATE-EXPR and GROUND-EXPR do not have compatible structures."
+  (append
+   (hard-match (operator to-instantiate-expr) (operator ground-expr))
+   (loop for e1 in (arguments to-instantiate-expr)
+	 for e2 in (arguments ground-expr)
+	 append (hard-match e1 e2))))
+
+;;;
+
+;; (defmethod subexpr? ((e1 expr) (e2 expr))
+;;   nil)
+
+;; (defmethod subexpr? ((e1 name-expr) (e2 name-expr))
+;;   (eq (id e1) (id e2)))
+
+;; (defmethod subexpr? ((e1 name-expr) (e2 application))
+;;   (some (lambda (e) (subexpr? e1 e)) (arguments e2)))
+
+;; n is the lemma number that should be introduced in this attemp
+(defstep use-numerical-bound-for-guard-expressions (function-name &optional (n 1))
+  (let ((lemma-name (format nil "~a_expr_num_~a" function-name n))
+	(return? nil)
+	;; (dummy (format t "~%~a ~a~%" function-name lemma-name)) ;;debug
+	) 
+    (then
+;;     (regroup-real-terms-in-error-bound-consequents)
+     ;; in case there are user-defined predicates in the guards
+     (replace-ascl-fp-application-by-pvs-counterpart)
+     (replace-called-logic-real-functions)
+     (finalize
+      (try
+       (lemma lemma-name)
+       (let ((instantiation (get-instantiation-for-precisa-certificate -1 1)))
+	 (if instantiation
+	     (then
+	      (inst? -1 :subst instantiation)
+	      (branch
+	       (split -1)
+	       ((then (simplify-integerToDouble)
+		      (flatten)
+		      (assert)
+		      (real-ineq-to-float-ineq)
+		      (canonize-ineqs)))))
+	   (skip)))
+       (let((dummy (setf return? t))
+;;	    (dummy (format t "~%[use-numerical-bound-for-guard-expressions] RETURN? ~a~%" return?)) ;;debug
+	    ) 
+	 (skip))))
+     ;; if the proposed lemma does not exist, all the possible lemmas were already tried.
+     (let((dummy (format nil "~%[use-numerical-bound-for-guard-expressions] RETURN? ~a~%" return?))) ;; debug
+       (if return?
+	   (printf "Couldn't match this goal with any numeric expression bound certificate.")
+	 (let ((next-n (+ n 1))) (use-numerical-bound-for-guard-expressions$ function-name next-n))))))
+  "" "")
+
+(defstep introduce-real-valued-version (function-name &optional (where *))
+  (let ((logic-real-name (logic-real-funct-str function-name))
+	(logic-real-expr (extra-get-expr (list '~ where (format nil "~a(%%)" logic-real-name))))
+	;;	(dummy (format t "[introduce-real-valued-version] ~a ~a~%" function-name where)) ;debug
+	)
+    (if logic-real-expr
+	(let ((pvs-real-fun-name function-name)
+	      (case-str (format nil "~a = ~a(~{~a~^, ~})" logic-real-expr pvs-real-fun-name (get-args logic-real-expr))))
+	  (branch
+	   (case case-str)
+	   ((replace -1 :hide? t)
+	    (then (hide-all-but 1)
+		  (expand logic-real-name :assert? none)
+		  (expand pvs-real-fun-name :assert? none)
+		  (beta) ;; in case there's a let-in; it would prevent next step application
+		  (replace-called-logic-real-functions 1)
+		  (repeat* (lift-if))
+		  (iff) ;;in case the real-valued function is a predicate
+		  (ground)))))
+      (printf "The logic real-valued function ~a does not seem to be in the sequent." logic-real-name)))
+  ""
+  "")
+
+;;TODO change to defhelper
+;; simplify integerToDouble(cte) expressions
+;;TODO change name, it does more things
+;;TODO add single precision version
+(defstep simplify-integerToDouble ()
+  (then
+   (repeat
+    (match "integerToDouble(%1)" step
+	   (branch
+	    (let ((case-str (format nil "integerToDouble(%1) = ~a(%1)" (round-fn t))))
+	      (case case-str))
+	    ((replace -1 :hide? t)
+	     (then (hide-all-but 1) (eval-formula))))))
+   ;; if any of such modifications resulted in an expression such as
+   ;; safe_prjct_double(round_nearest_even_double(-1))
+   ;; it is possible to ground evaluate it.
+   (repeat ;; all the fp literals in the sequent come from C constants, then, they are exaclty representable as fp
+    (let((match-str(format nil "safe_prjct_double(~a(%a))" (round-fn t))))
+      (match match-str
+	   step (then
+		 (try
+		  (eval-expr match-str)
+		  (replace -1 :hide? t)
+		  (skip)))))))
+  "Simplify integerToDouble(cte) expressions"
+  "")
+
+;; x= rond(0) AND mul(x,y) ... -> mul(0,y) ... -> 0 ...
+;; TODO change to defhelper
+(defstep simplify-fp-expressions ()
+  (then
+   (repeat
+    (match$ * "^safe_prjct_double(%1) = %2$"
+	    step (let ((test (and ;; (> 0 $1n) ;; M3 ~~~
+			      ;; (name-expr?(args1(args1 $1j))) ;;M3 it works for complex exprs as well
+			      (number-expr? (args2 $1j)))))
+		   (when test
+		     (let ;;((fnum (- $1n 1)))
+			 ((fnum (if (> 0 $1n) (- $1n 1) $1n)))
+		       (then
+			(lemma "safe_prjct_double_to_int")
+			(inst? -1 :where fnum)
+			(assert)
+			(hide fnum)
+			(replace -1 :hide? t)))))))
+   (assert))
+  ""
+  "")
+
+(defstep replace-concrete-values ()
+  (then
+   (repeat
+    (match$ * "^safe_prjct_double(%1) = %2$"
+	    step (let ((test (and ;; (> 0 $1n) ;; M3 ~~~
+			      ;; (name-expr?(args1(args1 $1j))) ;;M3 it works for complex exprs as well
+			      (number-expr? (args2 $1j)))))
+		   (when test
+		     (replace $1n :hide? t))))))
+  ""
+  "")
+
+;; M3 currently not needed; I'm keeping it just in case it usefulness becomes relevant itself later.
+;; TODO change to defhelper
+(defstep rewrite-fp-eqs ()
+  ;; TODO add single precision part
+  (let((match-str (format nil "^%1 = ~a(%2)$" (round-fn t))))
+    (repeat
+     (match$ * ;; "^safe_prjct_double(%1) = %2$"
+	     match-str
+	     step (let ((test (number-expr? (args1 (args2 $1j)))))
+		    (when test
+		      (let ((fnum (if (> 0 $1n) (- $1n 1) $1n)))
+			(then
+			 (lemma "safe_prjct_double_to_int")
+			 (inst? -1 :where fnum)
+			 (assert)
+			 (hide fnum)
+			 (replace -1 :hide? t))))))))
+  "Rewrite using formulas like 'safe_prjct_double(f2!1) = 0'"
+  "")
+
+;;TODO change to defhelper
+;; rewrite prj(f) <= cte to le(f,round(cte))
+;;TODO add single precision version
+;; le arriba, lt abajo
+(defstep canonize-ineqs ()
+  (then
+   ;; (expand "ieee754_double.<")
+   ;; (expand "ieee754_double.<=")
+   ;; (expand "ieee754_double.>")
+   ;; (expand "ieee754_double.>=")
+   (rewrite "double_qge_dual")
+   (rewrite "double_qgt_dual")
+;;   (rewrite* ("qle_efd" "qlt_efd"))
+   (match - "^qlt_efd(%%)$" step
+	  ;;(rewrite "double_nle_lt_rew")
+	  (try (use "double_nle_lt_rew") (try (replace -1 :hide? t) (skip) (fail) ) (fail))
+	  )
+   (match + "^qle_efd(%%)$" step
+	  (try (use "double_nlt_le_rew") (try (replace -1 :hide? t) (skip) (fail) ) (fail)))
+   ;; ;; TODO this is not an ineq, why it's here?
+   ;; (repeat
+   ;;  (match * "^safe_prjct_double(%1) = safe_prjct_double(%2)$"
+   ;; 	   step (let ((fnum (if (> 0 $1n) (- $1n 1) $1n)))
+   ;; 		  (then
+   ;; 		   (lemma "safe_prjct_double_inj")
+   ;; 		   (inst? -1 :where fnum)
+   ;; 		   (assert)
+   ;; 		   (hide fnum)))))
+   ;;
+   
+   ;;(rewrite "double_neq_not_eq_rew")
+   )
+  "Changes all gt,ge to lt,le"
+  "")
+
+;;M3 still in use in prove-numerical, can we not use it?
+;;TODO change to defhelper
+;; rewrite prj(f) <= cte to le(f,round(cte))
+;;TODO add single precision version
+(defstep real-ineq-to-float-ineq ()
+  (let((round-fn-p1 (format nil "~a(%1)" (round-fn t)))
+       (prjct-round-fn-p1 (format nil "~a(~a)" (prjct-fn t) round-fn-p1)))
+    (then
+     (repeat
+      (match$ "%1<=safe_prjct_double(%2)" step
+	      (then (lemma "double_safe_projection_is_le_compliant")
+		    (inst -1 round-fn-p1 "%2")
+		    (eval-expr prjct-round-fn-p1)
+		    (replace -1 :hide? t) (replace -1 :hide? t :dir rl))))
+     (repeat
+      (match$ "%1<safe_prjct_double(%2)" step
+	      (then (lemma "double_safe_projection_is_lt_compliant")
+		    (inst -1 round-fn-p1 "%2")
+		    (eval-expr prjct-round-fn-p1)
+		    (replace -1 :hide? t) (replace -1 :hide? t :dir rl))))   
+     (repeat
+      (match$ "safe_prjct_double(%1)<%2" step
+	      (then (lemma "double_safe_projection_is_lt_compliant")
+		    (inst -1 "%1" "round_nearest_even_double(%2)")
+		    (eval-expr "safe_prjct_double(round_nearest_even_double(%2))")
+		    (replace -1 :hide? t) (replace -1 :hide? t :dir rl))))
+     (repeat
+      (match$ "safe_prjct_double(%1)<=%2" step
+	      (then (lemma "double_safe_projection_is_le_compliant")
+		    (inst -1 "%1" "round_nearest_even_double(%2)")
+		    (eval-expr "safe_prjct_double(round_nearest_even_double(%2))")
+		    (replace -1 :hide? t) (replace -1 :hide? t :dir rl))))))
+  "" "")
+
+(defstep float-ineq-to-real-ineq ()
+  (then
+   (repeat
+    (match$ "qle_efd(%1,%2)" step
+	   (then (lemma "double_safe_projection_is_le_compliant")
+		 (inst -1 "%1" "%2")
+		 (replace -1 :hide? t))))
+   (repeat
+    (match$ "qlt_efd(%1,%2)" step
+	   (then (lemma "double_safe_projection_is_lt_compliant")
+		 (inst -1 "%1" "%2")
+		 (replace -1 :hide? t))))
+   (then (repeat (rewrite "double_neq_not_eq_rew")) (simplify-integerToDouble)))
+  ""
+  "")
+
+;; This helper should be able to transform a consequent of form
+;; ((abs(f8_maybeint_value(m!1) - sgn(r!1))) <= 0)
+;; to
+;; ((abs(fp_sgn(m!1) - sgn(r!1))) <= 0)
+(defstep introduce-fp-valued-version (function-name &optional (where '*))
+  (let ((logic-fp-name (logic-fp-funct-str function-name))
+	(logic-fp-expr (extra-get-expr (list '~ where (format nil "~a(%%)" logic-fp-name)))))
+    (if logic-fp-expr
+	(let ((pvs-fp-fun-name (fp-valued-funct-str function-name))
+	      (case-str (format nil "~a = ~a(~{~a~^, ~})" logic-fp-expr pvs-fp-fun-name (get-args logic-fp-expr)))
+	      ;;	      (dummy (format t "[introduce-fp-valued-version] CASE: ~a~%" case-str)) ;debug
+	      )
+	  (branch
+	   (case case-str)
+	   ((then (replace -1 :hide? t)  ;;TODO va o no? :hide? t
+		  
+		  ;; (let ((pvs-acsl-eq-fnum (extra-get-fnum `(~ - ,pvs-fp-fun-name))))
+		  ;;   ;; the equality between the pvs function and the acsl expression for the result
+		  ;;   (replace pvs-acsl-eq-fnum :hide? t :dir rl))
+		  
+		  )
+	    (then (hide-all-but 1) 
+		  (expand logic-fp-name)
+		  (expand pvs-fp-fun-name)
+		  (let ((acsl-fp-ops (acsl-fp-op-names)))
+		       (rewrite* acsl-fp-ops))
+		  (assert)
+		  (canonize-ineqs)
+		  ;; (translate-acsl-ops)
+		  ;; ;; boolean expr to canonic form: E1 <(<=) E
+		  ;; (rewrite "double_qge_dual")
+		  
+		  ;; rewrite prj(f) <= cte to le(f,round(cte))
+		  ;;TODO add single precision version
+		  ;; (match "%1<=safe_prjct_double(%2)" step
+		  ;; 	 (then (lemma "double_safe_projection_is_le_compliant")
+		  ;; 	       (inst -1 "round_nearest_even_double(%1)" "%2")
+		  ;; 	       (eval-expr "safe_prjct_double(round_nearest_even_double(%1))")
+		  ;; 	       (replace -1 :hide? t) (replace -1 :hide? t :dir rl)))
+;;		  (real-ineq-to-float-ineq)
+
+		  (simplify-integerToDouble) ;; part1
+		  (float-ineq-to-real-ineq)
+		  (simplify-integerToDouble) ;; part2
+		  
+		  ;; simplify integerToDouble(cte) expressions
+		  (repeat* (then (replace-ascl-fp-application-by-pvs-counterpart)(assert)))
+		  (repeat* (then (lift-if)(assert)))
+		  (iff) ;; in case the real-valued function is a predicate
+		  ;; (branch (ground) ((then (rewrite-fp-eqs$))))
+		  (ground)
+		  ))))
+      (printf "The logic floating-point function ~a does not seem to be in the sequent." logic-fp-name)))
+  ""
+  "")
+
+;;TODO helper
+(defstep replace-ascl-fp-application-by-pvs-counterpart (&optional (where *))
+   (for-each-fnum$
+    (let ((names (loop for lname in (remove-if-not
+				     (lambda (name) (prefix? "l_fp_" name))
+				    (mapcar (lambda (op) (format nil "~a" op)) (collect-application-operators (extra-get-expr fnum))))
+;;				     (collect-application-operators (extra-get-expr fnum)))
+		       collect (subseq lname 5)))) ;; (length "l_fp_") -> 5
+      (for-each-value$ (introduce-fp-valued-version$ fname fnum) fname names))
+    where)
+  ""
+  "")
+
+;;TODO helper
+(defstep replace-called-logic-real-functions (&optional (fnums *))
+  (for-each-fnum$
+   (let ((current-formula (extra-get-expr fnum))
+	 (not-quantified? (not (quant-expr? current-formula))))
+     (when not-quantified? ; I can only replace on ground applications 
+       (let((names (loop for lname in (remove-if-not
+				       (lambda (name) (and (prefix? "l_" name)
+							   (get-declarations (intern (subseq name 2)))))
+				       (mapcar (lambda (op) (format nil "~a" op)) (collect-application-operators (extra-get-expr fnum))))
+			 ;;				       (collect-application-operators current-formula))
+			 collect (subseq lname 2))))
+	 (when names
+	   (for-each-value$ (introduce-real-valued-version$ fname fnum) fname names)))))
+   fnums)
+  ""
+  "")
+
+(defun collect-application-operators (pvs-expr)
+  (cond ((application? pvs-expr)
+	 (let ((result (loop for arg in (arguments pvs-expr) append (collect-application-operators arg))))
+;;	   (remove-duplicates (cons (format nil "~a" (operator pvs-expr)) result) :test #'string=)))
+	   ;;	   (remove-duplicates (cons (id (operator pvs-expr)) result))
+	   (remove-duplicates (cons (operator pvs-expr) result) :test #'string= :key (lambda (op) (format nil "~a" op)))))
+	((quant-expr? pvs-expr)
+	 (collect-application-operators (expression pvs-expr)))
+	(t nil)))
+
+;; ;;TODO helper
+;; (defstep replace-called-logic-real-functions-in-plain-equality ()
+;;   (for-each-fnum (match fnum "%a{name_}(%%) = %b{name_}(%%)" 
+;; 		      step (when (prefix? "l_" "%a")
+;; 			     (let ((fname (subseq "%a" 2)))
+;; 			       (introduce-real-valued-version$ fname $1n)))))
+;;   ""
+;;   "")
+
+;;DEV not used
+(defstep split-paths (real-valued-funct-name)
+  (let((stable-paths-pred-str (stable-paths-pred-str real-valued-funct-name))
+       (fp-valued-funct-str (fp-valued-funct-str real-valued-funct-name)))
+    (then
+     (expand stable-paths-pred-str)
+     ;; (translate-acsl-ops)
+     (expand fp-valued-funct-str)
+     (expand real-valued-funct-name)
+     (ground)
+     ;; If the real-valued function returns an integer, the proof should end here.
+     ))
+  "" "")
+
+;;; General purpose strategies. ----------------------------------------------------------------
+
+;;BEGIN for-each-fnum
+(defstep for-each-fnum (step &optional (fnums *) verbose?)
+  (let ((fnums (map-fnums-arg fnums)))
+    (then
+     (when verbose? (printf "Applying step ~a to fnums ~{~a~^, ~}~%" step fnums))
+     (for-each-fnum-rec$ step fnums)))
+  "Apply STEPS binding every possible fnum in FNUMS to the symbol fnum."
+  "")
+
+(defhelper for-each-fnum-rec (step fnums &optional verbose?)
+  (if (null fnums)
+      (then
+       (when verbose? (printf "No more fnums to apply step.~%" (car fnums)))
+       (skip))
+    (then
+     (when verbose? (printf "Applying step to fnum ~a~%" (car fnums)))
+     (let ((fnum (car fnums))
+	   (new-step `(let ((fnum ,(car fnums))) ,step)))
+       new-step)
+     (let ((fnums (cdr fnums)))
+       (for-each-fnum-rec$ step fnums))))
+  "Apply STEP binding every possible fnum in FNUMS to the symbol fnum."
+  "")
+;;END for-each-fnum
+
+;;TODO extrategies?
+;;BEGIN for-each-obj
+;; for each object in a list of descriptors
+(defstep for-each-value (step variable-name values &optional verbose?)
+  (if (null values)
+      (let((dummy (when verbose? (format t "No more values for ~a~%" step))))
+	(skip))
+    (let ((object (car values)) ;;(ee-pvs-obj (car descriptors))
+	  (new-values (cdr values))
+	  (new-step `(let ((,variable-name ,object)) ,step))
+	  ;;(dummy(format t "~a~%" (length new-descs)))
+	  (dummy (when verbose? (format t "Applying ~a with binding ~a -> ~a~%" step variable-name object)))
+	  )
+      (if new-values
+	  (then
+	   new-step
+	   (for-each-value$ step variable-name new-values verbose?))
+	new-step)))
+  "Apply (let ((VARIABLE-NAME value)) STEP) for each value in VALUES."
+  "")
+
+(defstep for-each-value* (step variable-symbols values)
+  (if (null values)
+      (skip)
+    (let ((vals (car values)) ;;(ee-pvs-obj (car descriptors))
+	  (new-step `(let ,(loop for var in variable-symbols
+				 for val in vals
+				 collect (list var val)) ,step)))
+      (then
+       new-step
+       (let ((values (cdr values)))
+	 (for-each-value*$ step variable-symbols values)))))
+  "VARIABLE-NAMES list of variable names.
+   VALUES list of list of values, each list inside VALUES must have the same length as VARIABLE-NAMES"
+  "")
+
+;;END for-each-obj

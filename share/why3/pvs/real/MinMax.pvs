@@ -1,0 +1,23 @@
+MinMax: THEORY
+ BEGIN
+  IMPORTING Real
+  % do not edit above this line
+  
+  % Obsolete chunk max_is_ge
+  % max_is_ge: LEMMA FORALL (x:real, y:real): (max1(x, y) >= x) AND (max1(x,
+  %   y) >= y)
+  
+  % Obsolete chunk max_is_some
+  % max_is_some: LEMMA FORALL (x:real, y:real): (max1(x, y) = x) OR (max1(x,
+  %   y) = y)
+  
+  % Obsolete chunk min_is_le
+  % min_is_le: LEMMA FORALL (x:real, y:real): (min1(x, y) <= x) AND (min1(x,
+  %   y) <= y)
+  
+  % Obsolete chunk min_is_some
+  % min_is_some: LEMMA FORALL (x:real, y:real): (min1(x, y) = x) OR (min1(x,
+  %   y) = y)
+  
+ END MinMax
+ 

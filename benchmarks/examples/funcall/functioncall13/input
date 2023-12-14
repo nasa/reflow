@@ -1,0 +1,5 @@
+max_(a, b): a in [1, 2], b in [1, 2]
+
+without_call_conditional_function(a, b): a in [1, 2], b in [1, 2]
+
+with_call_conditional_function(a, b): a in [1, 2], b in [1, 2]

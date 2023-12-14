@@ -1,0 +1,15 @@
+let11: THEORY
+BEGIN
+
+    g(d: real): real = LET x = d IN x
+
+    h(s, d: real): bool =
+    LET x = s  IN
+           x - g(d) <= 0
+
+    % h(s, d: real): bool =
+    % LET x = s,
+    %     y = g(d) IN
+    %        x - y <= 0
+
+ END let11

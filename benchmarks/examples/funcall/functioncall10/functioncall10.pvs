@@ -1,0 +1,10 @@
+functioncall10: THEORY
+BEGIN
+
+f(X: real): real  = X + (X*2)
+
+g(X: real): real = f(X-1)
+
+h(X:real): real = f(g(X))
+
+END functioncall10

@@ -1,0 +1,5 @@
+theory Interface
+
+  (* dummy theory to be realized by PVS *)
+
+end

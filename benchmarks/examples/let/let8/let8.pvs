@@ -1,0 +1,29 @@
+wcv_detection_taumod: THEORY
+BEGIN
+
+    sign(x:real): int = IF x >= 0 THEN 1 ELSE -1 ENDIF
+
+    max_(a, b: real): real = IF a - b < 0 THEN b ELSE a ENDIF
+
+    Theta_H_neg(sz, nzvz, H: real): real =
+        (-sign(nzvz)*H-sz)/nzvz
+
+    coalt_entry(sz, nzvz, TCOA, ZTHR: real): real =
+        LET Z_COA = abs(nzvz)*TCOA IN
+            IF ZTHR - Z_COA <= 0 THEN
+                Theta_H_neg(sz, nzvz, Z_COA)
+            ELSE
+                Theta_H_neg(sz, nzvz, ZTHR)
+            ENDIF
+
+    vertical_WCV_exit_minus_entry(B, T, sz, vz, TCOA, ZTHR: real): real =
+    IF vz /= 0 THEN
+        LET centry = coalt_entry(sz, vz, TCOA, ZTHR)
+        IN  IF T - centry < 0  THEN B - T
+            ELSE max_(B, centry)
+            ENDIF
+    ELSIF abs(sz) - ZTHR <= 0 THEN T - B
+    ELSE B - T
+    ENDIF
+
+ END wcv_detection_taumod

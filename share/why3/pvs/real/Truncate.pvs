@@ -1,0 +1,31 @@
+Truncate: THEORY
+ BEGIN
+  IMPORTING int@Int
+  IMPORTING Real
+  IMPORTING FromInt
+  % do not edit above this line
+  % surround new declarations you insert below with blank lines
+  
+  % Why3 unit
+  unit: TYPE+ = []
+  
+  % Obsolete chunk inv
+  % inv(x:real): real
+  
+  % Obsolete chunk infix_sl
+  % infix_sl(x:real, y:real): real = (x * inv(y))
+  
+  % Obsolete chunk add_div
+  % add_div: LEMMA FORALL (x:real, y:real, z:real): (NOT (z = 0)) =>
+  %   (infix_sl((x + y), z) = (infix_sl(x, z) + infix_sl(y, z)))
+  
+  % Obsolete chunk sub_div
+  % sub_div: LEMMA FORALL (x:real, y:real, z:real): (NOT (z = 0)) =>
+  %   (infix_sl((x - y), z) = (infix_sl(x, z) - infix_sl(y, z)))
+  
+  % Obsolete chunk neg_div
+  % neg_div: LEMMA FORALL (x:real, y:real): (NOT (y = 0)) => (infix_sl((-x),
+  %   y) = (-infix_sl(x, y)))
+  
+ END Truncate
+ 

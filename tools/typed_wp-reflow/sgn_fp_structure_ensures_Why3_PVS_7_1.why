@@ -1,0 +1,72 @@
+(* WP Task for Prover PVS,7.1 *)
+wp_goal: THEORY
+ BEGIN
+  IMPORTING int@Int
+  IMPORTING int@Abs
+  IMPORTING int@ComputerDivision
+  IMPORTING real@Real
+  IMPORTING real@RealInfix
+  IMPORTING real@Abs
+  IMPORTING real@FromInt
+  IMPORTING real@Truncate
+  IMPORTING real@Square
+  IMPORTING frama_c_wp.qed@Qed
+  IMPORTING frama_c_wp.reflow@Interface
+  IMPORTING map@Map
+  IMPORTING frama_c_wp.cmath@Cmath
+  IMPORTING frama_c_wp.cmath@Square
+  IMPORTING frama_c_wp.cfloat@Cfloat
+  IMPORTING ieee_float@RoundingMode
+  IMPORTING bv@Pow2int
+  IMPORTING ieee_float@Float32
+  IMPORTING ieee_float@Float64
+  IMPORTING ieee_float@FloatConverter
+  IMPORTING frama_c_wp.cint@Cint
+  % do not edit above this line
+  % surround new declarations you insert below with blank lines
+  
+  % Why3 string
+  string: TYPE+
+  
+  % Why3 unit
+  unit: TYPE+ = []
+  
+  % Why3 s8_maybeint
+  s8_maybeint: DATATYPE
+   BEGIN
+    s8_maybeint1(x:int, x1:int): s8_maybeint1?
+   END s8_maybeint
+  
+  % Why3 f8_maybeint_value
+  f8_maybeint_value(v:s8_maybeint): int =
+    CASES v OF
+     s8_maybeint1(x, x1): x1
+    ENDCASES
+  
+  % Why3 f8_maybeint_isvalid
+  f8_maybeint_isvalid(v:s8_maybeint): int =
+    CASES v OF
+     s8_maybeint1(x, x1): x
+    ENDCASES
+  
+  % Why3 iss8_maybeint
+  iss8_maybeint(s:s8_maybeint): bool =
+    frama_c_wp_cint@Cint.is_bool(f8_maybeint_isvalid(s)) AND
+    frama_c_wp_cint@Cint.is_sint32(f8_maybeint_value(s))
+  
+  % Why3 l_sgn_fp
+  l_sgn_fp(x_double:double): int = IF (0 <= safe_proj_double(x_double))
+    THEN 1 ELSE (- 1) ENDIF
+  
+  % Why3 wp_goal
+  wp_goal: THEOREM FORALL (f:double, m:s8_maybeint, f1:double):
+    (NOT (f8_maybeint_isvalid(m) = 0)) => ((0 <= safe_proj_double(f)) =>
+    (iss8_maybeint(m) => (finite?_double(f1) => (finite?_double(f) =>
+    ((IF qle_double(f, f1) THEN (f8_maybeint_value(m) = 1)
+    ELSE ((f8_maybeint_value(m) = (- 1)) AND
+    qlt_double(f1, neg_double(f))) ENDIF) =>
+    (f8_maybeint_value(m) = l_sgn_fp(f1)))))))
+  
+  
+ END wp_goal
+ 

@@ -1,0 +1,14 @@
+Map: THEORY
+ BEGIN
+  % do not edit above this line
+  % surround new declarations you insert below with blank lines
+  
+  % Why3 unit
+  unit: TYPE+ = []
+  
+  % Why3 map
+  map[a:TYPE+, b:TYPE+]: TYPE+ = [a -> b]
+  
+  
+ END Map
+ 

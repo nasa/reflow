@@ -1,0 +1,91 @@
+theory frama_c_wp.qed.Qed
+  syntax function eqb "(%1 = %2)"
+  syntax function neqb "(%1 /= %2)"
+  syntax function zlt "(%1 < %2)"
+  syntax function zleq "(%1 <= %2)"
+  syntax function rlt "(%1 < %2)"
+  syntax function rleq "(%1 <= %2)"
+  syntax function real_of_int "(%1)"
+
+  remove allprops
+end
+
+theory frama_c_wp.cint.Cint
+  
+  remove allprops
+end
+
+theory frama_c_wp.cmath.Cmath
+  
+  remove allprops
+end
+
+theory frama_c_wp.cmath.Square
+  
+  remove allprops
+end
+
+theory frama_c_wp.cfloat.Cfloat
+
+  syntax function to_f32  "round_single(%1)"
+  syntax function to_f64  "round_double(%1)"
+
+  syntax function round_float "round_single(%2)" (* TODO [M320220810] the first parameter of round_float is the rounding mode; for example frama_c_wp_cfloat@Cfloat.round_float(ieee_float@RoundingMode.rne, r) *)
+  syntax function round_double "round_double(%2)" (* TODO [M320220810] the first parameter of round_double is the rounding mode; for example frama_c_wp_cfloat@Cfloat.round_float(ieee_float@RoundingMode.rne, r) *)
+
+  (* the following definitions are already interpreted in the mlw theory, then there's
+     really no need to include them here, but by doing this, we avoid to introduce
+     another name for the same element. *)
+     
+  syntax type f32   "single"
+  syntax function of_f32  "safe_proj_single(%1)"
+  syntax predicate is_finite_f32 "finite?_single(%1)"
+  syntax predicate is_NaN_f32 "NaN?_single(%1)"
+  syntax predicate is_infinite_f32 "infinite?_single(%1)"
+  syntax predicate is_positive_infinite_f32 "positive_infinite?(%1)"
+  syntax predicate is_negative_infinite_f32 "negative_infinite?(%1)"
+  syntax function eq_f32b "qeq_single(%1,%2)"
+  syntax predicate eq_f32 "qeq_single(%1,%2)"
+  syntax function ne_f32b "(NOT qeq_single(%1,%2))"
+  syntax predicate ne_f32 "(NOT qeq_single(%1,%2))"
+  syntax function le_f32b "qle_single(%1, %2)"
+  syntax predicate le_f32 "qle_single(%1, %2)"
+  syntax function lt_f32b "qlt_single(%1, %2)"
+  syntax predicate lt_f32 "qlt_single(%1, %2)"
+  syntax function add_f32 "add_single(%1,%2)"
+  syntax function sub_f32 "sub_single(%1,%2)"
+  syntax function mul_f32 "mul_single(%1,%2)"
+  syntax function div_f32 "div_single(%1,%2)"
+  syntax function sqrt_f32 "sqt_single(%1)"
+  syntax function neg_f32 "neg_single(%1)"
+  syntax function abs_f32 "abs_single(%1)"
+  syntax function ulp_f32 "ulp_single(%1)"
+  syntax function error_f32 "(IF model_32(%1) = 0 THEN 0 ELSE (delta_f32(%1) / abs(model_f32(%1))) ENDIF)"
+  
+  syntax type f64   "double"
+  syntax function of_f64  "safe_proj_double(%1)"
+  syntax predicate is_finite_f64 "finite?_double(%1)"
+  syntax predicate is_NaN_f64 "NaN?_double(%1)"
+  syntax predicate is_infinite_f64 "infinite?_double(%1)"
+  syntax predicate is_positive_infinite_f64 "positive_infinite?(%1)"
+  syntax predicate is_negative_infinite_f64 "negative_infinite?(%1)"
+  syntax function eq_f64b "qeq_double(%1,%2)"
+  syntax predicate eq_f64 "qeq_double(%1,%2)"
+  syntax function ne_f64b "(NOT qeq_double(%1,%2))"
+  syntax predicate ne_f64 "(NOT qeq_double(%1,%2))"
+  syntax function le_f64b "qle_double(%1, %2)"
+  syntax predicate le_f64 "qle_double(%1, %2)"
+  syntax function lt_f64b "qlt_double(%1, %2)"
+  syntax predicate lt_f64 "qlt_double(%1, %2)"
+  syntax function add_f64 "add_double(%1,%2)"
+  syntax function sub_f64 "sub_double(%1,%2)"
+  syntax function mul_f64 "mul_double(%1,%2)"
+  syntax function div_f64 "div_double(%1,%2)"
+  syntax function sqrt_f64 "sqt_double(%1)"
+  syntax function neg_f64 "neg_double(%1)"
+  syntax function abs_f64 "abs_double(%1)"
+  syntax function ulp_f64 "ulp_double(%1)"
+  syntax function error_f64 "(IF model_64(%1) = 0 THEN 0 ELSE (delta_f64(%1) / abs(model_f64(%1))) ENDIF)"
+  
+  remove allprops
+end

@@ -1,0 +1,30 @@
+(Real
+ (add_div 0
+  (add_div-1 nil 3551212368 ("" (default-strategy))
+   ((infix_sl const-decl "real" Real nil)
+    (/= const-decl "boolean" notequal nil))
+   shostak))
+ (sub_div 0
+  (sub_div-1 nil 3551212368 ("" (default-strategy))
+   ((infix_sl const-decl "real" Real nil)
+    (/= const-decl "boolean" notequal nil))
+   shostak))
+ (neg_div 0
+  (neg_div-1 nil 3551212369 ("" (default-strategy))
+   ((infix_sl const-decl "real" Real nil)
+    (/= const-decl "boolean" notequal nil)
+    (nzreal_div_nzreal_is_nzreal application-judgement "nzreal"
+     real_types nil)
+    (minus_real_is_real application-judgement "real" reals nil)
+    (real_times_real_is_real application-judgement "real" reals nil)
+    (real nonempty-type-from-decl nil reals nil)
+    (real_pred const-decl "[number_field -> boolean]" reals nil)
+    (number_field nonempty-type-from-decl nil number_fields nil)
+    (number_field_pred const-decl "[number -> boolean]" number_fields
+     nil)
+    (number nonempty-type-decl nil numbers nil)
+    (NOT const-decl "[bool -> bool]" booleans nil)
+    (bool nonempty-type-eq-decl nil booleans nil)
+    (boolean nonempty-type-decl nil booleans nil))
+   shostak)))
+

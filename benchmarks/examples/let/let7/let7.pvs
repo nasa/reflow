@@ -1,0 +1,24 @@
+let7: THEORY BEGIN
+
+
+  f(X : real): real
+  = X * 2
+
+  h(X : real): real
+  = X * 3
+
+  q(X,Y : real): real
+  = X * Y
+
+  g(X,Y: real) : bool
+  =  LET a = f(X),
+         b = h(X),
+         c = a + b IN
+           IF c < 0 THEN
+              TRUE
+           ELSIF c > 0 THEN
+              FALSE
+           ELSE TRUE
+           ENDIF
+END let7
+

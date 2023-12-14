@@ -1,0 +1,977 @@
+Float32: THEORY
+ BEGIN
+  IMPORTING int@Int
+  IMPORTING real@Real
+  IMPORTING real@RealInfix
+  IMPORTING real@Abs
+  IMPORTING real@FromInt
+  IMPORTING real@Truncate
+  IMPORTING real@Square
+  IMPORTING bv@Pow2int
+  IMPORTING RoundingMode
+  % do not edit above this line
+  % surround new declarations you insert below with blank lines
+  
+  % Why3 string
+  string: TYPE+
+  
+  %M3: Added by hand
+  IMPORTING interface__stdlib__ieee_float__float32__nasalib__float__single
+  
+  % Why3 unit
+  unit: TYPE+ = []
+  
+  % Why3 tqtaxiom
+  tqtaxiom: LEMMA FORALL (x:single): is_finite?(x) =>
+    (((-340282346638528859811704183484516925440) <= safe_prjct_single(x)) AND
+    (safe_prjct_single(x) <= 340282346638528859811704183484516925440))
+  
+  % Why3 pow2sb
+  pow2sb: int = 16777216
+  
+  % Why3 max_real
+  max_real: real = (33554430 * 10141204801825835211973625643008)
+  
+  % Why3 fma
+  fma(x:RoundingMode.mode, x1:single, x2:single, x3:single): single
+  
+  % Why3 prefix_dtmn
+  prefix_dtmn(x:single): single = neg_s(RoundingMode.rne,x)
+  
+  % Why3 infix_dtpl
+  infix_dtpl(x:single, y:single): single = add_s(RoundingMode.rne,x,y)
+  
+  % Why3 infix_dtmn
+  infix_dtmn(x:single, y:single): single = sub_s(RoundingMode.rne,x,y)
+  
+  % Why3 infix_dtas
+  infix_dtas(x:single, y:single): single = mul_s(RoundingMode.rne,x,y)
+  
+  % Why3 infix_dtsl
+  infix_dtsl(x:single, y:single): single = div_s(RoundingMode.rne,x,y)
+  
+  % Why3 roundtointegral
+  roundtointegral(x:RoundingMode.mode, x1:single): single
+  
+  % Why3 infix_dtlseq
+  infix_dtlseq(x:single, y:single): bool = le_s(x,y)
+  
+  % Why3 infix_dtls
+  infix_dtls(x:single, y:single): bool = lt_s(x,y)
+  
+  % Why3 infix_dtgteq
+  infix_dtgteq(x:single, y:single): bool = ge_s(x,y)
+  
+  % Why3 infix_dtgt
+  infix_dtgt(x:single, y:single): bool = gt_s(x,y)
+  
+  % Why3 infix_dteq
+  infix_dteq(x:single, y:single): bool = eq_s(x,y)
+  
+  % Why3 is_plus_zero
+  is_plus_zero(x:single): bool = zero_single?(x) AND positive_single?(x)
+  
+  % Why3 is_minus_zero
+  is_minus_zero(x:single): bool = zero_single?(x) AND negative_single?(x)
+  
+  % Why3 is_not_nan
+  is_not_nan(x:single): bool = is_finite?(x) OR is_finite?(x)
+  
+  % Why3 of_int
+  of_int(x:RoundingMode.mode, x1:int): single
+  
+  % Why3 to_int
+  to_int(x:RoundingMode.mode, x1:single): int
+  
+  % Why3 max_int
+  max_int: int
+  
+  % Why3 emax
+  emax: int = expt_safe(2,(exponent_bits_ - 1))
+  
+  % Why3 in_range
+  in_range(x:real): bool = ((-max_real) <= x) AND (x <= max_real)
+  
+  % Why3 in_int_range
+  in_int_range(i:int): bool = ((-max_int) <= i) AND (i <= max_int)
+  
+  % Why3 no_overflow
+  no_overflow(m:RoundingMode.mode, x:real): bool =
+    in_range(round_to_exactly_representable_as_single(m,x))
+  
+  % Why3 in_safe_int_range
+  in_safe_int_range(i:int): bool = ((-pow2sb) <= i) AND (i <= pow2sb)
+  
+  % Why3 same_sign
+  same_sign(x:single, y:single): bool = (positive_single?(x) AND
+    positive_single?(y)) OR (negative_single?(x) AND negative_single?(y))
+  
+  % Why3 diff_sign
+  diff_sign(x:single, y:single): bool = (positive_single?(x) AND
+    negative_single?(y)) OR (negative_single?(x) AND positive_single?(y))
+  
+  % Why3 product_sign
+  product_sign(z:single, x:single, y:single): bool = (same_sign(x, y) =>
+    positive_single?(z)) AND (diff_sign(x, y) => negative_single?(z))
+  
+  % Why3 same_sign_real
+  same_sign_real(x:single, r:real): bool = (positive_single?(x) AND
+    (r >  0)) OR (negative_single?(x) AND (r <  0))
+  
+  % Why3 is_int
+  is_int(x:single): bool
+  
+  % Obsolete chunk pow2
+  % pow2(x:int): int
+  
+  % Obsolete chunk power_0
+  % power_0: LEMMA (pow2(0) = 1)
+  
+  % Obsolete chunk power_s
+  % power_s: LEMMA FORALL (n:int): (n >= 0) => (pow2((n + 1)) = (2 * pow2(n)))
+  
+  % Obsolete chunk power_1
+  % power_1: LEMMA (pow2(1) = 2)
+  
+  % Obsolete chunk power_sum
+  % power_sum: LEMMA FORALL (n:int, m:int): ((n >= 0) AND (m >= 0)) =>
+  %   (pow2((n + m)) = (pow2(n) * pow2(m)))
+  
+  % Obsolete chunk pow2pos
+  % pow2pos: LEMMA FORALL (i:int): (i >= 0) => (pow2(i) >  0)
+  
+  % Obsolete chunk pow2_0
+  % pow2_0: LEMMA (pow2(0) = 1)
+  
+  % Obsolete chunk pow2_1
+  % pow2_1: LEMMA (pow2(1) = 2)
+  
+  % Obsolete chunk pow2_2
+  % pow2_2: LEMMA (pow2(2) = 4)
+  
+  % Obsolete chunk pow2_3
+  % pow2_3: LEMMA (pow2(3) = 8)
+  
+  % Obsolete chunk pow2_4
+  % pow2_4: LEMMA (pow2(4) = 16)
+  
+  % Obsolete chunk pow2_5
+  % pow2_5: LEMMA (pow2(5) = 32)
+  
+  % Obsolete chunk pow2_6
+  % pow2_6: LEMMA (pow2(6) = 64)
+  
+  % Obsolete chunk pow2_7
+  % pow2_7: LEMMA (pow2(7) = 128)
+  
+  % Obsolete chunk pow2_8
+  % pow2_8: LEMMA (pow2(8) = 256)
+  
+  % Obsolete chunk pow2_9
+  % pow2_9: LEMMA (pow2(9) = 512)
+  
+  % Obsolete chunk pow2_10
+  % pow2_10: LEMMA (pow2(10) = 1024)
+  
+  % Obsolete chunk pow2_11
+  % pow2_11: LEMMA (pow2(11) = 2048)
+  
+  % Obsolete chunk pow2_12
+  % pow2_12: LEMMA (pow2(12) = 4096)
+  
+  % Obsolete chunk pow2_13
+  % pow2_13: LEMMA (pow2(13) = 8192)
+  
+  % Obsolete chunk pow2_14
+  % pow2_14: LEMMA (pow2(14) = 16384)
+  
+  % Obsolete chunk pow2_15
+  % pow2_15: LEMMA (pow2(15) = 32768)
+  
+  % Obsolete chunk pow2_16
+  % pow2_16: LEMMA (pow2(16) = 65536)
+  
+  % Obsolete chunk pow2_17
+  % pow2_17: LEMMA (pow2(17) = 131072)
+  
+  % Obsolete chunk pow2_18
+  % pow2_18: LEMMA (pow2(18) = 262144)
+  
+  % Obsolete chunk pow2_19
+  % pow2_19: LEMMA (pow2(19) = 524288)
+  
+  % Obsolete chunk pow2_20
+  % pow2_20: LEMMA (pow2(20) = 1048576)
+  
+  % Obsolete chunk pow2_21
+  % pow2_21: LEMMA (pow2(21) = 2097152)
+  
+  % Obsolete chunk pow2_22
+  % pow2_22: LEMMA (pow2(22) = 4194304)
+  
+  % Obsolete chunk pow2_23
+  % pow2_23: LEMMA (pow2(23) = 8388608)
+  
+  % Obsolete chunk pow2_24
+  % pow2_24: LEMMA (pow2(24) = 16777216)
+  
+  % Obsolete chunk pow2_25
+  % pow2_25: LEMMA (pow2(25) = 33554432)
+  
+  % Obsolete chunk pow2_26
+  % pow2_26: LEMMA (pow2(26) = 67108864)
+  
+  % Obsolete chunk pow2_27
+  % pow2_27: LEMMA (pow2(27) = 134217728)
+  
+  % Obsolete chunk pow2_28
+  % pow2_28: LEMMA (pow2(28) = 268435456)
+  
+  % Obsolete chunk pow2_29
+  % pow2_29: LEMMA (pow2(29) = 536870912)
+  
+  % Obsolete chunk pow2_30
+  % pow2_30: LEMMA (pow2(30) = 1073741824)
+  
+  % Obsolete chunk pow2_31
+  % pow2_31: LEMMA (pow2(31) = 2147483648)
+  
+  % Obsolete chunk pow2_32
+  % pow2_32: LEMMA (pow2(32) = 4294967296)
+  
+  % Obsolete chunk pow2_33
+  % pow2_33: LEMMA (pow2(33) = 8589934592)
+  
+  % Obsolete chunk pow2_34
+  % pow2_34: LEMMA (pow2(34) = 17179869184)
+  
+  % Obsolete chunk pow2_35
+  % pow2_35: LEMMA (pow2(35) = 34359738368)
+  
+  % Obsolete chunk pow2_36
+  % pow2_36: LEMMA (pow2(36) = 68719476736)
+  
+  % Obsolete chunk pow2_37
+  % pow2_37: LEMMA (pow2(37) = 137438953472)
+  
+  % Obsolete chunk pow2_38
+  % pow2_38: LEMMA (pow2(38) = 274877906944)
+  
+  % Obsolete chunk pow2_39
+  % pow2_39: LEMMA (pow2(39) = 549755813888)
+  
+  % Obsolete chunk pow2_40
+  % pow2_40: LEMMA (pow2(40) = 1099511627776)
+  
+  % Obsolete chunk pow2_41
+  % pow2_41: LEMMA (pow2(41) = 2199023255552)
+  
+  % Obsolete chunk pow2_42
+  % pow2_42: LEMMA (pow2(42) = 4398046511104)
+  
+  % Obsolete chunk pow2_43
+  % pow2_43: LEMMA (pow2(43) = 8796093022208)
+  
+  % Obsolete chunk pow2_44
+  % pow2_44: LEMMA (pow2(44) = 17592186044416)
+  
+  % Obsolete chunk pow2_45
+  % pow2_45: LEMMA (pow2(45) = 35184372088832)
+  
+  % Obsolete chunk pow2_46
+  % pow2_46: LEMMA (pow2(46) = 70368744177664)
+  
+  % Obsolete chunk pow2_47
+  % pow2_47: LEMMA (pow2(47) = 140737488355328)
+  
+  % Obsolete chunk pow2_48
+  % pow2_48: LEMMA (pow2(48) = 281474976710656)
+  
+  % Obsolete chunk pow2_49
+  % pow2_49: LEMMA (pow2(49) = 562949953421312)
+  
+  % Obsolete chunk pow2_50
+  % pow2_50: LEMMA (pow2(50) = 1125899906842624)
+  
+  % Obsolete chunk pow2_51
+  % pow2_51: LEMMA (pow2(51) = 2251799813685248)
+  
+  % Obsolete chunk pow2_52
+  % pow2_52: LEMMA (pow2(52) = 4503599627370496)
+  
+  % Obsolete chunk pow2_53
+  % pow2_53: LEMMA (pow2(53) = 9007199254740992)
+  
+  % Obsolete chunk pow2_54
+  % pow2_54: LEMMA (pow2(54) = 18014398509481984)
+  
+  % Obsolete chunk pow2_55
+  % pow2_55: LEMMA (pow2(55) = 36028797018963968)
+  
+  % Obsolete chunk pow2_56
+  % pow2_56: LEMMA (pow2(56) = 72057594037927936)
+  
+  % Obsolete chunk pow2_57
+  % pow2_57: LEMMA (pow2(57) = 144115188075855872)
+  
+  % Obsolete chunk pow2_58
+  % pow2_58: LEMMA (pow2(58) = 288230376151711744)
+  
+  % Obsolete chunk pow2_59
+  % pow2_59: LEMMA (pow2(59) = 576460752303423488)
+  
+  % Obsolete chunk pow2_60
+  % pow2_60: LEMMA (pow2(60) = 1152921504606846976)
+  
+  % Obsolete chunk pow2_61
+  % pow2_61: LEMMA (pow2(61) = 2305843009213693952)
+  
+  % Obsolete chunk pow2_62
+  % pow2_62: LEMMA (pow2(62) = 4611686018427387904)
+  
+  % Obsolete chunk pow2_63
+  % pow2_63: LEMMA (pow2(63) = 9223372036854775808)
+  
+  % Obsolete chunk pow2_64
+  % pow2_64: LEMMA (pow2(64) = 18446744073709551616)
+  
+  % Obsolete chunk truncate
+  % truncate(x:real): int
+  
+  % Obsolete chunk truncate_int1
+  % truncate_int1: LEMMA FORALL (i:int): (truncate((i :: real)) = i)
+  
+  % Obsolete chunk truncate_down_pos
+  % truncate_down_pos: LEMMA FORALL (x:real): (x >= 0) =>
+  %   (((truncate(x) :: real) <= x) AND (x <  ((truncate(x) + 1) :: real)))
+  
+  % Obsolete chunk truncate_up_neg
+  % truncate_up_neg: LEMMA FORALL (x:real): (x <= 0) =>
+  %   ((((truncate(x) - 1) :: real) <  x) AND (x <= (truncate(x) :: real)))
+  
+  % Obsolete chunk real_of_truncate
+  % real_of_truncate: LEMMA FORALL (x:real):
+  %   ((x - 1) <= (truncate(x) :: real)) AND ((truncate(x) :: real) <= (x + 1))
+  
+  % Obsolete chunk truncate_monotonic
+  % truncate_monotonic: LEMMA FORALL (x:real, y:real): (x <= y) =>
+  %   (truncate(x) <= truncate(y))
+  
+  % Obsolete chunk truncate_monotonic_int1
+  % truncate_monotonic_int1: LEMMA FORALL (x:real, i:int):
+  %   (x <= (i :: real)) => (truncate(x) <= i)
+  
+  % Obsolete chunk truncate_monotonic_int2
+  % truncate_monotonic_int2: LEMMA FORALL (x:real, i:int):
+  %   ((i :: real) <= x) => (i <= truncate(x))
+  
+  % Obsolete chunk floor
+  % floor(x:real): int
+  
+  % Obsolete chunk ceil
+  % ceil(x:real): int
+  
+  % Obsolete chunk floor_int
+  % floor_int: LEMMA FORALL (i:int): (floor((i :: real)) = i)
+  
+  % Obsolete chunk ceil_int
+  % ceil_int: LEMMA FORALL (i:int): (ceil((i :: real)) = i)
+  
+  % Obsolete chunk floor_down
+  % floor_down: LEMMA FORALL (x:real): ((floor(x) :: real) <= x) AND
+  %   (x <  ((floor(x) + 1) :: real))
+  
+  % Obsolete chunk ceil_up
+  % ceil_up: LEMMA FORALL (x:real): (((ceil(x) - 1) :: real) <  x) AND
+  %   (x <= (ceil(x) :: real))
+  
+  % Obsolete chunk floor_monotonic
+  % floor_monotonic: LEMMA FORALL (x:real, y:real): (x <= y) =>
+  %   (floor(x) <= floor(y))
+  
+  % Obsolete chunk ceil_monotonic
+  % ceil_monotonic: LEMMA FORALL (x:real, y:real): (x <= y) =>
+  %   (ceil(x) <= ceil(y))
+  
+  % Obsolete chunk mode
+  % mode: DATATYPE
+  %  BEGIN
+  %   rne: rne?
+  %   rna: rna?
+  %   rtp: rtp?
+  %   rtn: rtn?
+  %   rtz: rtz?
+  %  END mode
+  
+  % Obsolete chunk to_nearest
+  % to_nearest(m:mode): bool = (m = rne) OR (m = rna)
+  
+  % Obsolete chunk is_not_nan1
+  % is_not_nan1: LEMMA FORALL (x:t): is_not_nan(x) <=> NOT is_nan(x)
+  
+  % Obsolete chunk is_not_finite
+  % is_not_finite: LEMMA FORALL (x:t): (NOT tqtisfinite(x)) <=>
+  %   (is_infinite(x) OR is_nan(x))
+  
+  % Obsolete chunk zerof_is_positive
+  % zerof_is_positive: LEMMA is_positive(zerof)
+  
+  % Obsolete chunk zerof_is_zero
+  % zerof_is_zero: LEMMA is_zero(zerof)
+  
+  % Obsolete chunk zero_to_real
+  % zero_to_real: LEMMA FORALL (x:t): is_zero(x) <=> (tqtisfinite(x) AND
+  %   (tqtreal(x) = 0))
+  
+  % Obsolete chunk zero_of_int
+  % zero_of_int: LEMMA FORALL (m:mode): (zerof = of_int(m, 0))
+  
+  % Obsolete chunk max_real_int
+  % max_real_int: LEMMA (max_real = (max_int :: real))
+  
+  % Obsolete chunk is_finite
+  % is_finite: LEMMA FORALL (x:t): tqtisfinite(x) => in_range(tqtreal(x))
+  
+  % Obsolete chunk bounded_real_no_overflow
+  % bounded_real_no_overflow: LEMMA FORALL (m:mode, x:real): in_range(x) =>
+  %   no_overflow(m, x)
+  
+  % Obsolete chunk round_monotonic
+  % round_monotonic: LEMMA FORALL (m:mode, x:real, y:real): (x <= y) =>
+  %   (round(m, x) <= round(m, y))
+  
+  % Obsolete chunk round_idempotent
+  % round_idempotent: LEMMA FORALL (m1:mode, m2:mode, x:real): (round(m1,
+  %   round(m2, x)) = round(m2, x))
+  
+  % Obsolete chunk round_to_real
+  % round_to_real: LEMMA FORALL (m:mode, x:t): tqtisfinite(x) => (round(m,
+  %   tqtreal(x)) = tqtreal(x))
+  
+  % Obsolete chunk round_down_le
+  % round_down_le: LEMMA FORALL (x:real): (round(rtn, x) <= x)
+  
+  % Obsolete chunk round_up_ge
+  % round_up_ge: LEMMA FORALL (x:real): (round(rtp, x) >= x)
+  
+  % Obsolete chunk round_down_neg
+  % round_down_neg: LEMMA FORALL (x:real): (round(rtn, (-x)) = (-round(rtp,
+  %   x)))
+  
+  % Obsolete chunk round_up_neg
+  % round_up_neg: LEMMA FORALL (x:real): (round(rtp, (-x)) = (-round(rtn, x)))
+  
+  % Obsolete chunk exact_rounding_for_integers
+  % exact_rounding_for_integers: LEMMA FORALL (m:mode, i:int):
+  %   in_safe_int_range(i) => (round(m, (i :: real)) = (i :: real))
+  
+  % Obsolete chunk feq_eq
+  % feq_eq: LEMMA FORALL (x:t, y:t): tqtisfinite(x) => (tqtisfinite(y) =>
+  %   ((NOT is_zero(x)) => (infix_dteq(x, y) => (x = y))))
+  
+  % Obsolete chunk eq_feq
+  % eq_feq: LEMMA FORALL (x:t, y:t): tqtisfinite(x) => (tqtisfinite(y) =>
+  %   ((x = y) => infix_dteq(x, y)))
+  
+  % Obsolete chunk eq_refl
+  % eq_refl: LEMMA FORALL (x:t): tqtisfinite(x) => infix_dteq(x, x)
+  
+  % Obsolete chunk eq_sym
+  % eq_sym: LEMMA FORALL (x:t, y:t): infix_dteq(x, y) => infix_dteq(y, x)
+  
+  % Obsolete chunk eq_trans
+  % eq_trans: LEMMA FORALL (x:t, y:t, z:t): infix_dteq(x, y) => (infix_dteq(y,
+  %   z) => infix_dteq(x, z))
+  
+  % Obsolete chunk eq_zero
+  % eq_zero: LEMMA infix_dteq(zerof, prefix_dtmn(zerof))
+  
+  % Obsolete chunk eq_to_real_finite
+  % eq_to_real_finite: LEMMA FORALL (x:t, y:t): (tqtisfinite(x) AND
+  %   tqtisfinite(y)) => (infix_dteq(x, y) <=> (tqtreal(x) = tqtreal(y)))
+  
+  % Obsolete chunk eq_special
+  % eq_special: LEMMA FORALL (x:t, y:t): infix_dteq(x, y) => (is_not_nan(x) AND
+  %   (is_not_nan(y) AND ((tqtisfinite(x) AND tqtisfinite(y)) OR
+  %   (is_infinite(x) AND (is_infinite(y) AND same_sign(x, y))))))
+  
+  % Obsolete chunk lt_finite
+  % lt_finite: LEMMA FORALL (x:t, y:t): (tqtisfinite(x) AND tqtisfinite(y)) =>
+  %   (lt(x, y) <=> (tqtreal(x) <  tqtreal(y)))
+  
+  % Obsolete chunk le_finite
+  % le_finite: LEMMA FORALL (x:t, y:t): (tqtisfinite(x) AND tqtisfinite(y)) =>
+  %   (le(x, y) <=> (tqtreal(x) <= tqtreal(y)))
+  
+  % Obsolete chunk le_lt_trans
+  % le_lt_trans: LEMMA FORALL (x:t, y:t, z:t): (infix_dtlseq(x, y) AND
+  %   infix_dtls(y, z)) => infix_dtls(x, z)
+  
+  % Obsolete chunk lt_le_trans
+  % lt_le_trans: LEMMA FORALL (x:t, y:t, z:t): (infix_dtls(x, y) AND
+  %   infix_dtlseq(y, z)) => infix_dtls(x, z)
+  
+  % Obsolete chunk le_ge_asym
+  % le_ge_asym: LEMMA FORALL (x:t, y:t): (infix_dtlseq(x, y) AND
+  %   infix_dtgteq(x, y)) => infix_dteq(x, y)
+  
+  % Obsolete chunk not_lt_ge
+  % not_lt_ge: LEMMA FORALL (x:t, y:t): ((NOT infix_dtls(x, y)) AND
+  %   (is_not_nan(x) AND is_not_nan(y))) => infix_dtgteq(x, y)
+  
+  % Obsolete chunk not_gt_le
+  % not_gt_le: LEMMA FORALL (x:t, y:t): ((NOT infix_dtgt(x, y)) AND
+  %   (is_not_nan(x) AND is_not_nan(y))) => infix_dtlseq(x, y)
+  
+  % Obsolete chunk le_special
+  % le_special: LEMMA FORALL (x:t, y:t): le(x, y) => ((tqtisfinite(x) AND
+  %   tqtisfinite(y)) OR ((is_minus_infinity(x) AND is_not_nan(y)) OR
+  %   (is_not_nan(x) AND is_plus_infinity(y))))
+  
+  % Obsolete chunk lt_special
+  % lt_special: LEMMA FORALL (x:t, y:t): lt(x, y) => ((tqtisfinite(x) AND
+  %   tqtisfinite(y)) OR ((is_minus_infinity(x) AND (is_not_nan(y) AND
+  %   NOT is_minus_infinity(y))) OR (is_not_nan(x) AND
+  %   ((NOT is_plus_infinity(x)) AND is_plus_infinity(y)))))
+  
+  % Obsolete chunk lt_lt_finite
+  % lt_lt_finite: LEMMA FORALL (x:t, y:t, z:t): lt(x, y) => (lt(y, z) =>
+  %   tqtisfinite(y))
+  
+  % Obsolete chunk positive_to_real
+  % positive_to_real: LEMMA FORALL (x:t): tqtisfinite(x) => (is_positive(x) =>
+  %   (tqtreal(x) >= 0))
+  
+  % Obsolete chunk to_real_positive
+  % to_real_positive: LEMMA FORALL (x:t): tqtisfinite(x) =>
+  %   ((tqtreal(x) >  0) => is_positive(x))
+  
+  % Obsolete chunk negative_to_real
+  % negative_to_real: LEMMA FORALL (x:t): tqtisfinite(x) => (is_negative(x) =>
+  %   (tqtreal(x) <= 0))
+  
+  % Obsolete chunk to_real_negative
+  % to_real_negative: LEMMA FORALL (x:t): tqtisfinite(x) =>
+  %   ((tqtreal(x) <  0) => is_negative(x))
+  
+  % Obsolete chunk negative_xor_positive
+  % negative_xor_positive: LEMMA FORALL (x:t): NOT (is_positive(x) AND
+  %   is_negative(x))
+  
+  % Obsolete chunk negative_or_positive
+  % negative_or_positive: LEMMA FORALL (x:t): is_not_nan(x) =>
+  %   (is_positive(x) OR is_negative(x))
+  
+  % Obsolete chunk diff_sign_trans
+  % diff_sign_trans: LEMMA FORALL (x:t, y:t, z:t): (diff_sign(x, y) AND
+  %   diff_sign(y, z)) => same_sign(x, z)
+  
+  % Obsolete chunk diff_sign_product
+  % diff_sign_product: LEMMA FORALL (x:t, y:t): (tqtisfinite(x) AND
+  %   (tqtisfinite(y) AND ((tqtreal(x) * tqtreal(y)) <  0))) => diff_sign(x, y)
+  
+  % Obsolete chunk same_sign_product
+  % same_sign_product: LEMMA FORALL (x:t, y:t): (tqtisfinite(x) AND
+  %   (tqtisfinite(y) AND same_sign(x, y))) => ((tqtreal(x) * tqtreal(y)) >= 0)
+  
+  % Obsolete chunk add_finite
+  % add_finite: LEMMA FORALL (m:mode, x:t, y:t): tqtisfinite(x) =>
+  %   (tqtisfinite(y) => (no_overflow(m, (tqtreal(x) + tqtreal(y))) =>
+  %   (tqtisfinite(add1(m, x, y)) AND (tqtreal(add1(m, x, y)) = round(m,
+  %   (tqtreal(x) + tqtreal(y)))))))
+  
+  % Obsolete chunk add_finite_rev
+  % add_finite_rev: LEMMA FORALL (m:mode, x:t, y:t): tqtisfinite(add1(m, x,
+  %   y)) => (tqtisfinite(x) AND tqtisfinite(y))
+  
+  % Obsolete chunk add_finite_rev_n
+  % add_finite_rev_n: LEMMA FORALL (m:mode, x:t, y:t): to_nearest(m) =>
+  %   (tqtisfinite(add1(m, x, y)) => (no_overflow(m,
+  %   (tqtreal(x) + tqtreal(y))) AND (tqtreal(add1(m, x, y)) = round(m,
+  %   (tqtreal(x) + tqtreal(y))))))
+  
+  % Obsolete chunk sub_finite
+  % sub_finite: LEMMA FORALL (m:mode, x:t, y:t): tqtisfinite(x) =>
+  %   (tqtisfinite(y) => (no_overflow(m, (tqtreal(x) - tqtreal(y))) =>
+  %   (tqtisfinite(sub(m, x, y)) AND (tqtreal(sub(m, x, y)) = round(m,
+  %   (tqtreal(x) - tqtreal(y)))))))
+  
+  % Obsolete chunk sub_finite_rev
+  % sub_finite_rev: LEMMA FORALL (m:mode, x:t, y:t): tqtisfinite(sub(m, x,
+  %   y)) => (tqtisfinite(x) AND tqtisfinite(y))
+  
+  % Obsolete chunk sub_finite_rev_n
+  % sub_finite_rev_n: LEMMA FORALL (m:mode, x:t, y:t): to_nearest(m) =>
+  %   (tqtisfinite(sub(m, x, y)) => (no_overflow(m,
+  %   (tqtreal(x) - tqtreal(y))) AND (tqtreal(sub(m, x, y)) = round(m,
+  %   (tqtreal(x) - tqtreal(y))))))
+  
+  % Obsolete chunk mul_finite
+  % mul_finite: LEMMA FORALL (m:mode, x:t, y:t): tqtisfinite(x) =>
+  %   (tqtisfinite(y) => (no_overflow(m, (tqtreal(x) * tqtreal(y))) =>
+  %   (tqtisfinite(mul(m, x, y)) AND (tqtreal(mul(m, x, y)) = round(m,
+  %   (tqtreal(x) * tqtreal(y)))))))
+  
+  % Obsolete chunk mul_finite_rev
+  % mul_finite_rev: LEMMA FORALL (m:mode, x:t, y:t): tqtisfinite(mul(m, x,
+  %   y)) => (tqtisfinite(x) AND tqtisfinite(y))
+  
+  % Obsolete chunk mul_finite_rev_n
+  % mul_finite_rev_n: LEMMA FORALL (m:mode, x:t, y:t): to_nearest(m) =>
+  %   (tqtisfinite(mul(m, x, y)) => (no_overflow(m,
+  %   (tqtreal(x) * tqtreal(y))) AND (tqtreal(mul(m, x, y)) = round(m,
+  %   (tqtreal(x) * tqtreal(y))))))
+  
+  % Obsolete chunk div_finite
+  % div_finite: LEMMA FORALL (m:mode, x:t, y:t): tqtisfinite(x) =>
+  %   (tqtisfinite(y) => ((NOT is_zero(y)) => (no_overflow(m,
+  %   real@Real.infix_sl(tqtreal(x), tqtreal(y))) => (tqtisfinite(div(m, x,
+  %   y)) AND (tqtreal(div(m, x, y)) = round(m,
+  %   real@Real.infix_sl(tqtreal(x), tqtreal(y))))))))
+  
+  % Obsolete chunk div_finite_rev
+  % div_finite_rev: LEMMA FORALL (m:mode, x:t, y:t): tqtisfinite(div(m, x,
+  %   y)) => ((tqtisfinite(x) AND (tqtisfinite(y) AND NOT is_zero(y))) OR
+  %   (tqtisfinite(x) AND (is_infinite(y) AND (tqtreal(div(m, x, y)) = 0))))
+  
+  % Obsolete chunk div_finite_rev_n
+  % div_finite_rev_n: LEMMA FORALL (m:mode, x:t, y:t): to_nearest(m) =>
+  %   (tqtisfinite(div(m, x, y)) => (tqtisfinite(y) => (no_overflow(m,
+  %   real@Real.infix_sl(tqtreal(x), tqtreal(y))) AND (tqtreal(div(m, x,
+  %   y)) = round(m, real@Real.infix_sl(tqtreal(x), tqtreal(y)))))))
+  
+  % Obsolete chunk neg_finite
+  % neg_finite: LEMMA FORALL (x:t): tqtisfinite(x) => (tqtisfinite(neg(x)) AND
+  %   (tqtreal(neg(x)) = (-tqtreal(x))))
+  
+  % Obsolete chunk neg_finite_rev
+  % neg_finite_rev: LEMMA FORALL (x:t): tqtisfinite(neg(x)) =>
+  %   (tqtisfinite(x) AND (tqtreal(neg(x)) = (-tqtreal(x))))
+  
+  % Obsolete chunk abs_finite
+  % abs_finite: LEMMA FORALL (x:t): tqtisfinite(x) => (tqtisfinite(abs1(x)) AND
+  %   ((tqtreal(abs1(x)) = abs(tqtreal(x))) AND is_positive(abs1(x))))
+  
+  % Obsolete chunk abs_finite_rev
+  % abs_finite_rev: LEMMA FORALL (x:t): tqtisfinite(abs1(x)) =>
+  %   (tqtisfinite(x) AND (tqtreal(abs1(x)) = abs(tqtreal(x))))
+  
+  % Obsolete chunk abs_universal
+  % abs_universal: LEMMA FORALL (x:t): NOT is_negative(abs1(x))
+  
+  % Obsolete chunk fma_finite
+  % fma_finite: LEMMA FORALL (m:mode, x:t, y:t, z:t): tqtisfinite(x) =>
+  %   (tqtisfinite(y) => (tqtisfinite(z) => (no_overflow(m,
+  %   ((tqtreal(x) * tqtreal(y)) + tqtreal(z))) => (tqtisfinite(fma(m, x, y,
+  %   z)) AND (tqtreal(fma(m, x, y, z)) = round(m,
+  %   ((tqtreal(x) * tqtreal(y)) + tqtreal(z))))))))
+  
+  % Obsolete chunk fma_finite_rev
+  % fma_finite_rev: LEMMA FORALL (m:mode, x:t, y:t, z:t): tqtisfinite(fma(m, x,
+  %   y, z)) => (tqtisfinite(x) AND (tqtisfinite(y) AND tqtisfinite(z)))
+  
+  % Obsolete chunk fma_finite_rev_n
+  % fma_finite_rev_n: LEMMA FORALL (m:mode, x:t, y:t, z:t): to_nearest(m) =>
+  %   (tqtisfinite(fma(m, x, y, z)) => (no_overflow(m,
+  %   ((tqtreal(x) * tqtreal(y)) + tqtreal(z))) AND (tqtreal(fma(m, x, y,
+  %   z)) = round(m, ((tqtreal(x) * tqtreal(y)) + tqtreal(z))))))
+  
+  % Obsolete chunk sqrt_finite
+  % sqrt_finite: LEMMA FORALL (m:mode, x:t): tqtisfinite(x) =>
+  %   ((tqtreal(x) >= 0) => (tqtisfinite(sqrt(m, x)) AND (tqtreal(sqrt(m,
+  %   x)) = round(m, real@Square.sqrt(tqtreal(x))))))
+  
+  % Obsolete chunk sqrt_finite_rev
+  % sqrt_finite_rev: LEMMA FORALL (m:mode, x:t): tqtisfinite(sqrt(m, x)) =>
+  %   (tqtisfinite(x) AND ((tqtreal(x) >= 0) AND (tqtreal(sqrt(m,
+  %   x)) = round(m, real@Square.sqrt(tqtreal(x))))))
+  
+  % Obsolete chunk add_special
+  % add_special: LEMMA FORALL (m:mode, x:t, y:t): LET r = add1(m, x, y) IN
+  %   (((is_nan(x) OR is_nan(y)) => is_nan(r)) AND (((tqtisfinite(x) AND
+  %   is_infinite(y)) => (is_infinite(r) AND same_sign(r, y))) AND
+  %   (((is_infinite(x) AND tqtisfinite(y)) => (is_infinite(r) AND same_sign(r,
+  %   x))) AND (((is_infinite(x) AND (is_infinite(y) AND same_sign(x, y))) =>
+  %   (is_infinite(r) AND same_sign(r, x))) AND (((is_infinite(x) AND
+  %   (is_infinite(y) AND diff_sign(x, y))) => is_nan(r)) AND
+  %   (((tqtisfinite(x) AND (tqtisfinite(y) AND NOT no_overflow(m,
+  %   (tqtreal(x) + tqtreal(y))))) => (same_sign_real(r,
+  %   (tqtreal(x) + tqtreal(y))) AND overflow_value(m, r))) AND
+  %   ((tqtisfinite(x) AND tqtisfinite(y)) => IF same_sign(x, y)
+  %   THEN same_sign(r, x) ELSE sign_zero_result(m, r) ENDIF)))))))
+  
+  % Obsolete chunk sub_special
+  % sub_special: LEMMA FORALL (m:mode, x:t, y:t): LET r = sub(m, x, y) IN
+  %   (((is_nan(x) OR is_nan(y)) => is_nan(r)) AND (((tqtisfinite(x) AND
+  %   is_infinite(y)) => (is_infinite(r) AND diff_sign(r, y))) AND
+  %   (((is_infinite(x) AND tqtisfinite(y)) => (is_infinite(r) AND same_sign(r,
+  %   x))) AND (((is_infinite(x) AND (is_infinite(y) AND same_sign(x, y))) =>
+  %   is_nan(r)) AND (((is_infinite(x) AND (is_infinite(y) AND diff_sign(x,
+  %   y))) => (is_infinite(r) AND same_sign(r, x))) AND (((tqtisfinite(x) AND
+  %   (tqtisfinite(y) AND NOT no_overflow(m, (tqtreal(x) - tqtreal(y))))) =>
+  %   (same_sign_real(r, (tqtreal(x) - tqtreal(y))) AND overflow_value(m,
+  %   r))) AND ((tqtisfinite(x) AND tqtisfinite(y)) => IF diff_sign(x, y)
+  %   THEN same_sign(r, x) ELSE sign_zero_result(m, r) ENDIF)))))))
+  
+  % Obsolete chunk mul_special
+  % mul_special: LEMMA FORALL (m:mode, x:t, y:t): LET r = mul(m, x, y) IN
+  %   (((is_nan(x) OR is_nan(y)) => is_nan(r)) AND (((is_zero(x) AND
+  %   is_infinite(y)) => is_nan(r)) AND (((tqtisfinite(x) AND
+  %   (is_infinite(y) AND NOT is_zero(x))) => is_infinite(r)) AND
+  %   (((is_infinite(x) AND is_zero(y)) => is_nan(r)) AND (((is_infinite(x) AND
+  %   (tqtisfinite(y) AND NOT is_zero(y))) => is_infinite(r)) AND
+  %   (((is_infinite(x) AND is_infinite(y)) => is_infinite(r)) AND
+  %   (((tqtisfinite(x) AND (tqtisfinite(y) AND NOT no_overflow(m,
+  %   (tqtreal(x) * tqtreal(y))))) => overflow_value(m, r)) AND
+  %   ((NOT is_nan(r)) => product_sign(r, x, y)))))))))
+  
+  % Obsolete chunk div_special
+  % div_special: LEMMA FORALL (m:mode, x:t, y:t): LET r = div(m, x, y) IN
+  %   (((is_nan(x) OR is_nan(y)) => is_nan(r)) AND (((tqtisfinite(x) AND
+  %   is_infinite(y)) => is_zero(r)) AND (((is_infinite(x) AND
+  %   tqtisfinite(y)) => is_infinite(r)) AND (((is_infinite(x) AND
+  %   is_infinite(y)) => is_nan(r)) AND (((tqtisfinite(x) AND
+  %   (tqtisfinite(y) AND ((NOT is_zero(y)) AND NOT no_overflow(m,
+  %   real@Real.infix_sl(tqtreal(x), tqtreal(y)))))) => overflow_value(m,
+  %   r)) AND (((tqtisfinite(x) AND (is_zero(y) AND NOT is_zero(x))) =>
+  %   is_infinite(r)) AND (((is_zero(x) AND is_zero(y)) => is_nan(r)) AND
+  %   ((NOT is_nan(r)) => product_sign(r, x, y)))))))))
+  
+  % Obsolete chunk neg_special
+  % neg_special: LEMMA FORALL (x:t): (is_nan(x) => is_nan(neg(x))) AND
+  %   ((is_infinite(x) => is_infinite(neg(x))) AND ((NOT is_nan(x)) =>
+  %   diff_sign(x, neg(x))))
+  
+  % Obsolete chunk abs_special
+  % abs_special: LEMMA FORALL (x:t): (is_nan(x) => is_nan(abs1(x))) AND
+  %   ((is_infinite(x) => is_infinite(abs1(x))) AND ((NOT is_nan(x)) =>
+  %   is_positive(abs1(x))))
+  
+  % Obsolete chunk fma_special
+  % fma_special: LEMMA FORALL (m:mode, x:t, y:t, z:t): LET r = fma(m, x, y,
+  %   z) IN (((is_nan(x) OR (is_nan(y) OR is_nan(z))) => is_nan(r)) AND
+  %   (((is_zero(x) AND is_infinite(y)) => is_nan(r)) AND (((is_infinite(x) AND
+  %   is_zero(y)) => is_nan(r)) AND (((tqtisfinite(x) AND ((NOT is_zero(x)) AND
+  %   (is_infinite(y) AND tqtisfinite(z)))) => (is_infinite(r) AND
+  %   product_sign(r, x, y))) AND (((tqtisfinite(x) AND ((NOT is_zero(x)) AND
+  %   (is_infinite(y) AND is_infinite(z)))) => IF product_sign(z, x, y)
+  %   THEN is_infinite(r) AND same_sign(r, z) ELSE is_nan(r) ENDIF) AND
+  %   (((is_infinite(x) AND (tqtisfinite(y) AND ((NOT is_zero(y)) AND
+  %   tqtisfinite(z)))) => (is_infinite(r) AND product_sign(r, x, y))) AND
+  %   (((is_infinite(x) AND (tqtisfinite(y) AND ((NOT is_zero(y)) AND
+  %   is_infinite(z)))) => IF product_sign(z, x, y) THEN is_infinite(r) AND
+  %   same_sign(r, z) ELSE is_nan(r) ENDIF) AND (((is_infinite(x) AND
+  %   (is_infinite(y) AND tqtisfinite(z))) => (is_infinite(r) AND
+  %   product_sign(r, x, y))) AND (((tqtisfinite(x) AND (tqtisfinite(y) AND
+  %   is_infinite(z))) => (is_infinite(r) AND same_sign(r, z))) AND
+  %   (((is_infinite(x) AND (is_infinite(y) AND is_infinite(z))) =>
+  %   IF product_sign(z, x, y) THEN is_infinite(r) AND same_sign(r, z)
+  %   ELSE is_nan(r) ENDIF) AND (((tqtisfinite(x) AND (tqtisfinite(y) AND
+  %   (tqtisfinite(z) AND NOT no_overflow(m,
+  %   ((tqtreal(x) * tqtreal(y)) + tqtreal(z)))))) => (same_sign_real(r,
+  %   ((tqtreal(x) * tqtreal(y)) + tqtreal(z))) AND overflow_value(m, r))) AND
+  %   ((tqtisfinite(x) AND (tqtisfinite(y) AND tqtisfinite(z))) =>
+  %   IF product_sign(z, x, y) THEN same_sign(r, z)
+  %   ELSE ((((tqtreal(x) * tqtreal(y)) + tqtreal(z)) = 0) => IF (m = rtn)
+  %   THEN is_negative(r) ELSE is_positive(r) ENDIF) ENDIF))))))))))))
+  
+  % Obsolete chunk sqrt_special
+  % sqrt_special: LEMMA FORALL (m:mode, x:t): LET r = sqrt(m, x) IN
+  %   ((is_nan(x) => is_nan(r)) AND ((is_plus_infinity(x) =>
+  %   is_plus_infinity(r)) AND ((is_minus_infinity(x) => is_nan(r)) AND
+  %   (((tqtisfinite(x) AND (tqtreal(x) <  0)) => is_nan(r)) AND
+  %   ((is_zero(x) => same_sign(r, x)) AND ((tqtisfinite(x) AND
+  %   (tqtreal(x) >  0)) => is_positive(r)))))))
+  
+  % Obsolete chunk of_int_add_exact
+  % of_int_add_exact: LEMMA FORALL (m:mode, n:mode, i:int, j:int):
+  %   in_safe_int_range(i) => (in_safe_int_range(j) =>
+  %   (in_safe_int_range((i + j)) => eq1(of_int(m, (i + j)), add1(n, of_int(m,
+  %   i), of_int(m, j)))))
+  
+  % Obsolete chunk of_int_sub_exact
+  % of_int_sub_exact: LEMMA FORALL (m:mode, n:mode, i:int, j:int):
+  %   in_safe_int_range(i) => (in_safe_int_range(j) =>
+  %   (in_safe_int_range((i - j)) => eq1(of_int(m, (i - j)), sub(n, of_int(m,
+  %   i), of_int(m, j)))))
+  
+  % Obsolete chunk of_int_mul_exact
+  % of_int_mul_exact: LEMMA FORALL (m:mode, n:mode, i:int, j:int):
+  %   in_safe_int_range(i) => (in_safe_int_range(j) =>
+  %   (in_safe_int_range((i * j)) => eq1(of_int(m, (i * j)), mul(n, of_int(m,
+  %   i), of_int(m, j)))))
+  
+  % Obsolete chunk min_r
+  % min_r: LEMMA FORALL (x:t, y:t): infix_dtlseq(y, x) => infix_dteq(min1(x,
+  %   y), y)
+  
+  % Obsolete chunk min_l
+  % min_l: LEMMA FORALL (x:t, y:t): infix_dtlseq(x, y) => infix_dteq(min1(x,
+  %   y), x)
+  
+  % Obsolete chunk max_r
+  % max_r: LEMMA FORALL (x:t, y:t): infix_dtlseq(y, x) => infix_dteq(max1(x,
+  %   y), x)
+  
+  % Obsolete chunk max_l
+  % max_l: LEMMA FORALL (x:t, y:t): infix_dtlseq(x, y) => infix_dteq(max1(x,
+  %   y), y)
+  
+  % Obsolete chunk zerof_is_int
+  % zerof_is_int: LEMMA is_int(zerof)
+  
+  % Obsolete chunk of_int_is_int
+  % of_int_is_int: LEMMA FORALL (m:mode, x:int): in_int_range(x) =>
+  %   is_int(of_int(m, x))
+  
+  % Obsolete chunk big_float_is_int
+  % big_float_is_int: LEMMA FORALL (m:mode, i:t): tqtisfinite(i) =>
+  %   ((infix_dtlseq(i, neg(of_int(m, pow2sb))) OR infix_dtlseq(of_int(m,
+  %   pow2sb), i)) => is_int(i))
+  
+  % Obsolete chunk roundtointegral_is_int
+  % roundtointegral_is_int: LEMMA FORALL (m:mode, x:t): tqtisfinite(x) =>
+  %   is_int(roundtointegral(m, x))
+  
+  % Obsolete chunk eq_is_int
+  % eq_is_int: LEMMA FORALL (x:t, y:t): eq1(x, y) => (is_int(x) => is_int(y))
+  
+  % Obsolete chunk add_int
+  % add_int: LEMMA FORALL (x:t, y:t, m:mode): is_int(x) => (is_int(y) =>
+  %   (tqtisfinite(add1(m, x, y)) => is_int(add1(m, x, y))))
+  
+  % Obsolete chunk sub_int
+  % sub_int: LEMMA FORALL (x:t, y:t, m:mode): is_int(x) => (is_int(y) =>
+  %   (tqtisfinite(sub(m, x, y)) => is_int(sub(m, x, y))))
+  
+  % Obsolete chunk mul_int
+  % mul_int: LEMMA FORALL (x:t, y:t, m:mode): is_int(x) => (is_int(y) =>
+  %   (tqtisfinite(mul(m, x, y)) => is_int(mul(m, x, y))))
+  
+  % Obsolete chunk fma_int
+  % fma_int: LEMMA FORALL (x:t, y:t, z:t, m:mode): is_int(x) => (is_int(y) =>
+  %   (is_int(z) => (tqtisfinite(fma(m, x, y, z)) => is_int(fma(m, x, y, z)))))
+  
+  % Obsolete chunk neg_int
+  % neg_int: LEMMA FORALL (x:t): is_int(x) => is_int(neg(x))
+  
+  % Obsolete chunk abs_int
+  % abs_int: LEMMA FORALL (x:t): is_int(x) => is_int(abs1(x))
+  
+  % Obsolete chunk is_int_of_int
+  % is_int_of_int: LEMMA FORALL (x:t, m:mode, mqt:mode): is_int(x) => eq1(x,
+  %   of_int(mqt, to_int(m, x)))
+  
+  % Obsolete chunk is_int_to_int
+  % is_int_to_int: LEMMA FORALL (m:mode, x:t): is_int(x) =>
+  %   in_int_range(to_int(m, x))
+  
+  % Obsolete chunk is_int_is_finite
+  % is_int_is_finite: LEMMA FORALL (x:t): is_int(x) => tqtisfinite(x)
+  
+  % Obsolete chunk int_to_real
+  % int_to_real: LEMMA FORALL (m:mode, x:t): is_int(x) =>
+  %   (tqtreal(x) = (to_int(m, x) :: real))
+  
+  % Obsolete chunk truncate_int
+  % truncate_int: LEMMA FORALL (m:mode, i:t): is_int(i) =>
+  %   infix_dteq(roundtointegral(m, i), i)
+  
+  % Obsolete chunk truncate_neg
+  % truncate_neg: LEMMA FORALL (x:t): tqtisfinite(x) => (is_negative(x) =>
+  %   (roundtointegral(rtz, x) = roundtointegral(rtp, x)))
+  
+  % Obsolete chunk truncate_pos
+  % truncate_pos: LEMMA FORALL (x:t): tqtisfinite(x) => (is_positive(x) =>
+  %   (roundtointegral(rtz, x) = roundtointegral(rtn, x)))
+  
+  % Obsolete chunk ceil_le
+  % ceil_le: LEMMA FORALL (x:t): tqtisfinite(x) => infix_dtlseq(x,
+  %   roundtointegral(rtp, x))
+  
+  % Obsolete chunk ceil_lest
+  % ceil_lest: LEMMA FORALL (x:t, y:t): (infix_dtlseq(x, y) AND is_int(y)) =>
+  %   infix_dtlseq(roundtointegral(rtp, x), y)
+  
+  % Obsolete chunk ceil_to_real
+  % ceil_to_real: LEMMA FORALL (x:t): tqtisfinite(x) =>
+  %   (tqtreal(roundtointegral(rtp, x)) = (ceil(tqtreal(x)) :: real))
+  
+  % Obsolete chunk ceil_to_int
+  % ceil_to_int: LEMMA FORALL (m:mode, x:t): tqtisfinite(x) => (to_int(m,
+  %   roundtointegral(rtp, x)) = ceil(tqtreal(x)))
+  
+  % Obsolete chunk floor_le
+  % floor_le: LEMMA FORALL (x:t): tqtisfinite(x) =>
+  %   infix_dtlseq(roundtointegral(rtn, x), x)
+  
+  % Obsolete chunk floor_lest
+  % floor_lest: LEMMA FORALL (x:t, y:t): (infix_dtlseq(y, x) AND is_int(y)) =>
+  %   infix_dtlseq(y, roundtointegral(rtn, x))
+  
+  % Obsolete chunk floor_to_real
+  % floor_to_real: LEMMA FORALL (x:t): tqtisfinite(x) =>
+  %   (tqtreal(roundtointegral(rtn, x)) = (floor(tqtreal(x)) :: real))
+  
+  % Obsolete chunk floor_to_int
+  % floor_to_int: LEMMA FORALL (m:mode, x:t): tqtisfinite(x) => (to_int(m,
+  %   roundtointegral(rtn, x)) = floor(tqtreal(x)))
+  
+  % Obsolete chunk rna_down
+  % rna_down: LEMMA FORALL (x:t): infix_dtls(infix_dtmn(x, roundtointegral(rtn,
+  %   x)), infix_dtmn(roundtointegral(rtp, x), x)) => (roundtointegral(rna,
+  %   x) = roundtointegral(rtn, x))
+  
+  % Obsolete chunk rna_up
+  % rna_up: LEMMA FORALL (x:t): infix_dtgt(infix_dtmn(x, roundtointegral(rtn,
+  %   x)), infix_dtmn(roundtointegral(rtp, x), x)) => (roundtointegral(rna,
+  %   x) = roundtointegral(rtp, x))
+  
+  % Obsolete chunk rna_down_tie
+  % rna_down_tie: LEMMA FORALL (x:t): infix_dteq(infix_dtmn(x,
+  %   roundtointegral(rtn, x)), infix_dtmn(roundtointegral(rtp, x), x)) =>
+  %   (is_negative(x) => (roundtointegral(rna, x) = roundtointegral(rtn, x)))
+  
+  % Obsolete chunk rna_up_tie
+  % rna_up_tie: LEMMA FORALL (x:t): infix_dteq(infix_dtmn(roundtointegral(rtp,
+  %   x), x), infix_dtmn(x, roundtointegral(rtn, x))) => (is_positive(x) =>
+  %   (roundtointegral(rna, x) = roundtointegral(rtp, x)))
+  
+  % Obsolete chunk to_int_roundtointegral
+  % to_int_roundtointegral: LEMMA FORALL (m:mode, x:t): (to_int(m,
+  %   x) = to_int(m, roundtointegral(m, x)))
+  
+  % Obsolete chunk to_int_monotonic
+  % to_int_monotonic: LEMMA FORALL (m:mode, x:t, y:t): tqtisfinite(x) =>
+  %   (tqtisfinite(y) => (le(x, y) => (to_int(m, x) <= to_int(m, y))))
+  
+  % Obsolete chunk to_int_of_int
+  % to_int_of_int: LEMMA FORALL (m:mode, i:int): in_safe_int_range(i) =>
+  %   (to_int(m, of_int(m, i)) = i)
+  
+  % Obsolete chunk eq_to_int
+  % eq_to_int: LEMMA FORALL (m:mode, x:t, y:t): tqtisfinite(x) =>
+  %   (infix_dteq(x, y) => (to_int(m, x) = to_int(m, y)))
+  
+  % Obsolete chunk neg_to_int
+  % neg_to_int: LEMMA FORALL (m:mode, x:t): is_int(x) => (to_int(m,
+  %   neg(x)) = (-to_int(m, x)))
+  
+  % Obsolete chunk roundtointegral_is_finite
+  % roundtointegral_is_finite: LEMMA FORALL (m:mode, x:t): tqtisfinite(x) =>
+  %   tqtisfinite(roundtointegral(m, x))
+  
+  % Obsolete chunk round_bound_ne
+  % round_bound_ne: LEMMA FORALL (x:real): no_overflow(rne, x) =>
+  %   ((((x - ((1 / 16777216) * abs(x))) - (1 / 1427247692705959881058285969449495136382746624)) <= round(rne,
+  %   x)) AND (round(rne,
+  %   x) <= ((x + ((1 / 16777216) * abs(x))) + (1 / 1427247692705959881058285969449495136382746624))))
+  
+  % Obsolete chunk round_bound
+  % round_bound: LEMMA FORALL (m:mode, x:real): no_overflow(m, x) =>
+  %   ((((x - ((1 / 8388608) * abs(x))) - (1 / 713623846352979940529142984724747568191373312)) <= round(m,
+  %   x)) AND (round(m,
+  %   x) <= ((x + ((1 / 8388608) * abs(x))) + (1 / 713623846352979940529142984724747568191373312))))
+  
+ END Float32
+ 

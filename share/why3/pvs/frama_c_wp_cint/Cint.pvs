@@ -1,0 +1,258 @@
+Cint: THEORY
+ BEGIN
+  IMPORTING int@Int
+  % do not edit above this line
+  % surround new declarations you insert below with blank lines
+  
+  % Why3 unit
+  unit: TYPE+ = []
+  
+  % Why3 max_uint8
+  max_uint8: int = 256
+  
+  % Why3 max_sint8
+  max_sint8: int = 128
+  
+  % Why3 max_uint16
+  max_uint16: int = 65536
+  
+  % Why3 max_sint16
+  max_sint16: int = 32768
+  
+  % Why3 max_uint32
+  max_uint32: int = 4294967296
+  
+  % Why3 max_sint32
+  max_sint32: int = 2147483648
+  
+  % Why3 max_uint64
+  max_uint64: int = 18446744073709551616
+  
+  % Why3 max_sint64
+  max_sint64: int = 9223372036854775808
+  
+  % Why3 is_bool
+  is_bool(x:int): bool = (x = 0) OR (x = 1)
+  
+  % Why3 is_uint8
+  is_uint8(x:int): bool = (0 <= x) AND (x <  max_uint8)
+  
+  % Why3 is_sint8
+  is_sint8(x:int): bool = ((-max_sint8) <= x) AND (x <  max_sint8)
+  
+  % Why3 is_uint16
+  is_uint16(x:int): bool = (0 <= x) AND (x <  max_uint16)
+  
+  % Why3 is_sint16
+  is_sint16(x:int): bool = ((-max_sint16) <= x) AND (x <  max_sint16)
+  
+  % Why3 is_uint32
+  is_uint32(x:int): bool = (0 <= x) AND (x <  max_uint32)
+  
+  % Why3 is_sint32
+  is_sint32(x:int): bool = ((-max_sint32) <= x) AND (x <  max_sint32)
+  
+  % Why3 is_uint64
+  is_uint64(x:int): bool = (0 <= x) AND (x <  max_uint64)
+  
+  % Why3 is_sint64
+  is_sint64(x:int): bool = ((-max_sint64) <= x) AND (x <  max_sint64)
+  
+  % Why3 to_bool
+  to_bool(x:int): int = IF (x = 0) THEN 0 ELSE 1 ENDIF
+  
+  % Why3 to_uint8
+  to_uint8(x:int): int
+  
+  % Why3 to_sint8
+  to_sint8(x:int): int
+  
+  % Why3 to_uint16
+  to_uint16(x:int): int
+  
+  % Why3 to_sint16
+  to_sint16(x:int): int
+  
+  % Why3 to_uint32
+  to_uint32(x:int): int
+  
+  % Why3 to_sint32
+  to_sint32(x:int): int
+  
+  % Why3 to_uint64
+  to_uint64(x:int): int
+  
+  % Why3 to_sint64
+  to_sint64(x:int): int
+  
+  % Why3 two_power_abs
+  two_power_abs(x:int): int
+  
+  % Why3 is_uint
+  is_uint(n:int, x:int): bool = (0 <= x) AND (x <  two_power_abs(n))
+  
+  % Why3 is_sint
+  is_sint(n:int, x:int): bool = ((-two_power_abs(n)) <= x) AND
+    (x <  two_power_abs(n))
+  
+  % Why3 to_uint
+  to_uint(x:int, x1:int): int
+  
+  % Why3 to_sint
+  to_sint(x:int, x1:int): int
+  
+  % Obsolete chunk is_bool0
+  % is_bool0: LEMMA is_bool(0)
+  
+  % Obsolete chunk is_bool1
+  % is_bool1: LEMMA is_bool(1)
+  
+  % Obsolete chunk two_power_abs_is_positive
+  % two_power_abs_is_positive: LEMMA FORALL (n:int): (0 <  two_power_abs(n))
+  
+  % Obsolete chunk two_power_abs_plus_pos
+  % two_power_abs_plus_pos: LEMMA FORALL (n:int, m:int): (0 <= n) =>
+  %   ((0 <= m) =>
+  %   (two_power_abs((n + m)) = (two_power_abs(n) * two_power_abs(m))))
+  
+  % Obsolete chunk two_power_abs_plus_one
+  % two_power_abs_plus_one: LEMMA FORALL (n:int): (0 <= n) =>
+  %   (two_power_abs((n + 1)) = (2 * two_power_abs(n)))
+  
+  % Obsolete chunk is_to_uint
+  % is_to_uint: LEMMA FORALL (n:int, x:int): is_uint(n, to_uint(n, x))
+  
+  % Obsolete chunk is_to_sint
+  % is_to_sint: LEMMA FORALL (n:int, x:int): is_sint(n, to_sint(n, x))
+  
+  % Obsolete chunk is_to_uint8
+  % is_to_uint8: LEMMA FORALL (x:int): is_uint8(to_uint8(x))
+  
+  % Obsolete chunk is_to_sint8
+  % is_to_sint8: LEMMA FORALL (x:int): is_sint8(to_sint8(x))
+  
+  % Obsolete chunk is_to_uint16
+  % is_to_uint16: LEMMA FORALL (x:int): is_uint16(to_uint16(x))
+  
+  % Obsolete chunk is_to_sint16
+  % is_to_sint16: LEMMA FORALL (x:int): is_sint16(to_sint16(x))
+  
+  % Obsolete chunk is_to_uint32
+  % is_to_uint32: LEMMA FORALL (x:int): is_uint32(to_uint32(x))
+  
+  % Obsolete chunk is_to_sint32
+  % is_to_sint32: LEMMA FORALL (x:int): is_sint32(to_sint32(x))
+  
+  % Obsolete chunk is_to_uint64
+  % is_to_uint64: LEMMA FORALL (x:int): is_uint64(to_uint64(x))
+  
+  % Obsolete chunk is_to_sint64
+  % is_to_sint64: LEMMA FORALL (x:int): is_sint64(to_sint64(x))
+  
+  % Obsolete chunk id_uint
+  % id_uint: LEMMA FORALL (n:int, x:int): is_uint(n, x) <=> (to_uint(n, x) = x)
+  
+  % Obsolete chunk id_sint
+  % id_sint: LEMMA FORALL (n:int, x:int): is_sint(n, x) <=> (to_sint(n, x) = x)
+  
+  % Obsolete chunk id_uint8
+  % id_uint8: LEMMA FORALL (x:int): is_uint8(x) => (to_uint8(x) = x)
+  
+  % Obsolete chunk id_sint8
+  % id_sint8: LEMMA FORALL (x:int): is_sint8(x) => (to_sint8(x) = x)
+  
+  % Obsolete chunk id_uint16
+  % id_uint16: LEMMA FORALL (x:int): is_uint16(x) => (to_uint16(x) = x)
+  
+  % Obsolete chunk id_sint16
+  % id_sint16: LEMMA FORALL (x:int): is_sint16(x) => (to_sint16(x) = x)
+  
+  % Obsolete chunk id_uint32
+  % id_uint32: LEMMA FORALL (x:int): is_uint32(x) => (to_uint32(x) = x)
+  
+  % Obsolete chunk id_sint32
+  % id_sint32: LEMMA FORALL (x:int): is_sint32(x) => (to_sint32(x) = x)
+  
+  % Obsolete chunk id_uint64
+  % id_uint64: LEMMA FORALL (x:int): is_uint64(x) => (to_uint64(x) = x)
+  
+  % Obsolete chunk id_sint64
+  % id_sint64: LEMMA FORALL (x:int): is_sint64(x) => (to_sint64(x) = x)
+  
+  % Obsolete chunk proj_uint
+  % proj_uint: LEMMA FORALL (n:int, x:int): (to_uint(n, to_uint(n,
+  %   x)) = to_uint(n, x))
+  
+  % Obsolete chunk proj_sint
+  % proj_sint: LEMMA FORALL (n:int, x:int): (to_sint(n, to_sint(n,
+  %   x)) = to_sint(n, x))
+  
+  % Obsolete chunk proj_uint8
+  % proj_uint8: LEMMA FORALL (x:int): (to_uint8(to_uint8(x)) = to_uint8(x))
+  
+  % Obsolete chunk proj_sint8
+  % proj_sint8: LEMMA FORALL (x:int): (to_sint8(to_sint8(x)) = to_sint8(x))
+  
+  % Obsolete chunk proj_uint16
+  % proj_uint16: LEMMA FORALL (x:int): (to_uint16(to_uint16(x)) = to_uint16(x))
+  
+  % Obsolete chunk proj_sint16
+  % proj_sint16: LEMMA FORALL (x:int): (to_sint16(to_sint16(x)) = to_sint16(x))
+  
+  % Obsolete chunk proj_uint32
+  % proj_uint32: LEMMA FORALL (x:int): (to_uint32(to_uint32(x)) = to_uint32(x))
+  
+  % Obsolete chunk proj_sint32
+  % proj_sint32: LEMMA FORALL (x:int): (to_sint32(to_sint32(x)) = to_sint32(x))
+  
+  % Obsolete chunk proj_uint64
+  % proj_uint64: LEMMA FORALL (x:int): (to_uint64(to_uint64(x)) = to_uint64(x))
+  
+  % Obsolete chunk proj_sint64
+  % proj_sint64: LEMMA FORALL (x:int): (to_sint64(to_sint64(x)) = to_sint64(x))
+  
+  % Obsolete chunk proj_su
+  % proj_su: LEMMA FORALL (n:int, x:int): (to_sint(n, to_uint(n,
+  %   x)) = to_uint(n, x))
+  
+  % Obsolete chunk incl_su
+  % incl_su: LEMMA FORALL (n:int, x:int): is_uint(n, x) => is_sint(n, x)
+  
+  % Obsolete chunk proj_su_uint
+  % proj_su_uint: LEMMA FORALL (n:int, m:int, x:int): (0 <= n) => ((0 <= m) =>
+  %   (to_sint((m + n), to_uint(n, x)) = to_uint(n, x)))
+  
+  % Obsolete chunk proj_su_sint
+  % proj_su_sint: LEMMA FORALL (n:int, m:int, x:int): (0 <= n) => ((0 <= m) =>
+  %   (to_sint(n, to_uint((m + (n + 1)), x)) = to_sint(n, x)))
+  
+  % Obsolete chunk proj_int8
+  % proj_int8: LEMMA FORALL (x:int): (to_sint8(to_uint8(x)) = to_sint8(x))
+  
+  % Obsolete chunk proj_int16
+  % proj_int16: LEMMA FORALL (x:int): (to_sint16(to_uint16(x)) = to_sint16(x))
+  
+  % Obsolete chunk proj_int32
+  % proj_int32: LEMMA FORALL (x:int): (to_sint32(to_uint32(x)) = to_sint32(x))
+  
+  % Obsolete chunk proj_int64
+  % proj_int64: LEMMA FORALL (x:int): (to_sint64(to_uint64(x)) = to_sint64(x))
+  
+  % Obsolete chunk proj_us_uint
+  % proj_us_uint: LEMMA FORALL (n:int, m:int, x:int): (0 <= n) => ((0 <= m) =>
+  %   (to_uint((n + 1), to_sint((m + n), x)) = to_uint((n + 1), x)))
+  
+  % Obsolete chunk incl_uint
+  % incl_uint: LEMMA FORALL (n:int, x:int, i:int): (0 <= n) => ((0 <= i) =>
+  %   (is_uint(n, x) => is_uint((n + i), x)))
+  
+  % Obsolete chunk incl_sint
+  % incl_sint: LEMMA FORALL (n:int, x:int, i:int): (0 <= n) => ((0 <= i) =>
+  %   (is_sint(n, x) => is_sint((n + i), x)))
+  
+  % Obsolete chunk incl_int
+  % incl_int: LEMMA FORALL (n:int, x:int, i:int): (0 <= n) => ((0 <= i) =>
+  %   (is_uint(n, x) => is_sint((n + i), x)))
+  
+ END Cint
+ 

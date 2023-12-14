@@ -1,0 +1,24 @@
+RoundingMode: THEORY
+ BEGIN
+  % do not edit above this line
+  % surround new declarations you insert below with blank lines
+  
+  % Why3 unit
+  unit: TYPE+ = []
+  
+  % Why3 mode
+  mode: DATATYPE
+   BEGIN
+    rne: rne?
+    rna: rna?
+    rtp: rtp?
+    rtn: rtn?
+    rtz: rtz?
+   END mode
+  
+  % Why3 to_nearest
+  to_nearest(m:mode): bool = (m = rne) OR (m = rna)
+  
+  
+ END RoundingMode
+ 

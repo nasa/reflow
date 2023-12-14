@@ -1,0 +1,8 @@
+% Generated automatically by run-framac.sh
+%
+Interface: THEORY
+BEGIN
+
+  % Add connection to user files (if needed)
+
+END Interface

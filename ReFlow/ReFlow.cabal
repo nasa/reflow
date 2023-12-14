@@ -1,0 +1,96 @@
+cabal-version:      3.0
+name:               ReFlow
+version:            1.0.0
+synopsis:           ReFlow is a tool that extract floating-point C code from a PVS real numbers specification.
+
+description:        ReFlow takes as input a PVS real number specification and automatically generates a C
+                    implementation that uses floating-point numbers.
+                    The C code is annotated with pre- and post- conditions on the accumulated round-off error.
+                    In addition, ReFlow perfoms a code instrumentation to detect when the floating-point control flow diverges with respect to the ideal real numbers' one.
+
+homepage:           https://nasa.github.io/reflow
+
+bug-reports:
+license:
+author:             Laura Titolo, Marco A. Feliu
+maintainer:         laura.titolo@nasa.gov marco.feliu@nasa.gov
+
+copyright:
+category:           Language
+extra-source-files: CHANGELOG.md
+
+library
+  exposed-modules:
+      Common.TypeConversions
+    , FramaC.ACSLTypes
+    , FramaC.ACSLlang
+    , FramaC.CLang
+    , FramaC.GenerateACSL
+    , FramaC.PVS2C
+    , FramaC.PrecisaPrelude
+    , FramaC.PrettyPrint
+    , FramaC.Types
+    , Transformation
+    , TransformationUtils
+  build-depends:
+      base >=4.14
+    , directory
+    , extra
+    , mtl
+    , precisa
+  hs-source-dirs: app
+  default-language: Haskell2010
+
+executable reflow
+  main-is:          Main.hs
+  other-modules:
+      ReFlow
+    , Options
+    , Common.TypeConversions
+    , FramaC.ACSLTypes
+    , FramaC.ACSLlang
+    , FramaC.CLang
+    , FramaC.GenerateACSL
+    , FramaC.PVS2C
+    , FramaC.PrecisaPrelude
+    , FramaC.PrettyPrint
+    , FramaC.Types
+    , Transformation
+    , TransformationUtils
+  other-extensions:
+  build-depends:
+      base >=4.14
+    , directory
+    , extra
+    , filepath
+    , optparse-applicative
+    , mtl
+    , precisa
+    , ReFlow
+  hs-source-dirs: app
+  default-language: Haskell2010
+
+test-suite reflowTests
+  ghc-options: -Wno-missing-signatures
+  build-depends:
+      base >=4.14
+    , containers >=0.5 && <0.7
+    , pretty >=1.1 && <1.2
+    , mtl >= 2.2
+    , tasty >=0.11
+    , tasty-hunit >=0.9 && <0.10
+    , precisa
+    , ReFlow
+  type:
+    exitcode-stdio-1.0
+  hs-source-dirs:
+    tests/
+  main-is:
+    Main.hs
+  other-modules:
+    FramaC.GenerateACSLTest
+    FramaC.PVS2CTest
+    FramaC.PrettyPrint.CLangTest
+    TransformationTest
+    TransformationUtilsTest
+  default-language: Haskell2010

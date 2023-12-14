@@ -1,0 +1,18 @@
+RealInfix: THEORY
+ BEGIN
+  IMPORTING Real
+  % do not edit above this line
+  % surround new declarations you insert below with blank lines
+  
+  % Why3 string
+  string: TYPE+
+  
+  % Why3 unit
+  unit: TYPE+ = []
+  
+  % Why3 inv
+  inv(x:real): real = Real.inv(x)
+  
+  
+ END RealInfix
+ 

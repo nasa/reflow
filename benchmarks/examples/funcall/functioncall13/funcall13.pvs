@@ -1,0 +1,19 @@
+example2: THEORY
+
+BEGIN
+
+max_(a, b: real): real =
+
+IF a - b >= 0 THEN a
+
+ELSE b ENDIF
+
+without_call_conditional_function(a, b: real): bool =
+
+ a > 0 OR b > 0
+
+with_call_conditional_function(a, b: real): bool =
+
+ max_(a, b) > 0
+
+END example2

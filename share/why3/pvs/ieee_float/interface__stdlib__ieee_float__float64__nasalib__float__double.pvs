@@ -1,0 +1,41 @@
+%
+% Interface Why3 ieee_float.Float64 with PVS NASALIB/float/double.
+%
+interface__stdlib__ieee_float__float64__nasalib__float__double: THEORY
+BEGIN
+
+  IMPORTING axm_bnd@ieee754_double
+
+  % below is to support fnd_bnd
+
+
+%   IMPORTING float@double
+
+%   IMPORTING float@extended_float_rounding__nearest_even[radix_,precision_,dExp_]
+
+% % rnd_ef
+
+%   IMPORTING RoundingMode
+
+%   %M3 TODO complete interpretation with additional rounding modes
+%   round_to_exactly_representable_as_double(m: mode, x: real): real
+%   = safe_prjct_double(rnd_ef(x))
+
+%   %M3 TODO complete interpretation with additional rounding modes
+%   add_d(m: mode, X,Y: double): double = add_efd(rnd_ef)(X,Y)
+%   sub_d(m: mode, X,Y: double): double = sub_efd(rnd_ef)(X,Y)
+%   mul_d(m: mode, X,Y: double): double = mul_efd(rnd_ef)(X,Y)
+%   div_d(m: mode, X,Y: double): double = div_efd(rnd_ef)(X,Y)
+%   max_d(m: mode, X,Y: double): double = max_efd(rnd_ef)(X,Y)
+%   min_d(m: mode, X,Y: double): double = min_efd(rnd_ef)(X,Y)
+%   neg_d(m: mode, X: double)  : double = neg_efd(rnd_ef)(X)
+%   abs_d(m: mode, X: double)  : double = abs_efd(rnd_ef)(X)
+%   sqt_d(m: mode, X: double)  : double = sqt_efd(rnd_ef)(X)
+
+%   lt_d(X,Y: double): bool = qlt_efd(X,Y)
+%   le_d(X,Y: double): bool = qle_efd(X,Y)
+%   gt_d(X,Y: double): bool = qgt_efd(X,Y)
+%   ge_d(X,Y: double): bool = qge_efd(X,Y)
+%   eq_d(X,Y: double): bool = qeq_efd(X,Y)
+
+END interface__stdlib__ieee_float__float64__nasalib__float__double

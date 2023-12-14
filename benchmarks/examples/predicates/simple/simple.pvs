@@ -1,0 +1,14 @@
+simple : THEORY
+BEGIN
+
+IMPORTING structures@for_iterate
+
+% positiveTRUE(X,Y: real): bool = TRUE
+
+% positiveFALSE(X,Y: real): bool = FALSE
+
+positive(X,Y: real): bool = X * Y > 0
+
+% positive(X,Y: real): bool = IF X * Y > 0 THEN TRUE ELSE FALSE ENDIF
+
+END simple

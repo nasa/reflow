@@ -1,0 +1,65 @@
+Qed: THEORY
+ BEGIN
+  IMPORTING int@Int
+  IMPORTING int@Abs
+  IMPORTING int@ComputerDivision
+  IMPORTING real@Real
+  IMPORTING real@FromInt
+  % do not edit above this line
+  % surround new declarations you insert below with blank lines
+  
+  % Why3 unit
+  unit: TYPE+ = []
+  
+  % Obsolete chunk match_bool1
+  % match_bool1[a:TYPE+]: LEMMA FORALL (p:bool, x:a, y:a): ((p = TRUE) AND
+  %   (match_bool(p, x, y) = x)) OR ((p = FALSE) AND (match_bool(p, x, y) = y))
+  
+  % Obsolete chunk eqb1
+  % eqb1[a:TYPE+]: LEMMA FORALL (x:a, y:a): (eqb(x, y) = TRUE) <=> (x = y)
+  
+  % Obsolete chunk eqb_false
+  % eqb_false[a:TYPE+]: LEMMA FORALL (x:a, y:a): (eqb(x, y) = FALSE) <=>
+  %   NOT (x = y)
+  
+  % Obsolete chunk neqb1
+  % neqb1[a:TYPE+]: LEMMA FORALL (x:a, y:a): (neqb(x, y) = TRUE) <=>
+  %   NOT (x = y)
+  
+  % Obsolete chunk zlt1
+  % zlt1: LEMMA FORALL (x:int, y:int): (zlt(x, y) = TRUE) <=> (x <  y)
+  
+  % Obsolete chunk zleq1
+  % zleq1: LEMMA FORALL (x:int, y:int): (zleq(x, y) = TRUE) <=> (x <= y)
+  
+  % Obsolete chunk rlt1
+  % rlt1: LEMMA FORALL (x:real, y:real): (rlt(x, y) = TRUE) <=> (x <  y)
+  
+  % Obsolete chunk rleq1
+  % rleq1: LEMMA FORALL (x:real, y:real): (rleq(x, y) = TRUE) <=> (x <= y)
+  
+  % Obsolete chunk c_euclidian
+  % c_euclidian: LEMMA FORALL (n:int, d:int): (NOT (d = 0)) =>
+  %   (n = ((int@ComputerDivision.div(n, d) * d) + int@ComputerDivision.mod1(n,
+  %   d)))
+  
+  % Obsolete chunk cmod_remainder
+  % cmod_remainder: LEMMA FORALL (n:int, d:int): ((n >= 0) => ((d >  0) =>
+  %   ((0 <= int@ComputerDivision.mod1(n, d)) AND (int@ComputerDivision.mod1(n,
+  %   d) <  d)))) AND (((n <= 0) => ((d >  0) =>
+  %   (((-d) <  int@ComputerDivision.mod1(n, d)) AND
+  %   (int@ComputerDivision.mod1(n, d) <= 0)))) AND (((n >= 0) => ((d <  0) =>
+  %   ((0 <= int@ComputerDivision.mod1(n, d)) AND (int@ComputerDivision.mod1(n,
+  %   d) <  (-d))))) AND ((n <= 0) => ((d <  0) =>
+  %   ((d <  int@ComputerDivision.mod1(n, d)) AND (int@ComputerDivision.mod1(n,
+  %   d) <= 0))))))
+  
+  % Obsolete chunk cdiv_neutral
+  % cdiv_neutral: LEMMA FORALL (a:int): (int@ComputerDivision.div(a, 1) = a)
+  
+  % Obsolete chunk cdiv_inv
+  % cdiv_inv: LEMMA FORALL (a:int): (NOT (a = 0)) =>
+  %   (int@ComputerDivision.div(a, a) = 1)
+  
+ END Qed
+ 

@@ -1,0 +1,42 @@
+Cfloat: THEORY
+ BEGIN
+  IMPORTING int@Int
+  IMPORTING real@Real
+  IMPORTING real@RealInfix
+  IMPORTING real@Abs
+  IMPORTING real@FromInt
+  IMPORTING real@Truncate
+  IMPORTING real@Square
+  IMPORTING bv@Pow2int
+  IMPORTING ieee_float@RoundingMode
+  IMPORTING ieee_float@Float32
+  IMPORTING ieee_float@Float64
+  IMPORTING ieee_float@FloatConverter
+  % do not edit above this line
+  % surround new declarations you insert below with blank lines
+  
+  % Why3 string
+  string: TYPE+
+  
+  % Why3 unit
+  unit: TYPE+ = []
+  
+  % Why3 finite
+  finite(x:real): bool = finite?_single(round_single(x)) AND
+    finite?_double(round_double(x))
+  
+  % Why3 model_f32
+  model_f32(x:single): real
+  
+  % Why3 delta_f32
+  delta_f32(f:single): real = abs((safe_proj_single(f) - model_f32(f)))
+  
+  % Why3 model_f64
+  model_f64(x:double): real
+  
+  % Why3 delta_f64
+  delta_f64(f:double): real = abs((safe_proj_double(f) - model_f64(f)))
+  
+  
+ END Cfloat
+ 

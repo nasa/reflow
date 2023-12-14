@@ -1,0 +1,113 @@
+wcv_detection_taumod: THEORY
+BEGIN
+
+    %IMPORTING wcv
+    %%%%%%%%%%%%%%%%%% begin wcv file %%%%%%%%%%%%%%%%%%%%%%%
+     tcoa(sz,vz:real): real = IF (sz*vz < 0) THEN -(sz/vz)
+                       ELSE -1
+		       ENDIF
+
+    tcpa(sx,vx,sy,vy:real) : real =
+    IF (vx*vx + vy*vy /=0) THEN
+    -(sx*vx + sy*vy)/(vx*vx + vy*vy)
+    ELSE 0
+    ENDIF
+
+    taumod(sx,vx,sy,vy,DTHR:real) : real =
+    IF (sx*vx)+(sy*vy) < 0
+    THEN (DTHR*DTHR - (sx*sx + sy*sy))/(sx*vx + sy*vy)
+    ELSE -1
+    ENDIF
+
+    horizontal_wcv(sx,sy,vx,vy, DTHR,TTHR:real): bool =
+    LET tc = tcpa(sx,vx,sy,vy),
+        tm = taumod(sx,vx,sy,vy,DTHR) IN
+    (sx*sx) + (sy*sy) - DTHR*DTHR <= 0
+    OR
+    (((sx+tc*vx)*(sx+tc*vx) + (sy+tc*vy)*(sy+tc*vy)) - DTHR * DTHR <= 0  AND
+    0 <= tm AND tm - TTHR <= 0)
+
+    vertical_WCV(sz,vz,ZTHR,TCOA:real): bool =
+    abs(sz) - ZTHR <= 0 OR
+    (0 <= tcoa(sz,vz) AND tcoa(sz,vz) - TCOA <= 0)
+
+    WCV(sx,sy,sz,vx,vy,vz,DTHR,TTHR,ZTHR,TCOA:real): bool =
+    horizontal_wcv(sx,sy,vx,vy,DTHR,TTHR)
+    AND
+    vertical_WCV(sz,vz,ZTHR,TCOA)
+
+     %%%%%%%%%%%%%%%%%% end wcv file %%%%%%%%%%%%%%%%%%%%%%%%
+
+    % get sign of real (copied form nasalib reals@sign)
+    sign(x:real): int = IF x >= 0 THEN 1 ELSE -1 ENDIF
+
+    % get max between 2 values
+    max_(a, b: real): real = IF a - b < 0 THEN b ELSE a ENDIF
+
+    % get max between 2 values
+    min_(a, b: real): real = IF a - b > 0 THEN b ELSE a ENDIF
+
+    % uncomment this to type check this file
+    % definition of sqrt (copied from nasalib reals@sqrt)
+    % sqrt(nnx: real): {nnz : real | nnz*nnz = nnx}
+
+    % disctiminant (copied from nasalib reals@quadratic)
+    discr(a, b, c: real) : real = b*b - 4*a*c
+
+    % root of quadratic equation using + sign
+    root_pos(a, b, c: real): real =
+        IF b*b - 4*a*c >= 0 AND a /= 0 THEN
+            (-b + sqrt(abs(b*b - 4*a*c))) / (2*a)
+        ELSE 0 ENDIF
+
+    % root of quadratic equation using - sign
+    root_neg(a, b, c: real): real =
+        IF b*b - 4*a*c >= 0 AND a /= 0 THEN
+            (-b - sqrt(abs(b*b - 4*a*c))) / (2*a)
+        ELSE 0 ENDIF
+
+
+    % inner product between vectors (sx, sy) and (vx, vy)
+    inner_product(sx, sy, vx, vy: real): real =
+        sx*vx + sy*vy
+
+    % cross product between vectors (sx, sy) and (vx, vy)
+    cross_product(sx, sy, vx, vy: real): real =
+        sx*vy - sy*vx
+
+    % squared norm of vector (sx, sy)
+    sq(sx, sy: real): real =
+        inner_product(sx, sy, sx, sy)
+
+    % ULM 1D projection
+    proj(sx, vx, t: real): real =
+        sx + vx * t
+
+    Delta(sx, sy, vx, vy, D: real): real =
+        D*D*sq(vx, vy) - cross_product(sx, sy, vx, vy)*cross_product(sx, sy, vx, vy)
+
+    % Theta D using root with + sign
+    Theta_D_pos(D, sx, sy, vx, vy: real): real =
+        LET a = sq(vx, vy),
+            b = inner_product(sx, sy, vx, vy),
+            c = sq(sx, sy) - D*D IN
+        root_pos(a,2*b,c)
+
+    horizontal_WCV_taumod_interval(T, sx, sy, vx, vy, TAUMOD, DTHR: real): bool =
+    LET a = sq(vx, vy),
+        b = 2 * inner_product(sx, sy, vx, vy) + TAUMOD * sq(vx, vy),
+        c = sq(sx, sy) + TAUMOD * inner_product(sx, sy, vx, vy) - DTHR*DTHR,
+        theta_d_pos = Theta_D_pos(DTHR, sx, sy, vx, vy) IN
+        LET root_neg_var = root_neg(a, b, c) IN
+            IF a > 0 AND sq(sx, sy) - DTHR*DTHR <= 0 THEN
+                0 <= min_(T, theta_d_pos)
+            ELSIF sq(sx, sy) - DTHR*DTHR <= 0 THEN
+                TRUE
+            ELSIF inner_product(sx, sy, vx, vy) >= 0 OR discr(a, b, c) < 0 THEN  FALSE
+            ELSIF Delta(sx, sy, vx, vy, DTHR) >= 0 AND root_neg_var - T  <= 0 THEN
+                max_(0, root_neg_var) - min_(T, theta_d_pos) <= 0
+            ELSE FALSE
+            ENDIF
+
+
+ END wcv_detection_taumod

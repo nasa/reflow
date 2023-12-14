@@ -1,0 +1,96 @@
+wcv_detection_taumod_zvz_nzv: THEORY
+BEGIN
+    sx, sy, sz, vx, vy, nzvx, nzvy, pvz, H, D: VAR real
+    B, TCOA: VAR nnreal
+    T: VAR posreal
+    TAUMOD, DMOD,DTHR,TTHR,ZTHR: VAR posreal
+
+    % IMPORTING reals@sqrt
+    % uncomment this to type check this file
+    % definition of sqrt (copied from nasalib reals@sqrt)
+    sqrt(nnx: real| nnx >= 0): {nnz : nnreal | nnz*nnz = nnx}
+
+    % disctiminant (copied from nasalib reals@quadratic)
+    discr(a, b, c: real) : real = b*b - 4*a*c
+
+    % inner product between vectors (sx, sy) and (vx, vy)
+    inner_product(sx, sy, vx, vy: real): real =
+        sx*vx + sy*vy
+
+    % cross product between vectors (sx, sy) and (vx, vy)
+    cross_product(sx, sy, vx, vy: real): real =
+        sx*vy - sy*vx
+
+    % squared norm of vector (sx, sy)
+    sq(sx, sy: real): real =
+        inner_product(sx, sy, sx, sy)
+
+    Delta(sx, sy, vx, vy, D: real): real
+    = LET cross_product = cross_product(sx, sy, vx, vy)
+      IN D*D*sq(vx, vy) - cross_product*cross_product
+
+    % Assuming:
+    % 1) nzvx /= 0 OR  nzvy /= 0
+    % 2) [unecessary] (2*inner_product(sx, sy, nzvx, nzvy))^2 >= 4*sq(nzvx, nzvy)*(sq(sx, sy) - DTHR*DTHR)
+    %   a) in first if  c(sq(sx, sy) - DTHR*DTHR) < 0 and a > 0 , thus b^2 - 4*a*c > 0
+    %   b) in second if a >= 0 and  delta = D*D*(v.v) - (sxv).(sxv) > 0
+    %      thus  b^2 - 4*a*c > 0, once (sxv).(sxv) = ((sxv)xs).v = ((s.s)v -(s.v)s).v = (s.s)(v.v) - (s.v)^2
+    %      thus delta = D^2(v.v) - [ (s.s)(v.v) - (s.v)^2] = D^2(v.v) + (s.v)^2 - (s.s)(v.v) > 0
+    %      disc = 4(s.v)^2 - 4(v.v)[(s.s)-D^2] =(/4)  (s.v)^2 - (v.v)(s.s) + (v.v)D^2
+    horizontal_WCV_taumod_interval_non_zero_velocity(T, sx, sy, nzvx, (nzvy | nzvx /= 0 OR nzvy /= 0), TAUMOD, DTHR): bool
+    = LET a = sq(nzvx, nzvy), % a /= 0
+          b = 2 * inner_product(sx, sy, nzvx, nzvy) + TAUMOD * sq(nzvx, nzvy),
+          c = sq(sx, sy) + TAUMOD * inner_product(sx, sy, nzvx, nzvy) - DTHR*DTHR
+      IN
+          IF sq(sx, sy) - DTHR*DTHR <= 0
+          THEN % 0 <= min_(T, theta_d_pos) % IFF 0 <=T AND 0<=theta_d_pos
+               LET % theta_d_pos = Theta_D_pos(DTHR, sx, sy, nzvx, nzvy)
+                 %             = root_pos(sq(nzvx, nzvy),2*inner_product(sx, sy, nzvx, nzvy),sq(sx, sy) - DTHR*DTHR)
+                 %             =[ by (3) and sq(nzvx, nzvy) > 0, there's no need for the IF-THEN-ELSE from root_pos ]
+                 root_pos_b  = 2*inner_product(sx, sy, nzvx, nzvy),
+                 root_pos_c  = sq(sx, sy) - DTHR*DTHR IN
+               LET theta_d_pos = (-root_pos_b + sqrt(abs(root_pos_b*root_pos_b - 4*a*root_pos_c))) / (2*a) % TODO abs because of Kodiak
+               IN 0 <=T AND 0<=theta_d_pos
+         ELSIF inner_product(sx, sy, nzvx, nzvy) >= 0 OR discr(a, b, c) < 0 THEN  FALSE
+         ELSE LET root_neg_var = % root_neg(a, b, c) % at this point discr >= 0 and a > 0
+                    (-b - sqrt(abs(b*b - 4*a*c))) / (2*a) % TODO We had to include abs because of a Kodiak error
+              IN
+            IF Delta(sx, sy, nzvx, nzvy, DTHR) >= 0 AND root_neg_var - T  <= 0
+            THEN % max_(0, root_neg_var) - min_(T, theta_d_pos) <= 0
+                LET % theta_d_pos = Theta_D_pos(DTHR, sx, sy, nzvx, nzvy)
+                    %             = root_pos(sq(nzvx, nzvy),2*inner_product(sx, sy, nzvx, nzvy),sq(sx, sy) - DTHR*DTHR)
+                    %             =[ by (3) and sq(nzvx, nzvy) > 0, there's no need for the IF-THEN-ELSE from root_pos ]
+                    root_pos_b  = 2*inner_product(sx, sy, nzvx, nzvy),
+                    root_pos_c  = sq(sx, sy) - DTHR*DTHR IN
+                LET theta_d_pos = (-root_pos_b + sqrt(abs(root_pos_b*root_pos_b - 4*a*root_pos_c))) / (2*a) % TODO abs because of Kodiak
+                IN % max_(0, root_neg_var) - min_(T, theta_d_pos) <= 0
+                     (-root_neg_var <= 0 AND (root_neg_var - T <= 0 AND root_neg_var - theta_d_pos <= 0)) OR
+                     (root_neg_var < 0 AND (-T <= 0 AND -theta_d_pos <= 0))
+            ELSE FALSE
+            ENDIF
+         ENDIF
+
+    % Assuming:
+    % 1) vz = 0
+    % 2) nzvx /= 0 or nzvy /= 0
+    % 3) B < T
+    WCV_interval_zero_vz_non_zero_velocity(B, (T | T > B), sx, sy, sz, nzvx, (nzvy | nzvx /= 0 OR nzvy /= 0), pvz, TAUMOD, DTHR, ZTHR): bool
+    =   LET proj_x112 = sx + nzvx * B,
+                proj_y112 = sy + nzvy * B
+            IN  abs(sz) - ZTHR <= 0 AND
+                horizontal_WCV_taumod_interval_non_zero_velocity(T-B, proj_x112, proj_y112, nzvx, nzvy, TAUMOD, DTHR)
+
+
+    % WCV_detection(sx, sy, sz, vx, vy, vz, B, T: real): bool =
+    %     LET TAUMOD = 1.0, TCOA = 1.0, DTHR = 1.0, TTHR = 1.0, ZTHR = 1.0
+    %     IN
+    %         LET proj_x = sx + vx * B,
+    %             proj_y = sy + vy * B,
+    %             proj_z = sz + vz * B
+    %         IN  IF B - T > 0 THEN WCV_interval(B, T, sx, sy, sz, vx, vy, vz)
+    %             ELSIF (T - B) < 0 THEN FALSE
+    %             ELSE
+    %                 WCV(proj_x, proj_y, proj_z, vx ,vy ,vz , DTHR, TAUMOD, ZTHR, TCOA)
+    %             ENDIF
+
+ END wcv_detection_taumod_zvz_nzv

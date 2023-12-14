@@ -1,0 +1,135 @@
+precisa_prelude_fabs_ensures: THEORY
+ BEGIN
+  IMPORTING int@Int
+  IMPORTING int@Abs
+  IMPORTING int@ComputerDivision
+  IMPORTING real@Real
+  IMPORTING real@RealInfix
+  IMPORTING real@Abs
+  IMPORTING real@FromInt
+  IMPORTING real@Truncate
+  IMPORTING real@Square
+  IMPORTING frama_c_wp_qed@Qed
+  IMPORTING frama_c_wp_reflow@Interface
+  IMPORTING map@Map
+  IMPORTING frama_c_wp_cmath@Cmath
+  IMPORTING frama_c_wp_cmath@Square
+  IMPORTING frama_c_wp_cfloat@Cfloat
+  IMPORTING ieee_float@RoundingMode
+  IMPORTING bv@Pow2int
+  IMPORTING ieee_float@Float32
+  IMPORTING ieee_float@Float64
+  IMPORTING ieee_float@FloatConverter
+  IMPORTING frama_c_wp_cint@Cint
+  % do not edit above this line
+  % surround new declarations you insert below with blank lines
+  
+  % Why3 string
+  string: TYPE+
+  
+  % Why3 unit
+  unit: TYPE+ = []
+  
+  % Why3 l_dgt
+  l_dgt(x:double, x1:double): int
+  
+  % Why3 l_dge
+  l_dge(x:double, x1:double): int
+  
+  % Why3 l_dlt
+  l_dlt(x:double, x1:double): int
+  
+  % Why3 l_dle
+  l_dle(x:double, x1:double): int
+  
+  % Why3 l_dne
+  l_dne(x:double, x1:double): int
+  
+  % Why3 l_deq
+  l_deq(x:double, x1:double): int
+  
+  % Why3 q_tl_dgt
+  q_tl_dgt: AXIOM FORALL (x:double, y:double):
+    frama_c_wp_cint@Cint.is_bool(l_dgt(x, y))
+  
+  % Why3 q_tl_dge
+  q_tl_dge: AXIOM FORALL (x:double, y:double):
+    frama_c_wp_cint@Cint.is_bool(l_dge(x, y))
+  
+  % Why3 q_tl_dlt
+  q_tl_dlt: AXIOM FORALL (x:double, y:double):
+    frama_c_wp_cint@Cint.is_bool(l_dlt(x, y))
+  
+  % Why3 q_tl_dle
+  q_tl_dle: AXIOM FORALL (x:double, y:double):
+    frama_c_wp_cint@Cint.is_bool(l_dle(x, y))
+  
+  % Why3 q_tl_dne
+  q_tl_dne: AXIOM FORALL (x:double, y:double):
+    frama_c_wp_cint@Cint.is_bool(l_dne(x, y))
+  
+  % Why3 q_tl_deq
+  q_tl_deq: AXIOM FORALL (x:double, y:double):
+    frama_c_wp_cint@Cint.is_bool(l_deq(x, y))
+  
+  % Why3 q_dgt_def
+  q_dgt_def: AXIOM FORALL (x:double, y:double): (NOT qlt_double(y, x)) <=>
+    (l_dgt(x, y) = 0)
+  
+  % Why3 q_dge_def
+  q_dge_def: AXIOM FORALL (x:double, y:double): (NOT qle_double(y, x)) <=>
+    (l_dge(x, y) = 0)
+  
+  % Why3 q_dlt_def
+  q_dlt_def: AXIOM FORALL (x:double, y:double): (NOT qlt_double(x, y)) <=>
+    (l_dlt(x, y) = 0)
+  
+  % Why3 q_dle_def
+  q_dle_def: AXIOM FORALL (x:double, y:double): (NOT qle_double(x, y)) <=>
+    (l_dle(x, y) = 0)
+  
+  % Why3 q_dne_def
+  q_dne_def: AXIOM FORALL (x:double, y:double):
+    (NOT (NOT qeq_double(x,y))) <=> (l_dne(x, y) = 0)
+  
+  % Why3 q_deq_def
+  q_deq_def: AXIOM FORALL (x:double, y:double): (NOT qeq_double(x,y)) <=>
+    (l_deq(x, y) = 0)
+  
+  % Why3 l_dmul
+  l_dmul(x:double, y:double): double = mul_double(x,y)
+  
+  % Why3 fliteral
+  fliteral: double
+  
+  % Why3 fliteral_axiom
+  fliteral_axiom: AXIOM finite?_double(fliteral) AND
+    (safe_proj_double(fliteral) = 0)
+  
+  % Why3 l_dabs
+  l_dabs(x:double): double = IF (l_deq(x, fliteral) = 0) THEN IF (l_dlt(x,
+    fliteral) = 0) THEN x ELSE neg_double(x) ENDIF ELSE l_dmul(fliteral,
+    fliteral) ENDIF
+  
+  % Why3 p_equal_fp
+  p_equal_fp(instrumented:double, notinstrumented:double): bool =
+    (NaN?_double(instrumented) => NaN?_double(notinstrumented)) AND
+    ((NOT NaN?_double(instrumented)) =>
+    qeq_double(instrumented,notinstrumented))
+  
+  % Why3 precisa_prelude_fabs_ensures
+  precisa_prelude_fabs_ensures: THEOREM FORALL (f:double, p:bool, f1:double):
+    (IF qeq_double(f1,fliteral) THEN (fliteral = f)
+    ELSE ((NOT (p = TRUE)) AND IF qlt_double(f1, fliteral)
+    THEN (neg_double(f1) = f) ELSE (f1 = f) ENDIF) ENDIF) => p_equal_fp(f,
+    l_dabs(f1))
+  
+  % Obsolete chunk precisa_prelude_fabs_ensures
+  % precisa_prelude_fabs_ensures: THEOREM FORALL (f:double, p:bool, f1:double):
+  %   (IF qeq_double(f1,fliteral) THEN (fliteral = f)
+  %   ELSE ((NOT (p = TRUE)) AND IF qlt_double(f1, fliteral)
+  %   THEN (neg_double(f1) = f) ELSE (f1 = f) ENDIF) ENDIF) => p_equal_fp(f,
+  %   l_dabs(f1))
+  
+ END precisa_prelude_fabs_ensures
+ 

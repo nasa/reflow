@@ -1,0 +1,2598 @@
+vertical_wcv_tauminus_num_ensures: THEORY
+ BEGIN
+  IMPORTING int@Int
+  IMPORTING int@Abs
+  IMPORTING int@ComputerDivision
+  IMPORTING real@Real
+  IMPORTING real@Abs
+  IMPORTING real@FromInt
+  IMPORTING real@Square
+  % do not edit above this line
+  % surround new declarations you insert below with blank lines
+  
+  % Why3 string
+  string: TYPE+
+  
+  % Why3 unit
+  unit: TYPE+ = []
+  
+  % Why3 eqb
+  eqb[a:TYPE+](x:a, x1:a): bool
+  
+  % Why3 eqb1
+  eqb1[a:TYPE+]: AXIOM FORALL (x:a, y:a): (eqb(x, y) = TRUE) <=> (x = y)
+  
+  % Why3 eqb_false
+  eqb_false[a:TYPE+]: AXIOM FORALL (x:a, y:a): (eqb(x, y) = FALSE) <=>
+    NOT (x = y)
+  
+  % Why3 neqb
+  neqb[a:TYPE+](x:a, x1:a): bool
+  
+  % Why3 neqb1
+  neqb1[a:TYPE+]: AXIOM FORALL (x:a, y:a): (neqb(x, y) = TRUE) <=>
+    NOT (x = y)
+  
+  % Why3 zlt
+  zlt(x:int, x1:int): bool
+  
+  % Why3 zleq
+  zleq(x:int, x1:int): bool
+  
+  % Why3 zlt1
+  zlt1: AXIOM FORALL (x:int, y:int): (zlt(x, y) = TRUE) <=> (x <  y)
+  
+  % Why3 zleq1
+  zleq1: AXIOM FORALL (x:int, y:int): (zleq(x, y) = TRUE) <=> (x <= y)
+  
+  % Why3 rlt
+  rlt(x:real, x1:real): bool
+  
+  % Why3 rleq
+  rleq(x:real, x1:real): bool
+  
+  % Why3 rlt1
+  rlt1: AXIOM FORALL (x:real, y:real): (rlt(x, y) = TRUE) <=> (x <  y)
+  
+  % Why3 rleq1
+  rleq1: AXIOM FORALL (x:real, y:real): (rleq(x, y) = TRUE) <=> (x <= y)
+  
+  % Why3 real_of_int
+  real_of_int(x:int): real = (x :: real)
+  
+  % Why3 c_euclidian
+  c_euclidian: AXIOM FORALL (n:int, d:int): (NOT (d = 0)) =>
+    (n = ((int@ComputerDivision.div(n, d) * d) + int@ComputerDivision.mod1(n,
+    d)))
+  
+  % Why3 cmod_remainder
+  cmod_remainder: AXIOM FORALL (n:int, d:int): ((n >= 0) => ((d >  0) =>
+    ((0 <= int@ComputerDivision.mod1(n, d)) AND (int@ComputerDivision.mod1(n,
+    d) <  d)))) AND (((n <= 0) => ((d >  0) =>
+    (((-d) <  int@ComputerDivision.mod1(n, d)) AND
+    (int@ComputerDivision.mod1(n, d) <= 0)))) AND (((n >= 0) => ((d <  0) =>
+    ((0 <= int@ComputerDivision.mod1(n, d)) AND (int@ComputerDivision.mod1(n,
+    d) <  (-d))))) AND ((n <= 0) => ((d <  0) =>
+    ((d <  int@ComputerDivision.mod1(n, d)) AND (int@ComputerDivision.mod1(n,
+    d) <= 0))))))
+  
+  % Why3 cdiv_neutral
+  cdiv_neutral: AXIOM FORALL (a:int): (int@ComputerDivision.div(a, 1) = a)
+  
+  % Why3 cdiv_inv
+  cdiv_inv: AXIOM FORALL (a:int): (NOT (a = 0)) =>
+    (int@ComputerDivision.div(a, a) = 1)
+  
+  % Why3 cdiv_closed_remainder
+  cdiv_closed_remainder: AXIOM FORALL (a:int, b:int, n:int): (0 <= a) =>
+    ((0 <= b) => (((0 <= (b - a)) AND ((b - a) <  n)) =>
+    ((int@ComputerDivision.mod1(a, n) = int@ComputerDivision.mod1(b, n)) =>
+    (a = b))))
+  
+  % Why3 map
+  map[a:TYPE+, b:TYPE+]: TYPE+ = [a -> b]
+  
+  % Why3 abs_def
+  abs_def: AXIOM FORALL (x:int): IF (x >= 0) THEN (abs(x) = x)
+    ELSE (abs(x) = (-x)) ENDIF
+  
+  % Why3 sqrt_lin1
+  sqrt_lin1: AXIOM FORALL (x:real): (1 <  x) => (real@Square.sqrt(x) <  x)
+  
+  % Why3 sqrt_lin0
+  sqrt_lin0: AXIOM FORALL (x:real): ((0 <  x) AND (x <  1)) =>
+    (x <  real@Square.sqrt(x))
+  
+  % Why3 sqrt_0
+  sqrt_0: AXIOM (real@Square.sqrt(0) = 0)
+  
+  % Why3 sqrt_1
+  sqrt_1: AXIOM (real@Square.sqrt(1) = 1)
+  
+  % Why3 mode
+  mode: DATATYPE
+   BEGIN
+    rne: rne?
+    rna: rna?
+    rtp: rtp?
+    rtn: rtn?
+    rtz: rtz?
+   END mode
+  
+  % Why3 to_nearest
+  to_nearest(m:mode): bool = (m = rne) OR (m = rna)
+  
+  % Why3 t
+  t: TYPE+
+  
+  % Why3 tqtreal
+  tqtreal(x:t): real
+  
+  % Why3 tqtisfinite
+  tqtisfinite(x:t): bool
+  
+  % Why3 tqtaxiom
+  tqtaxiom: AXIOM FORALL (x:t): tqtisfinite(x) =>
+    (((-340282346638528859811704183484516925440) <= tqtreal(x)) AND
+    (tqtreal(x) <= 340282346638528859811704183484516925440))
+  
+  % Why3 tqteb
+  tqteb: int = 8
+  
+  % Why3 tqtsb
+  tqtsb: int = 24
+  
+  % Why3 pow2sb
+  pow2sb: int = 16777216
+  
+  % Why3 max_real
+  max_real: real = (33554430 * 10141204801825835211973625643008)
+  
+  % Why3 pow2
+  pow2(x:int): int
+  
+  % Why3 power_0
+  power_0: AXIOM (pow2(0) = 1)
+  
+  % Why3 power_s
+  power_s: AXIOM FORALL (n:int): (n >= 0) => (pow2((n + 1)) = (2 * pow2(n)))
+  
+  % Why3 power_1
+  power_1: AXIOM (pow2(1) = 2)
+  
+  % Why3 power_sum
+  power_sum: AXIOM FORALL (n:int, m:int): ((n >= 0) AND (m >= 0)) =>
+    (pow2((n + m)) = (pow2(n) * pow2(m)))
+  
+  % Why3 pow2pos
+  pow2pos: AXIOM FORALL (i:int): (i >= 0) => (pow2(i) >  0)
+  
+  % Why3 pow2_0
+  pow2_0: AXIOM (pow2(0) = 1)
+  
+  % Why3 pow2_1
+  pow2_1: AXIOM (pow2(1) = 2)
+  
+  % Why3 pow2_2
+  pow2_2: AXIOM (pow2(2) = 4)
+  
+  % Why3 pow2_3
+  pow2_3: AXIOM (pow2(3) = 8)
+  
+  % Why3 pow2_4
+  pow2_4: AXIOM (pow2(4) = 16)
+  
+  % Why3 pow2_5
+  pow2_5: AXIOM (pow2(5) = 32)
+  
+  % Why3 pow2_6
+  pow2_6: AXIOM (pow2(6) = 64)
+  
+  % Why3 pow2_7
+  pow2_7: AXIOM (pow2(7) = 128)
+  
+  % Why3 pow2_8
+  pow2_8: AXIOM (pow2(8) = 256)
+  
+  % Why3 pow2_9
+  pow2_9: AXIOM (pow2(9) = 512)
+  
+  % Why3 pow2_10
+  pow2_10: AXIOM (pow2(10) = 1024)
+  
+  % Why3 pow2_11
+  pow2_11: AXIOM (pow2(11) = 2048)
+  
+  % Why3 pow2_12
+  pow2_12: AXIOM (pow2(12) = 4096)
+  
+  % Why3 pow2_13
+  pow2_13: AXIOM (pow2(13) = 8192)
+  
+  % Why3 pow2_14
+  pow2_14: AXIOM (pow2(14) = 16384)
+  
+  % Why3 pow2_15
+  pow2_15: AXIOM (pow2(15) = 32768)
+  
+  % Why3 pow2_16
+  pow2_16: AXIOM (pow2(16) = 65536)
+  
+  % Why3 pow2_17
+  pow2_17: AXIOM (pow2(17) = 131072)
+  
+  % Why3 pow2_18
+  pow2_18: AXIOM (pow2(18) = 262144)
+  
+  % Why3 pow2_19
+  pow2_19: AXIOM (pow2(19) = 524288)
+  
+  % Why3 pow2_20
+  pow2_20: AXIOM (pow2(20) = 1048576)
+  
+  % Why3 pow2_21
+  pow2_21: AXIOM (pow2(21) = 2097152)
+  
+  % Why3 pow2_22
+  pow2_22: AXIOM (pow2(22) = 4194304)
+  
+  % Why3 pow2_23
+  pow2_23: AXIOM (pow2(23) = 8388608)
+  
+  % Why3 pow2_24
+  pow2_24: AXIOM (pow2(24) = 16777216)
+  
+  % Why3 pow2_25
+  pow2_25: AXIOM (pow2(25) = 33554432)
+  
+  % Why3 pow2_26
+  pow2_26: AXIOM (pow2(26) = 67108864)
+  
+  % Why3 pow2_27
+  pow2_27: AXIOM (pow2(27) = 134217728)
+  
+  % Why3 pow2_28
+  pow2_28: AXIOM (pow2(28) = 268435456)
+  
+  % Why3 pow2_29
+  pow2_29: AXIOM (pow2(29) = 536870912)
+  
+  % Why3 pow2_30
+  pow2_30: AXIOM (pow2(30) = 1073741824)
+  
+  % Why3 pow2_31
+  pow2_31: AXIOM (pow2(31) = 2147483648)
+  
+  % Why3 pow2_32
+  pow2_32: AXIOM (pow2(32) = 4294967296)
+  
+  % Why3 pow2_33
+  pow2_33: AXIOM (pow2(33) = 8589934592)
+  
+  % Why3 pow2_34
+  pow2_34: AXIOM (pow2(34) = 17179869184)
+  
+  % Why3 pow2_35
+  pow2_35: AXIOM (pow2(35) = 34359738368)
+  
+  % Why3 pow2_36
+  pow2_36: AXIOM (pow2(36) = 68719476736)
+  
+  % Why3 pow2_37
+  pow2_37: AXIOM (pow2(37) = 137438953472)
+  
+  % Why3 pow2_38
+  pow2_38: AXIOM (pow2(38) = 274877906944)
+  
+  % Why3 pow2_39
+  pow2_39: AXIOM (pow2(39) = 549755813888)
+  
+  % Why3 pow2_40
+  pow2_40: AXIOM (pow2(40) = 1099511627776)
+  
+  % Why3 pow2_41
+  pow2_41: AXIOM (pow2(41) = 2199023255552)
+  
+  % Why3 pow2_42
+  pow2_42: AXIOM (pow2(42) = 4398046511104)
+  
+  % Why3 pow2_43
+  pow2_43: AXIOM (pow2(43) = 8796093022208)
+  
+  % Why3 pow2_44
+  pow2_44: AXIOM (pow2(44) = 17592186044416)
+  
+  % Why3 pow2_45
+  pow2_45: AXIOM (pow2(45) = 35184372088832)
+  
+  % Why3 pow2_46
+  pow2_46: AXIOM (pow2(46) = 70368744177664)
+  
+  % Why3 pow2_47
+  pow2_47: AXIOM (pow2(47) = 140737488355328)
+  
+  % Why3 pow2_48
+  pow2_48: AXIOM (pow2(48) = 281474976710656)
+  
+  % Why3 pow2_49
+  pow2_49: AXIOM (pow2(49) = 562949953421312)
+  
+  % Why3 pow2_50
+  pow2_50: AXIOM (pow2(50) = 1125899906842624)
+  
+  % Why3 pow2_51
+  pow2_51: AXIOM (pow2(51) = 2251799813685248)
+  
+  % Why3 pow2_52
+  pow2_52: AXIOM (pow2(52) = 4503599627370496)
+  
+  % Why3 pow2_53
+  pow2_53: AXIOM (pow2(53) = 9007199254740992)
+  
+  % Why3 pow2_54
+  pow2_54: AXIOM (pow2(54) = 18014398509481984)
+  
+  % Why3 pow2_55
+  pow2_55: AXIOM (pow2(55) = 36028797018963968)
+  
+  % Why3 pow2_56
+  pow2_56: AXIOM (pow2(56) = 72057594037927936)
+  
+  % Why3 pow2_57
+  pow2_57: AXIOM (pow2(57) = 144115188075855872)
+  
+  % Why3 pow2_58
+  pow2_58: AXIOM (pow2(58) = 288230376151711744)
+  
+  % Why3 pow2_59
+  pow2_59: AXIOM (pow2(59) = 576460752303423488)
+  
+  % Why3 pow2_60
+  pow2_60: AXIOM (pow2(60) = 1152921504606846976)
+  
+  % Why3 pow2_61
+  pow2_61: AXIOM (pow2(61) = 2305843009213693952)
+  
+  % Why3 pow2_62
+  pow2_62: AXIOM (pow2(62) = 4611686018427387904)
+  
+  % Why3 pow2_63
+  pow2_63: AXIOM (pow2(63) = 9223372036854775808)
+  
+  % Why3 pow2_64
+  pow2_64: AXIOM (pow2(64) = 18446744073709551616)
+  
+  % Why3 truncate
+  truncate(x:real): int
+  
+  % Why3 truncate_int
+  truncate_int: AXIOM FORALL (i:int): (truncate((i :: real)) = i)
+  
+  % Why3 truncate_down_pos
+  truncate_down_pos: AXIOM FORALL (x:real): (x >= 0) =>
+    (((truncate(x) :: real) <= x) AND (x <  ((truncate(x) + 1) :: real)))
+  
+  % Why3 truncate_up_neg
+  truncate_up_neg: AXIOM FORALL (x:real): (x <= 0) =>
+    ((((truncate(x) - 1) :: real) <  x) AND (x <= (truncate(x) :: real)))
+  
+  % Why3 real_of_truncate
+  real_of_truncate: AXIOM FORALL (x:real):
+    ((x - 1) <= (truncate(x) :: real)) AND ((truncate(x) :: real) <= (x + 1))
+  
+  % Why3 truncate_monotonic
+  truncate_monotonic: AXIOM FORALL (x:real, y:real): (x <= y) =>
+    (truncate(x) <= truncate(y))
+  
+  % Why3 truncate_monotonic_int1
+  truncate_monotonic_int1: AXIOM FORALL (x:real, i:int):
+    (x <= (i :: real)) => (truncate(x) <= i)
+  
+  % Why3 truncate_monotonic_int2
+  truncate_monotonic_int2: AXIOM FORALL (x:real, i:int):
+    ((i :: real) <= x) => (i <= truncate(x))
+  
+  % Why3 floor
+  floor(x:real): int
+  
+  % Why3 ceil
+  ceil(x:real): int
+  
+  % Why3 floor_int
+  floor_int: AXIOM FORALL (i:int): (floor((i :: real)) = i)
+  
+  % Why3 ceil_int
+  ceil_int: AXIOM FORALL (i:int): (ceil((i :: real)) = i)
+  
+  % Why3 floor_down
+  floor_down: AXIOM FORALL (x:real): ((floor(x) :: real) <= x) AND
+    (x <  ((floor(x) + 1) :: real))
+  
+  % Why3 ceil_up
+  ceil_up: AXIOM FORALL (x:real): (((ceil(x) - 1) :: real) <  x) AND
+    (x <= (ceil(x) :: real))
+  
+  % Why3 floor_monotonic
+  floor_monotonic: AXIOM FORALL (x:real, y:real): (x <= y) =>
+    (floor(x) <= floor(y))
+  
+  % Why3 ceil_monotonic
+  ceil_monotonic: AXIOM FORALL (x:real, y:real): (x <= y) =>
+    (ceil(x) <= ceil(y))
+  
+  % Why3 zerof
+  zerof: t
+  
+  % Why3 add1
+  add1(x:mode, x1:t, x2:t): t
+  
+  % Why3 sub
+  sub(x:mode, x1:t, x2:t): t
+  
+  % Why3 mul
+  mul(x:mode, x1:t, x2:t): t
+  
+  % Why3 div
+  div(x:mode, x1:t, x2:t): t
+  
+  % Why3 abs1
+  abs1(x:t): t
+  
+  % Why3 neg
+  neg(x:t): t
+  
+  % Why3 fma
+  fma(x:mode, x1:t, x2:t, x3:t): t
+  
+  % Why3 sqrt
+  sqrt(x:mode, x1:t): t
+  
+  % Why3 prefix_dtmn
+  prefix_dtmn(x:t): t = neg(x)
+  
+  % Why3 infix_dtpl
+  infix_dtpl(x:t, y:t): t = add1(rne, x, y)
+  
+  % Why3 infix_dtmn
+  infix_dtmn(x:t, y:t): t = sub(rne, x, y)
+  
+  % Why3 infix_dtas
+  infix_dtas(x:t, y:t): t = mul(rne, x, y)
+  
+  % Why3 infix_dtsl
+  infix_dtsl(x:t, y:t): t = div(rne, x, y)
+  
+  % Why3 roundtointegral
+  roundtointegral(x:mode, x1:t): t
+  
+  % Why3 min1
+  min1(x:t, x1:t): t
+  
+  % Why3 max1
+  max1(x:t, x1:t): t
+  
+  % Why3 le
+  le(x:t, x1:t): bool
+  
+  % Why3 lt
+  lt(x:t, x1:t): bool
+  
+  % Why3 ge
+  ge(x:t, y:t): bool = le(y, x)
+  
+  % Why3 gt
+  gt(x:t, y:t): bool = lt(y, x)
+  
+  % Why3 eq1
+  eq1(x:t, x1:t): bool
+  
+  % Why3 infix_dtlseq
+  infix_dtlseq(x:t, y:t): bool = le(x, y)
+  
+  % Why3 infix_dtls
+  infix_dtls(x:t, y:t): bool = lt(x, y)
+  
+  % Why3 infix_dtgteq
+  infix_dtgteq(x:t, y:t): bool = ge(x, y)
+  
+  % Why3 infix_dtgt
+  infix_dtgt(x:t, y:t): bool = gt(x, y)
+  
+  % Why3 infix_dteq
+  infix_dteq(x:t, y:t): bool = eq1(x, y)
+  
+  % Why3 is_normal
+  is_normal(x:t): bool
+  
+  % Why3 is_subnormal
+  is_subnormal(x:t): bool
+  
+  % Why3 is_zero
+  is_zero(x:t): bool
+  
+  % Why3 is_infinite
+  is_infinite(x:t): bool
+  
+  % Why3 is_nan
+  is_nan(x:t): bool
+  
+  % Why3 is_positive
+  is_positive(x:t): bool
+  
+  % Why3 is_negative
+  is_negative(x:t): bool
+  
+  % Why3 is_plus_infinity
+  is_plus_infinity(x:t): bool = is_infinite(x) AND is_positive(x)
+  
+  % Why3 is_minus_infinity
+  is_minus_infinity(x:t): bool = is_infinite(x) AND is_negative(x)
+  
+  % Why3 is_plus_zero
+  is_plus_zero(x:t): bool = is_zero(x) AND is_positive(x)
+  
+  % Why3 is_minus_zero
+  is_minus_zero(x:t): bool = is_zero(x) AND is_negative(x)
+  
+  % Why3 is_not_nan
+  is_not_nan(x:t): bool = tqtisfinite(x) OR is_infinite(x)
+  
+  % Why3 is_not_nan1
+  is_not_nan1: AXIOM FORALL (x:t): is_not_nan(x) <=> NOT is_nan(x)
+  
+  % Why3 is_not_finite
+  is_not_finite: AXIOM FORALL (x:t): (NOT tqtisfinite(x)) <=>
+    (is_infinite(x) OR is_nan(x))
+  
+  % Why3 zerof_is_positive
+  zerof_is_positive: AXIOM is_positive(zerof)
+  
+  % Why3 zerof_is_zero
+  zerof_is_zero: AXIOM is_zero(zerof)
+  
+  % Why3 zero_to_real
+  zero_to_real: AXIOM FORALL (x:t): is_zero(x) <=> (tqtisfinite(x) AND
+    (tqtreal(x) = 0))
+  
+  % Why3 of_int
+  of_int(x:mode, x1:int): t
+  
+  % Why3 to_int
+  to_int(x:mode, x1:t): int
+  
+  % Why3 zero_of_int
+  zero_of_int: AXIOM FORALL (m:mode): (zerof = of_int(m, 0))
+  
+  % Why3 round
+  round(x:mode, x1:real): real
+  
+  % Why3 max_int
+  max_int: int
+  
+  % Why3 emax
+  emax: int = pow2((tqteb - 1))
+  
+  % Why3 max_real_int
+  max_real_int: AXIOM (max_real = (max_int :: real))
+  
+  % Why3 in_range
+  in_range(x:real): bool = ((-max_real) <= x) AND (x <= max_real)
+  
+  % Why3 in_int_range
+  in_int_range(i:int): bool = ((-max_int) <= i) AND (i <= max_int)
+  
+  % Why3 is_finite
+  is_finite: AXIOM FORALL (x:t): tqtisfinite(x) => in_range(tqtreal(x))
+  
+  % Why3 no_overflow
+  no_overflow(m:mode, x:real): bool = in_range(round(m, x))
+  
+  % Why3 bounded_real_no_overflow
+  bounded_real_no_overflow: AXIOM FORALL (m:mode, x:real): in_range(x) =>
+    no_overflow(m, x)
+  
+  % Why3 round_monotonic
+  round_monotonic: AXIOM FORALL (m:mode, x:real, y:real): (x <= y) =>
+    (round(m, x) <= round(m, y))
+  
+  % Why3 round_idempotent
+  round_idempotent: AXIOM FORALL (m1:mode, m2:mode, x:real): (round(m1,
+    round(m2, x)) = round(m2, x))
+  
+  % Why3 round_to_real
+  round_to_real: AXIOM FORALL (m:mode, x:t): tqtisfinite(x) => (round(m,
+    tqtreal(x)) = tqtreal(x))
+  
+  % Why3 round_down_le
+  round_down_le: AXIOM FORALL (x:real): (round(rtn, x) <= x)
+  
+  % Why3 round_up_ge
+  round_up_ge: AXIOM FORALL (x:real): (round(rtp, x) >= x)
+  
+  % Why3 round_down_neg
+  round_down_neg: AXIOM FORALL (x:real): (round(rtn, (-x)) = (-round(rtp,
+    x)))
+  
+  % Why3 round_up_neg
+  round_up_neg: AXIOM FORALL (x:real): (round(rtp, (-x)) = (-round(rtn, x)))
+  
+  % Why3 in_safe_int_range
+  in_safe_int_range(i:int): bool = ((-pow2sb) <= i) AND (i <= pow2sb)
+  
+  % Why3 exact_rounding_for_integers
+  exact_rounding_for_integers: AXIOM FORALL (m:mode, i:int):
+    in_safe_int_range(i) => (round(m, (i :: real)) = (i :: real))
+  
+  % Why3 same_sign
+  same_sign(x:t, y:t): bool = (is_positive(x) AND is_positive(y)) OR
+    (is_negative(x) AND is_negative(y))
+  
+  % Why3 diff_sign
+  diff_sign(x:t, y:t): bool = (is_positive(x) AND is_negative(y)) OR
+    (is_negative(x) AND is_positive(y))
+  
+  % Why3 feq_eq
+  feq_eq: AXIOM FORALL (x:t, y:t): tqtisfinite(x) => (tqtisfinite(y) =>
+    ((NOT is_zero(x)) => (infix_dteq(x, y) => (x = y))))
+  
+  % Why3 eq_feq
+  eq_feq: AXIOM FORALL (x:t, y:t): tqtisfinite(x) => (tqtisfinite(y) =>
+    ((x = y) => infix_dteq(x, y)))
+  
+  % Why3 eq_refl
+  eq_refl: AXIOM FORALL (x:t): tqtisfinite(x) => infix_dteq(x, x)
+  
+  % Why3 eq_sym
+  eq_sym: AXIOM FORALL (x:t, y:t): infix_dteq(x, y) => infix_dteq(y, x)
+  
+  % Why3 eq_trans
+  eq_trans: AXIOM FORALL (x:t, y:t, z:t): infix_dteq(x, y) => (infix_dteq(y,
+    z) => infix_dteq(x, z))
+  
+  % Why3 eq_zero
+  eq_zero: AXIOM infix_dteq(zerof, prefix_dtmn(zerof))
+  
+  % Why3 eq_to_real_finite
+  eq_to_real_finite: AXIOM FORALL (x:t, y:t): (tqtisfinite(x) AND
+    tqtisfinite(y)) => (infix_dteq(x, y) <=> (tqtreal(x) = tqtreal(y)))
+  
+  % Why3 eq_special
+  eq_special: AXIOM FORALL (x:t, y:t): infix_dteq(x, y) => (is_not_nan(x) AND
+    (is_not_nan(y) AND ((tqtisfinite(x) AND tqtisfinite(y)) OR
+    (is_infinite(x) AND (is_infinite(y) AND same_sign(x, y))))))
+  
+  % Why3 lt_finite
+  lt_finite: AXIOM FORALL (x:t, y:t): (tqtisfinite(x) AND tqtisfinite(y)) =>
+    (lt(x, y) <=> (tqtreal(x) <  tqtreal(y)))
+  
+  % Why3 le_finite
+  le_finite: AXIOM FORALL (x:t, y:t): (tqtisfinite(x) AND tqtisfinite(y)) =>
+    (le(x, y) <=> (tqtreal(x) <= tqtreal(y)))
+  
+  % Why3 le_lt_trans
+  le_lt_trans: AXIOM FORALL (x:t, y:t, z:t): (infix_dtlseq(x, y) AND
+    infix_dtls(y, z)) => infix_dtls(x, z)
+  
+  % Why3 lt_le_trans
+  lt_le_trans: AXIOM FORALL (x:t, y:t, z:t): (infix_dtls(x, y) AND
+    infix_dtlseq(y, z)) => infix_dtls(x, z)
+  
+  % Why3 le_ge_asym
+  le_ge_asym: AXIOM FORALL (x:t, y:t): (infix_dtlseq(x, y) AND
+    infix_dtgteq(x, y)) => infix_dteq(x, y)
+  
+  % Why3 not_lt_ge
+  not_lt_ge: AXIOM FORALL (x:t, y:t): ((NOT infix_dtls(x, y)) AND
+    (is_not_nan(x) AND is_not_nan(y))) => infix_dtgteq(x, y)
+  
+  % Why3 not_gt_le
+  not_gt_le: AXIOM FORALL (x:t, y:t): ((NOT infix_dtgt(x, y)) AND
+    (is_not_nan(x) AND is_not_nan(y))) => infix_dtlseq(x, y)
+  
+  % Why3 le_special
+  le_special: AXIOM FORALL (x:t, y:t): le(x, y) => ((tqtisfinite(x) AND
+    tqtisfinite(y)) OR ((is_minus_infinity(x) AND is_not_nan(y)) OR
+    (is_not_nan(x) AND is_plus_infinity(y))))
+  
+  % Why3 lt_special
+  lt_special: AXIOM FORALL (x:t, y:t): lt(x, y) => ((tqtisfinite(x) AND
+    tqtisfinite(y)) OR ((is_minus_infinity(x) AND (is_not_nan(y) AND
+    NOT is_minus_infinity(y))) OR (is_not_nan(x) AND
+    ((NOT is_plus_infinity(x)) AND is_plus_infinity(y)))))
+  
+  % Why3 lt_lt_finite
+  lt_lt_finite: AXIOM FORALL (x:t, y:t, z:t): lt(x, y) => (lt(y, z) =>
+    tqtisfinite(y))
+  
+  % Why3 positive_to_real
+  positive_to_real: AXIOM FORALL (x:t): tqtisfinite(x) => (is_positive(x) =>
+    (tqtreal(x) >= 0))
+  
+  % Why3 to_real_positive
+  to_real_positive: AXIOM FORALL (x:t): tqtisfinite(x) =>
+    ((tqtreal(x) >  0) => is_positive(x))
+  
+  % Why3 negative_to_real
+  negative_to_real: AXIOM FORALL (x:t): tqtisfinite(x) => (is_negative(x) =>
+    (tqtreal(x) <= 0))
+  
+  % Why3 to_real_negative
+  to_real_negative: AXIOM FORALL (x:t): tqtisfinite(x) =>
+    ((tqtreal(x) <  0) => is_negative(x))
+  
+  % Why3 negative_xor_positive
+  negative_xor_positive: AXIOM FORALL (x:t): NOT (is_positive(x) AND
+    is_negative(x))
+  
+  % Why3 negative_or_positive
+  negative_or_positive: AXIOM FORALL (x:t): is_not_nan(x) =>
+    (is_positive(x) OR is_negative(x))
+  
+  % Why3 diff_sign_trans
+  diff_sign_trans: AXIOM FORALL (x:t, y:t, z:t): (diff_sign(x, y) AND
+    diff_sign(y, z)) => same_sign(x, z)
+  
+  % Why3 diff_sign_product
+  diff_sign_product: AXIOM FORALL (x:t, y:t): (tqtisfinite(x) AND
+    (tqtisfinite(y) AND ((tqtreal(x) * tqtreal(y)) <  0))) => diff_sign(x, y)
+  
+  % Why3 same_sign_product
+  same_sign_product: AXIOM FORALL (x:t, y:t): (tqtisfinite(x) AND
+    (tqtisfinite(y) AND same_sign(x, y))) => ((tqtreal(x) * tqtreal(y)) >= 0)
+  
+  % Why3 product_sign
+  product_sign(z:t, x:t, y:t): bool = (same_sign(x, y) => is_positive(z)) AND
+    (diff_sign(x, y) => is_negative(z))
+  
+  % Why3 overflow_value
+  overflow_value(m:mode, x:t): bool =
+    CASES m OF
+     rtn: IF is_positive(x) THEN tqtisfinite(x) AND (tqtreal(x) = max_real)
+        ELSE is_infinite(x) ENDIF,
+     rtp: IF is_positive(x) THEN is_infinite(x) ELSE (tqtisfinite(x) AND
+        (tqtreal(x) = (-max_real))) ENDIF,
+     rtz: IF is_positive(x) THEN tqtisfinite(x) AND (tqtreal(x) = max_real)
+        ELSE (tqtisfinite(x) AND (tqtreal(x) = (-max_real))) ENDIF,
+     rna: is_infinite(x),
+     rne: is_infinite(x)
+    ENDCASES
+  
+  % Why3 sign_zero_result
+  sign_zero_result(m:mode, x:t): bool = is_zero(x) =>
+    CASES m OF
+     rtn: is_negative(x)
+    ELSE is_positive(x)
+    ENDCASES
+  
+  % Why3 add_finite
+  add_finite: AXIOM FORALL (m:mode, x:t, y:t): tqtisfinite(x) =>
+    (tqtisfinite(y) => (no_overflow(m, (tqtreal(x) + tqtreal(y))) =>
+    (tqtisfinite(add1(m, x, y)) AND (tqtreal(add1(m, x, y)) = round(m,
+    (tqtreal(x) + tqtreal(y)))))))
+  
+  % Why3 add_finite_rev
+  add_finite_rev: AXIOM FORALL (m:mode, x:t, y:t): tqtisfinite(add1(m, x,
+    y)) => (tqtisfinite(x) AND tqtisfinite(y))
+  
+  % Why3 add_finite_rev_n
+  add_finite_rev_n: AXIOM FORALL (m:mode, x:t, y:t): to_nearest(m) =>
+    (tqtisfinite(add1(m, x, y)) => (no_overflow(m,
+    (tqtreal(x) + tqtreal(y))) AND (tqtreal(add1(m, x, y)) = round(m,
+    (tqtreal(x) + tqtreal(y))))))
+  
+  % Why3 sub_finite
+  sub_finite: AXIOM FORALL (m:mode, x:t, y:t): tqtisfinite(x) =>
+    (tqtisfinite(y) => (no_overflow(m, (tqtreal(x) - tqtreal(y))) =>
+    (tqtisfinite(sub(m, x, y)) AND (tqtreal(sub(m, x, y)) = round(m,
+    (tqtreal(x) - tqtreal(y)))))))
+  
+  % Why3 sub_finite_rev
+  sub_finite_rev: AXIOM FORALL (m:mode, x:t, y:t): tqtisfinite(sub(m, x,
+    y)) => (tqtisfinite(x) AND tqtisfinite(y))
+  
+  % Why3 sub_finite_rev_n
+  sub_finite_rev_n: AXIOM FORALL (m:mode, x:t, y:t): to_nearest(m) =>
+    (tqtisfinite(sub(m, x, y)) => (no_overflow(m,
+    (tqtreal(x) - tqtreal(y))) AND (tqtreal(sub(m, x, y)) = round(m,
+    (tqtreal(x) - tqtreal(y))))))
+  
+  % Why3 mul_finite
+  mul_finite: AXIOM FORALL (m:mode, x:t, y:t): tqtisfinite(x) =>
+    (tqtisfinite(y) => (no_overflow(m, (tqtreal(x) * tqtreal(y))) =>
+    (tqtisfinite(mul(m, x, y)) AND (tqtreal(mul(m, x, y)) = round(m,
+    (tqtreal(x) * tqtreal(y)))))))
+  
+  % Why3 mul_finite_rev
+  mul_finite_rev: AXIOM FORALL (m:mode, x:t, y:t): tqtisfinite(mul(m, x,
+    y)) => (tqtisfinite(x) AND tqtisfinite(y))
+  
+  % Why3 mul_finite_rev_n
+  mul_finite_rev_n: AXIOM FORALL (m:mode, x:t, y:t): to_nearest(m) =>
+    (tqtisfinite(mul(m, x, y)) => (no_overflow(m,
+    (tqtreal(x) * tqtreal(y))) AND (tqtreal(mul(m, x, y)) = round(m,
+    (tqtreal(x) * tqtreal(y))))))
+  
+  % Why3 div_finite
+  div_finite: AXIOM FORALL (m:mode, x:t, y:t): tqtisfinite(x) =>
+    (tqtisfinite(y) => ((NOT is_zero(y)) => (no_overflow(m,
+    real@Real.infix_sl(tqtreal(x), tqtreal(y))) => (tqtisfinite(div(m, x,
+    y)) AND (tqtreal(div(m, x, y)) = round(m,
+    real@Real.infix_sl(tqtreal(x), tqtreal(y))))))))
+  
+  % Why3 div_finite_rev
+  div_finite_rev: AXIOM FORALL (m:mode, x:t, y:t): tqtisfinite(div(m, x,
+    y)) => ((tqtisfinite(x) AND (tqtisfinite(y) AND NOT is_zero(y))) OR
+    (tqtisfinite(x) AND (is_infinite(y) AND (tqtreal(div(m, x, y)) = 0))))
+  
+  % Why3 div_finite_rev_n
+  div_finite_rev_n: AXIOM FORALL (m:mode, x:t, y:t): to_nearest(m) =>
+    (tqtisfinite(div(m, x, y)) => (tqtisfinite(y) => (no_overflow(m,
+    real@Real.infix_sl(tqtreal(x), tqtreal(y))) AND (tqtreal(div(m, x,
+    y)) = round(m, real@Real.infix_sl(tqtreal(x), tqtreal(y)))))))
+  
+  % Why3 neg_finite
+  neg_finite: AXIOM FORALL (x:t): tqtisfinite(x) => (tqtisfinite(neg(x)) AND
+    (tqtreal(neg(x)) = (-tqtreal(x))))
+  
+  % Why3 neg_finite_rev
+  neg_finite_rev: AXIOM FORALL (x:t): tqtisfinite(neg(x)) =>
+    (tqtisfinite(x) AND (tqtreal(neg(x)) = (-tqtreal(x))))
+  
+  % Why3 abs_finite
+  abs_finite: AXIOM FORALL (x:t): tqtisfinite(x) => (tqtisfinite(abs1(x)) AND
+    ((tqtreal(abs1(x)) = abs(tqtreal(x))) AND is_positive(abs1(x))))
+  
+  % Why3 abs_finite_rev
+  abs_finite_rev: AXIOM FORALL (x:t): tqtisfinite(abs1(x)) =>
+    (tqtisfinite(x) AND (tqtreal(abs1(x)) = abs(tqtreal(x))))
+  
+  % Why3 abs_universal
+  abs_universal: AXIOM FORALL (x:t): NOT is_negative(abs1(x))
+  
+  % Why3 fma_finite
+  fma_finite: AXIOM FORALL (m:mode, x:t, y:t, z:t): tqtisfinite(x) =>
+    (tqtisfinite(y) => (tqtisfinite(z) => (no_overflow(m,
+    ((tqtreal(x) * tqtreal(y)) + tqtreal(z))) => (tqtisfinite(fma(m, x, y,
+    z)) AND (tqtreal(fma(m, x, y, z)) = round(m,
+    ((tqtreal(x) * tqtreal(y)) + tqtreal(z))))))))
+  
+  % Why3 fma_finite_rev
+  fma_finite_rev: AXIOM FORALL (m:mode, x:t, y:t, z:t): tqtisfinite(fma(m, x,
+    y, z)) => (tqtisfinite(x) AND (tqtisfinite(y) AND tqtisfinite(z)))
+  
+  % Why3 fma_finite_rev_n
+  fma_finite_rev_n: AXIOM FORALL (m:mode, x:t, y:t, z:t): to_nearest(m) =>
+    (tqtisfinite(fma(m, x, y, z)) => (no_overflow(m,
+    ((tqtreal(x) * tqtreal(y)) + tqtreal(z))) AND (tqtreal(fma(m, x, y,
+    z)) = round(m, ((tqtreal(x) * tqtreal(y)) + tqtreal(z))))))
+  
+  % Why3 sqrt_finite
+  sqrt_finite: AXIOM FORALL (m:mode, x:t): tqtisfinite(x) =>
+    ((tqtreal(x) >= 0) => (tqtisfinite(sqrt(m, x)) AND (tqtreal(sqrt(m,
+    x)) = round(m, real@Square.sqrt(tqtreal(x))))))
+  
+  % Why3 sqrt_finite_rev
+  sqrt_finite_rev: AXIOM FORALL (m:mode, x:t): tqtisfinite(sqrt(m, x)) =>
+    (tqtisfinite(x) AND ((tqtreal(x) >= 0) AND (tqtreal(sqrt(m,
+    x)) = round(m, real@Square.sqrt(tqtreal(x))))))
+  
+  % Why3 same_sign_real
+  same_sign_real(x:t, r:real): bool = (is_positive(x) AND (r >  0)) OR
+    (is_negative(x) AND (r <  0))
+  
+  % Why3 add_special
+  add_special: AXIOM FORALL (m:mode, x:t, y:t): LET r = add1(m, x, y) IN
+    (((is_nan(x) OR is_nan(y)) => is_nan(r)) AND (((tqtisfinite(x) AND
+    is_infinite(y)) => (is_infinite(r) AND same_sign(r, y))) AND
+    (((is_infinite(x) AND tqtisfinite(y)) => (is_infinite(r) AND same_sign(r,
+    x))) AND (((is_infinite(x) AND (is_infinite(y) AND same_sign(x, y))) =>
+    (is_infinite(r) AND same_sign(r, x))) AND (((is_infinite(x) AND
+    (is_infinite(y) AND diff_sign(x, y))) => is_nan(r)) AND
+    (((tqtisfinite(x) AND (tqtisfinite(y) AND NOT no_overflow(m,
+    (tqtreal(x) + tqtreal(y))))) => (same_sign_real(r,
+    (tqtreal(x) + tqtreal(y))) AND overflow_value(m, r))) AND
+    ((tqtisfinite(x) AND tqtisfinite(y)) => IF same_sign(x, y)
+    THEN same_sign(r, x) ELSE sign_zero_result(m, r) ENDIF)))))))
+  
+  % Why3 sub_special
+  sub_special: AXIOM FORALL (m:mode, x:t, y:t): LET r = sub(m, x, y) IN
+    (((is_nan(x) OR is_nan(y)) => is_nan(r)) AND (((tqtisfinite(x) AND
+    is_infinite(y)) => (is_infinite(r) AND diff_sign(r, y))) AND
+    (((is_infinite(x) AND tqtisfinite(y)) => (is_infinite(r) AND same_sign(r,
+    x))) AND (((is_infinite(x) AND (is_infinite(y) AND same_sign(x, y))) =>
+    is_nan(r)) AND (((is_infinite(x) AND (is_infinite(y) AND diff_sign(x,
+    y))) => (is_infinite(r) AND same_sign(r, x))) AND (((tqtisfinite(x) AND
+    (tqtisfinite(y) AND NOT no_overflow(m, (tqtreal(x) - tqtreal(y))))) =>
+    (same_sign_real(r, (tqtreal(x) - tqtreal(y))) AND overflow_value(m,
+    r))) AND ((tqtisfinite(x) AND tqtisfinite(y)) => IF diff_sign(x, y)
+    THEN same_sign(r, x) ELSE sign_zero_result(m, r) ENDIF)))))))
+  
+  % Why3 mul_special
+  mul_special: AXIOM FORALL (m:mode, x:t, y:t): LET r = mul(m, x, y) IN
+    (((is_nan(x) OR is_nan(y)) => is_nan(r)) AND (((is_zero(x) AND
+    is_infinite(y)) => is_nan(r)) AND (((tqtisfinite(x) AND
+    (is_infinite(y) AND NOT is_zero(x))) => is_infinite(r)) AND
+    (((is_infinite(x) AND is_zero(y)) => is_nan(r)) AND (((is_infinite(x) AND
+    (tqtisfinite(y) AND NOT is_zero(y))) => is_infinite(r)) AND
+    (((is_infinite(x) AND is_infinite(y)) => is_infinite(r)) AND
+    (((tqtisfinite(x) AND (tqtisfinite(y) AND NOT no_overflow(m,
+    (tqtreal(x) * tqtreal(y))))) => overflow_value(m, r)) AND
+    ((NOT is_nan(r)) => product_sign(r, x, y)))))))))
+  
+  % Why3 div_special
+  div_special: AXIOM FORALL (m:mode, x:t, y:t): LET r = div(m, x, y) IN
+    (((is_nan(x) OR is_nan(y)) => is_nan(r)) AND (((tqtisfinite(x) AND
+    is_infinite(y)) => is_zero(r)) AND (((is_infinite(x) AND
+    tqtisfinite(y)) => is_infinite(r)) AND (((is_infinite(x) AND
+    is_infinite(y)) => is_nan(r)) AND (((tqtisfinite(x) AND
+    (tqtisfinite(y) AND ((NOT is_zero(y)) AND NOT no_overflow(m,
+    real@Real.infix_sl(tqtreal(x), tqtreal(y)))))) => overflow_value(m,
+    r)) AND (((tqtisfinite(x) AND (is_zero(y) AND NOT is_zero(x))) =>
+    is_infinite(r)) AND (((is_zero(x) AND is_zero(y)) => is_nan(r)) AND
+    ((NOT is_nan(r)) => product_sign(r, x, y)))))))))
+  
+  % Why3 neg_special
+  neg_special: AXIOM FORALL (x:t): (is_nan(x) => is_nan(neg(x))) AND
+    ((is_infinite(x) => is_infinite(neg(x))) AND ((NOT is_nan(x)) =>
+    diff_sign(x, neg(x))))
+  
+  % Why3 abs_special
+  abs_special: AXIOM FORALL (x:t): (is_nan(x) => is_nan(abs1(x))) AND
+    ((is_infinite(x) => is_infinite(abs1(x))) AND ((NOT is_nan(x)) =>
+    is_positive(abs1(x))))
+  
+  % Why3 fma_special
+  fma_special: AXIOM FORALL (m:mode, x:t, y:t, z:t): LET r = fma(m, x, y,
+    z) IN (((is_nan(x) OR (is_nan(y) OR is_nan(z))) => is_nan(r)) AND
+    (((is_zero(x) AND is_infinite(y)) => is_nan(r)) AND (((is_infinite(x) AND
+    is_zero(y)) => is_nan(r)) AND (((tqtisfinite(x) AND ((NOT is_zero(x)) AND
+    (is_infinite(y) AND tqtisfinite(z)))) => (is_infinite(r) AND
+    product_sign(r, x, y))) AND (((tqtisfinite(x) AND ((NOT is_zero(x)) AND
+    (is_infinite(y) AND is_infinite(z)))) => IF product_sign(z, x, y)
+    THEN is_infinite(r) AND same_sign(r, z) ELSE is_nan(r) ENDIF) AND
+    (((is_infinite(x) AND (tqtisfinite(y) AND ((NOT is_zero(y)) AND
+    tqtisfinite(z)))) => (is_infinite(r) AND product_sign(r, x, y))) AND
+    (((is_infinite(x) AND (tqtisfinite(y) AND ((NOT is_zero(y)) AND
+    is_infinite(z)))) => IF product_sign(z, x, y) THEN is_infinite(r) AND
+    same_sign(r, z) ELSE is_nan(r) ENDIF) AND (((is_infinite(x) AND
+    (is_infinite(y) AND tqtisfinite(z))) => (is_infinite(r) AND
+    product_sign(r, x, y))) AND (((tqtisfinite(x) AND (tqtisfinite(y) AND
+    is_infinite(z))) => (is_infinite(r) AND same_sign(r, z))) AND
+    (((is_infinite(x) AND (is_infinite(y) AND is_infinite(z))) =>
+    IF product_sign(z, x, y) THEN is_infinite(r) AND same_sign(r, z)
+    ELSE is_nan(r) ENDIF) AND (((tqtisfinite(x) AND (tqtisfinite(y) AND
+    (tqtisfinite(z) AND NOT no_overflow(m,
+    ((tqtreal(x) * tqtreal(y)) + tqtreal(z)))))) => (same_sign_real(r,
+    ((tqtreal(x) * tqtreal(y)) + tqtreal(z))) AND overflow_value(m, r))) AND
+    ((tqtisfinite(x) AND (tqtisfinite(y) AND tqtisfinite(z))) =>
+    IF product_sign(z, x, y) THEN same_sign(r, z)
+    ELSE ((((tqtreal(x) * tqtreal(y)) + tqtreal(z)) = 0) => IF (m = rtn)
+    THEN is_negative(r) ELSE is_positive(r) ENDIF) ENDIF))))))))))))
+  
+  % Why3 sqrt_special
+  sqrt_special: AXIOM FORALL (m:mode, x:t): LET r = sqrt(m, x) IN
+    ((is_nan(x) => is_nan(r)) AND ((is_plus_infinity(x) =>
+    is_plus_infinity(r)) AND ((is_minus_infinity(x) => is_nan(r)) AND
+    (((tqtisfinite(x) AND (tqtreal(x) <  0)) => is_nan(r)) AND
+    ((is_zero(x) => same_sign(r, x)) AND ((tqtisfinite(x) AND
+    (tqtreal(x) >  0)) => is_positive(r)))))))
+  
+  % Why3 of_int_add_exact
+  of_int_add_exact: AXIOM FORALL (m:mode, n:mode, i:int, j:int):
+    in_safe_int_range(i) => (in_safe_int_range(j) =>
+    (in_safe_int_range((i + j)) => eq1(of_int(m, (i + j)), add1(n, of_int(m,
+    i), of_int(m, j)))))
+  
+  % Why3 of_int_sub_exact
+  of_int_sub_exact: AXIOM FORALL (m:mode, n:mode, i:int, j:int):
+    in_safe_int_range(i) => (in_safe_int_range(j) =>
+    (in_safe_int_range((i - j)) => eq1(of_int(m, (i - j)), sub(n, of_int(m,
+    i), of_int(m, j)))))
+  
+  % Why3 of_int_mul_exact
+  of_int_mul_exact: AXIOM FORALL (m:mode, n:mode, i:int, j:int):
+    in_safe_int_range(i) => (in_safe_int_range(j) =>
+    (in_safe_int_range((i * j)) => eq1(of_int(m, (i * j)), mul(n, of_int(m,
+    i), of_int(m, j)))))
+  
+  % Why3 min_r
+  min_r: AXIOM FORALL (x:t, y:t): infix_dtlseq(y, x) => infix_dteq(min1(x,
+    y), y)
+  
+  % Why3 min_l
+  min_l: AXIOM FORALL (x:t, y:t): infix_dtlseq(x, y) => infix_dteq(min1(x,
+    y), x)
+  
+  % Why3 max_r
+  max_r: AXIOM FORALL (x:t, y:t): infix_dtlseq(y, x) => infix_dteq(max1(x,
+    y), x)
+  
+  % Why3 max_l
+  max_l: AXIOM FORALL (x:t, y:t): infix_dtlseq(x, y) => infix_dteq(max1(x,
+    y), y)
+  
+  % Why3 is_int
+  is_int(x:t): bool
+  
+  % Why3 zerof_is_int
+  zerof_is_int: AXIOM is_int(zerof)
+  
+  % Why3 of_int_is_int
+  of_int_is_int: AXIOM FORALL (m:mode, x:int): in_int_range(x) =>
+    is_int(of_int(m, x))
+  
+  % Why3 big_float_is_int
+  big_float_is_int: AXIOM FORALL (m:mode, i:t): tqtisfinite(i) =>
+    ((infix_dtlseq(i, neg(of_int(m, pow2sb))) OR infix_dtlseq(of_int(m,
+    pow2sb), i)) => is_int(i))
+  
+  % Why3 roundtointegral_is_int
+  roundtointegral_is_int: AXIOM FORALL (m:mode, x:t): tqtisfinite(x) =>
+    is_int(roundtointegral(m, x))
+  
+  % Why3 eq_is_int
+  eq_is_int: AXIOM FORALL (x:t, y:t): eq1(x, y) => (is_int(x) => is_int(y))
+  
+  % Why3 add_int
+  add_int: AXIOM FORALL (x:t, y:t, m:mode): is_int(x) => (is_int(y) =>
+    (tqtisfinite(add1(m, x, y)) => is_int(add1(m, x, y))))
+  
+  % Why3 sub_int
+  sub_int: AXIOM FORALL (x:t, y:t, m:mode): is_int(x) => (is_int(y) =>
+    (tqtisfinite(sub(m, x, y)) => is_int(sub(m, x, y))))
+  
+  % Why3 mul_int
+  mul_int: AXIOM FORALL (x:t, y:t, m:mode): is_int(x) => (is_int(y) =>
+    (tqtisfinite(mul(m, x, y)) => is_int(mul(m, x, y))))
+  
+  % Why3 fma_int
+  fma_int: AXIOM FORALL (x:t, y:t, z:t, m:mode): is_int(x) => (is_int(y) =>
+    (is_int(z) => (tqtisfinite(fma(m, x, y, z)) => is_int(fma(m, x, y, z)))))
+  
+  % Why3 neg_int
+  neg_int: AXIOM FORALL (x:t): is_int(x) => is_int(neg(x))
+  
+  % Why3 abs_int
+  abs_int: AXIOM FORALL (x:t): is_int(x) => is_int(abs1(x))
+  
+  % Why3 is_int_of_int
+  is_int_of_int: AXIOM FORALL (x:t, m:mode, mqt:mode): is_int(x) => eq1(x,
+    of_int(mqt, to_int(m, x)))
+  
+  % Why3 is_int_to_int
+  is_int_to_int: AXIOM FORALL (m:mode, x:t): is_int(x) =>
+    in_int_range(to_int(m, x))
+  
+  % Why3 is_int_is_finite
+  is_int_is_finite: AXIOM FORALL (x:t): is_int(x) => tqtisfinite(x)
+  
+  % Why3 int_to_real
+  int_to_real: AXIOM FORALL (m:mode, x:t): is_int(x) =>
+    (tqtreal(x) = (to_int(m, x) :: real))
+  
+  % Why3 truncate_int1
+  truncate_int1: AXIOM FORALL (m:mode, i:t): is_int(i) =>
+    infix_dteq(roundtointegral(m, i), i)
+  
+  % Why3 truncate_neg
+  truncate_neg: AXIOM FORALL (x:t): tqtisfinite(x) => (is_negative(x) =>
+    (roundtointegral(rtz, x) = roundtointegral(rtp, x)))
+  
+  % Why3 truncate_pos
+  truncate_pos: AXIOM FORALL (x:t): tqtisfinite(x) => (is_positive(x) =>
+    (roundtointegral(rtz, x) = roundtointegral(rtn, x)))
+  
+  % Why3 ceil_le
+  ceil_le: AXIOM FORALL (x:t): tqtisfinite(x) => infix_dtlseq(x,
+    roundtointegral(rtp, x))
+  
+  % Why3 ceil_lest
+  ceil_lest: AXIOM FORALL (x:t, y:t): (infix_dtlseq(x, y) AND is_int(y)) =>
+    infix_dtlseq(roundtointegral(rtp, x), y)
+  
+  % Why3 ceil_to_real
+  ceil_to_real: AXIOM FORALL (x:t): tqtisfinite(x) =>
+    (tqtreal(roundtointegral(rtp, x)) = (ceil(tqtreal(x)) :: real))
+  
+  % Why3 ceil_to_int
+  ceil_to_int: AXIOM FORALL (m:mode, x:t): tqtisfinite(x) => (to_int(m,
+    roundtointegral(rtp, x)) = ceil(tqtreal(x)))
+  
+  % Why3 floor_le
+  floor_le: AXIOM FORALL (x:t): tqtisfinite(x) =>
+    infix_dtlseq(roundtointegral(rtn, x), x)
+  
+  % Why3 floor_lest
+  floor_lest: AXIOM FORALL (x:t, y:t): (infix_dtlseq(y, x) AND is_int(y)) =>
+    infix_dtlseq(y, roundtointegral(rtn, x))
+  
+  % Why3 floor_to_real
+  floor_to_real: AXIOM FORALL (x:t): tqtisfinite(x) =>
+    (tqtreal(roundtointegral(rtn, x)) = (floor(tqtreal(x)) :: real))
+  
+  % Why3 floor_to_int
+  floor_to_int: AXIOM FORALL (m:mode, x:t): tqtisfinite(x) => (to_int(m,
+    roundtointegral(rtn, x)) = floor(tqtreal(x)))
+  
+  % Why3 rna_down
+  rna_down: AXIOM FORALL (x:t): infix_dtls(infix_dtmn(x, roundtointegral(rtn,
+    x)), infix_dtmn(roundtointegral(rtp, x), x)) => (roundtointegral(rna,
+    x) = roundtointegral(rtn, x))
+  
+  % Why3 rna_up
+  rna_up: AXIOM FORALL (x:t): infix_dtgt(infix_dtmn(x, roundtointegral(rtn,
+    x)), infix_dtmn(roundtointegral(rtp, x), x)) => (roundtointegral(rna,
+    x) = roundtointegral(rtp, x))
+  
+  % Why3 rna_down_tie
+  rna_down_tie: AXIOM FORALL (x:t): infix_dteq(infix_dtmn(x,
+    roundtointegral(rtn, x)), infix_dtmn(roundtointegral(rtp, x), x)) =>
+    (is_negative(x) => (roundtointegral(rna, x) = roundtointegral(rtn, x)))
+  
+  % Why3 rna_up_tie
+  rna_up_tie: AXIOM FORALL (x:t): infix_dteq(infix_dtmn(roundtointegral(rtp,
+    x), x), infix_dtmn(x, roundtointegral(rtn, x))) => (is_positive(x) =>
+    (roundtointegral(rna, x) = roundtointegral(rtp, x)))
+  
+  % Why3 to_int_roundtointegral
+  to_int_roundtointegral: AXIOM FORALL (m:mode, x:t): (to_int(m,
+    x) = to_int(m, roundtointegral(m, x)))
+  
+  % Why3 to_int_monotonic
+  to_int_monotonic: AXIOM FORALL (m:mode, x:t, y:t): tqtisfinite(x) =>
+    (tqtisfinite(y) => (le(x, y) => (to_int(m, x) <= to_int(m, y))))
+  
+  % Why3 to_int_of_int
+  to_int_of_int: AXIOM FORALL (m:mode, i:int): in_safe_int_range(i) =>
+    (to_int(m, of_int(m, i)) = i)
+  
+  % Why3 eq_to_int
+  eq_to_int: AXIOM FORALL (m:mode, x:t, y:t): tqtisfinite(x) =>
+    (infix_dteq(x, y) => (to_int(m, x) = to_int(m, y)))
+  
+  % Why3 neg_to_int
+  neg_to_int: AXIOM FORALL (m:mode, x:t): is_int(x) => (to_int(m,
+    neg(x)) = (-to_int(m, x)))
+  
+  % Why3 roundtointegral_is_finite
+  roundtointegral_is_finite: AXIOM FORALL (m:mode, x:t): tqtisfinite(x) =>
+    tqtisfinite(roundtointegral(m, x))
+  
+  % Why3 round_bound_ne
+  round_bound_ne: AXIOM FORALL (x:real): no_overflow(rne, x) =>
+    ((((x - ((1 / 16777216) * abs(x))) - (1 / 1427247692705959881058285969449495136382746624)) <= round(rne,
+    x)) AND (round(rne,
+    x) <= ((x + ((1 / 16777216) * abs(x))) + (1 / 1427247692705959881058285969449495136382746624))))
+  
+  % Why3 round_bound
+  round_bound: AXIOM FORALL (m:mode, x:real): no_overflow(m, x) =>
+    ((((x - ((1 / 8388608) * abs(x))) - (1 / 713623846352979940529142984724747568191373312)) <= round(m,
+    x)) AND (round(m,
+    x) <= ((x + ((1 / 8388608) * abs(x))) + (1 / 713623846352979940529142984724747568191373312))))
+  
+  % Why3 t1
+  t1: TYPE+
+  
+  % Why3 tqtreal1
+  tqtreal1(x:t1): real
+  
+  % Why3 tqtisfinite1
+  tqtisfinite1(x:t1): bool
+  
+  % Why3 tqtaxiom1
+  tqtaxiom1: AXIOM FORALL (x:t1): tqtisfinite1(x) =>
+    (((-179769313486231570814527423731704356798070567525844996598917476803157260780028538760589558632766878171540458953514382464234321326889464182768467546703537516986049910576551282076245490090389328944075868508455133942304583236903222948165808559332123348274797826204144723168738177180919299881250404026184124858368) <= tqtreal1(x)) AND
+    (tqtreal1(x) <= 179769313486231570814527423731704356798070567525844996598917476803157260780028538760589558632766878171540458953514382464234321326889464182768467546703537516986049910576551282076245490090389328944075868508455133942304583236903222948165808559332123348274797826204144723168738177180919299881250404026184124858368))
+  
+  % Why3 tqteb1
+  tqteb1: int = 11
+  
+  % Why3 tqtsb1
+  tqtsb1: int = 53
+  
+  % Why3 pow2sb1
+  pow2sb1: int = 9007199254740992
+  
+  % Why3 max_real1
+  max_real1: real =
+    (9007199254740991 * 19958403095347198116563727130368385660674512604354575415025472424372118918689640657849579654926357010893424468441924952439724379883935936607391717982848314203200056729510856765175377214443629871826533567445439239933308104551208703888888552684480441575071209068757560416423584952303440099278848)
+  
+  % Why3 zerof1
+  zerof1: t1
+  
+  % Why3 add2
+  add2(x:mode, x1:t1, x2:t1): t1
+  
+  % Why3 sub1
+  sub1(x:mode, x1:t1, x2:t1): t1
+  
+  % Why3 mul1
+  mul1(x:mode, x1:t1, x2:t1): t1
+  
+  % Why3 div1
+  div1(x:mode, x1:t1, x2:t1): t1
+  
+  % Why3 abs2
+  abs2(x:t1): t1
+  
+  % Why3 neg1
+  neg1(x:t1): t1
+  
+  % Why3 fma1
+  fma1(x:mode, x1:t1, x2:t1, x3:t1): t1
+  
+  % Why3 sqrt1
+  sqrt1(x:mode, x1:t1): t1
+  
+  % Why3 prefix_dtmn1
+  prefix_dtmn1(x:t1): t1 = neg1(x)
+  
+  % Why3 infix_dtpl1
+  infix_dtpl1(x:t1, y:t1): t1 = add2(rne, x, y)
+  
+  % Why3 infix_dtmn1
+  infix_dtmn1(x:t1, y:t1): t1 = sub1(rne, x, y)
+  
+  % Why3 infix_dtas1
+  infix_dtas1(x:t1, y:t1): t1 = mul1(rne, x, y)
+  
+  % Why3 infix_dtsl1
+  infix_dtsl1(x:t1, y:t1): t1 = div1(rne, x, y)
+  
+  % Why3 roundtointegral1
+  roundtointegral1(x:mode, x1:t1): t1
+  
+  % Why3 min2
+  min2(x:t1, x1:t1): t1
+  
+  % Why3 max2
+  max2(x:t1, x1:t1): t1
+  
+  % Why3 le1
+  le1(x:t1, x1:t1): bool
+  
+  % Why3 lt1
+  lt1(x:t1, x1:t1): bool
+  
+  % Why3 ge1
+  ge1(x:t1, y:t1): bool = le1(y, x)
+  
+  % Why3 gt1
+  gt1(x:t1, y:t1): bool = lt1(y, x)
+  
+  % Why3 eq2
+  eq2(x:t1, x1:t1): bool
+  
+  % Why3 infix_dtlseq1
+  infix_dtlseq1(x:t1, y:t1): bool = le1(x, y)
+  
+  % Why3 infix_dtls1
+  infix_dtls1(x:t1, y:t1): bool = lt1(x, y)
+  
+  % Why3 infix_dtgteq1
+  infix_dtgteq1(x:t1, y:t1): bool = ge1(x, y)
+  
+  % Why3 infix_dtgt1
+  infix_dtgt1(x:t1, y:t1): bool = gt1(x, y)
+  
+  % Why3 infix_dteq1
+  infix_dteq1(x:t1, y:t1): bool = eq2(x, y)
+  
+  % Why3 is_normal1
+  is_normal1(x:t1): bool
+  
+  % Why3 is_subnormal1
+  is_subnormal1(x:t1): bool
+  
+  % Why3 is_zero1
+  is_zero1(x:t1): bool
+  
+  % Why3 is_infinite1
+  is_infinite1(x:t1): bool
+  
+  % Why3 is_nan1
+  is_nan1(x:t1): bool
+  
+  % Why3 is_positive1
+  is_positive1(x:t1): bool
+  
+  % Why3 is_negative1
+  is_negative1(x:t1): bool
+  
+  % Why3 is_plus_infinity1
+  is_plus_infinity1(x:t1): bool = is_infinite1(x) AND is_positive1(x)
+  
+  % Why3 is_minus_infinity1
+  is_minus_infinity1(x:t1): bool = is_infinite1(x) AND is_negative1(x)
+  
+  % Why3 is_plus_zero1
+  is_plus_zero1(x:t1): bool = is_zero1(x) AND is_positive1(x)
+  
+  % Why3 is_minus_zero1
+  is_minus_zero1(x:t1): bool = is_zero1(x) AND is_negative1(x)
+  
+  % Why3 is_not_nan2
+  is_not_nan2(x:t1): bool = tqtisfinite1(x) OR is_infinite1(x)
+  
+  % Why3 is_not_nan3
+  is_not_nan3: AXIOM FORALL (x:t1): is_not_nan2(x) <=> NOT is_nan1(x)
+  
+  % Why3 is_not_finite1
+  is_not_finite1: AXIOM FORALL (x:t1): (NOT tqtisfinite1(x)) <=>
+    (is_infinite1(x) OR is_nan1(x))
+  
+  % Why3 zerof_is_positive1
+  zerof_is_positive1: AXIOM is_positive1(zerof1)
+  
+  % Why3 zerof_is_zero1
+  zerof_is_zero1: AXIOM is_zero1(zerof1)
+  
+  % Why3 zero_to_real1
+  zero_to_real1: AXIOM FORALL (x:t1): is_zero1(x) <=> (tqtisfinite1(x) AND
+    (tqtreal1(x) = 0))
+  
+  % Why3 of_int1
+  of_int1(x:mode, x1:int): t1
+  
+  % Why3 to_int1
+  to_int1(x:mode, x1:t1): int
+  
+  % Why3 zero_of_int1
+  zero_of_int1: AXIOM FORALL (m:mode): (zerof1 = of_int1(m, 0))
+  
+  % Why3 round1
+  round1(x:mode, x1:real): real
+  
+  % Why3 max_int1
+  max_int1: int
+  
+  % Why3 emax1
+  emax1: int = pow2((tqteb1 - 1))
+  
+  % Why3 max_real_int1
+  max_real_int1: AXIOM (max_real1 = (max_int1 :: real))
+  
+  % Why3 in_range1
+  in_range1(x:real): bool = ((-max_real1) <= x) AND (x <= max_real1)
+  
+  % Why3 in_int_range1
+  in_int_range1(i:int): bool = ((-max_int1) <= i) AND (i <= max_int1)
+  
+  % Why3 is_finite1
+  is_finite1: AXIOM FORALL (x:t1): tqtisfinite1(x) => in_range1(tqtreal1(x))
+  
+  % Why3 no_overflow1
+  no_overflow1(m:mode, x:real): bool = in_range1(round1(m, x))
+  
+  % Why3 bounded_real_no_overflow1
+  bounded_real_no_overflow1: AXIOM FORALL (m:mode, x:real): in_range1(x) =>
+    no_overflow1(m, x)
+  
+  % Why3 round_monotonic1
+  round_monotonic1: AXIOM FORALL (m:mode, x:real, y:real): (x <= y) =>
+    (round1(m, x) <= round1(m, y))
+  
+  % Why3 round_idempotent1
+  round_idempotent1: AXIOM FORALL (m1:mode, m2:mode, x:real): (round1(m1,
+    round1(m2, x)) = round1(m2, x))
+  
+  % Why3 round_to_real1
+  round_to_real1: AXIOM FORALL (m:mode, x:t1): tqtisfinite1(x) => (round1(m,
+    tqtreal1(x)) = tqtreal1(x))
+  
+  % Why3 round_down_le1
+  round_down_le1: AXIOM FORALL (x:real): (round1(rtn, x) <= x)
+  
+  % Why3 round_up_ge1
+  round_up_ge1: AXIOM FORALL (x:real): (round1(rtp, x) >= x)
+  
+  % Why3 round_down_neg1
+  round_down_neg1: AXIOM FORALL (x:real): (round1(rtn, (-x)) = (-round1(rtp,
+    x)))
+  
+  % Why3 round_up_neg1
+  round_up_neg1: AXIOM FORALL (x:real): (round1(rtp, (-x)) = (-round1(rtn,
+    x)))
+  
+  % Why3 in_safe_int_range1
+  in_safe_int_range1(i:int): bool = ((-pow2sb1) <= i) AND (i <= pow2sb1)
+  
+  % Why3 exact_rounding_for_integers1
+  exact_rounding_for_integers1: AXIOM FORALL (m:mode, i:int):
+    in_safe_int_range1(i) => (round1(m, (i :: real)) = (i :: real))
+  
+  % Why3 same_sign1
+  same_sign1(x:t1, y:t1): bool = (is_positive1(x) AND is_positive1(y)) OR
+    (is_negative1(x) AND is_negative1(y))
+  
+  % Why3 diff_sign1
+  diff_sign1(x:t1, y:t1): bool = (is_positive1(x) AND is_negative1(y)) OR
+    (is_negative1(x) AND is_positive1(y))
+  
+  % Why3 feq_eq1
+  feq_eq1: AXIOM FORALL (x:t1, y:t1): tqtisfinite1(x) => (tqtisfinite1(y) =>
+    ((NOT is_zero1(x)) => (infix_dteq1(x, y) => (x = y))))
+  
+  % Why3 eq_feq1
+  eq_feq1: AXIOM FORALL (x:t1, y:t1): tqtisfinite1(x) => (tqtisfinite1(y) =>
+    ((x = y) => infix_dteq1(x, y)))
+  
+  % Why3 eq_refl1
+  eq_refl1: AXIOM FORALL (x:t1): tqtisfinite1(x) => infix_dteq1(x, x)
+  
+  % Why3 eq_sym1
+  eq_sym1: AXIOM FORALL (x:t1, y:t1): infix_dteq1(x, y) => infix_dteq1(y, x)
+  
+  % Why3 eq_trans1
+  eq_trans1: AXIOM FORALL (x:t1, y:t1, z:t1): infix_dteq1(x, y) =>
+    (infix_dteq1(y, z) => infix_dteq1(x, z))
+  
+  % Why3 eq_zero1
+  eq_zero1: AXIOM infix_dteq1(zerof1, prefix_dtmn1(zerof1))
+  
+  % Why3 eq_to_real_finite1
+  eq_to_real_finite1: AXIOM FORALL (x:t1, y:t1): (tqtisfinite1(x) AND
+    tqtisfinite1(y)) => (infix_dteq1(x, y) <=> (tqtreal1(x) = tqtreal1(y)))
+  
+  % Why3 eq_special1
+  eq_special1: AXIOM FORALL (x:t1, y:t1): infix_dteq1(x, y) =>
+    (is_not_nan2(x) AND (is_not_nan2(y) AND ((tqtisfinite1(x) AND
+    tqtisfinite1(y)) OR (is_infinite1(x) AND (is_infinite1(y) AND
+    same_sign1(x, y))))))
+  
+  % Why3 lt_finite1
+  lt_finite1: AXIOM FORALL (x:t1, y:t1): (tqtisfinite1(x) AND
+    tqtisfinite1(y)) => (lt1(x, y) <=> (tqtreal1(x) <  tqtreal1(y)))
+  
+  % Why3 le_finite1
+  le_finite1: AXIOM FORALL (x:t1, y:t1): (tqtisfinite1(x) AND
+    tqtisfinite1(y)) => (le1(x, y) <=> (tqtreal1(x) <= tqtreal1(y)))
+  
+  % Why3 le_lt_trans1
+  le_lt_trans1: AXIOM FORALL (x:t1, y:t1, z:t1): (infix_dtlseq1(x, y) AND
+    infix_dtls1(y, z)) => infix_dtls1(x, z)
+  
+  % Why3 lt_le_trans1
+  lt_le_trans1: AXIOM FORALL (x:t1, y:t1, z:t1): (infix_dtls1(x, y) AND
+    infix_dtlseq1(y, z)) => infix_dtls1(x, z)
+  
+  % Why3 le_ge_asym1
+  le_ge_asym1: AXIOM FORALL (x:t1, y:t1): (infix_dtlseq1(x, y) AND
+    infix_dtgteq1(x, y)) => infix_dteq1(x, y)
+  
+  % Why3 not_lt_ge1
+  not_lt_ge1: AXIOM FORALL (x:t1, y:t1): ((NOT infix_dtls1(x, y)) AND
+    (is_not_nan2(x) AND is_not_nan2(y))) => infix_dtgteq1(x, y)
+  
+  % Why3 not_gt_le1
+  not_gt_le1: AXIOM FORALL (x:t1, y:t1): ((NOT infix_dtgt1(x, y)) AND
+    (is_not_nan2(x) AND is_not_nan2(y))) => infix_dtlseq1(x, y)
+  
+  % Why3 le_special1
+  le_special1: AXIOM FORALL (x:t1, y:t1): le1(x, y) => ((tqtisfinite1(x) AND
+    tqtisfinite1(y)) OR ((is_minus_infinity1(x) AND is_not_nan2(y)) OR
+    (is_not_nan2(x) AND is_plus_infinity1(y))))
+  
+  % Why3 lt_special1
+  lt_special1: AXIOM FORALL (x:t1, y:t1): lt1(x, y) => ((tqtisfinite1(x) AND
+    tqtisfinite1(y)) OR ((is_minus_infinity1(x) AND (is_not_nan2(y) AND
+    NOT is_minus_infinity1(y))) OR (is_not_nan2(x) AND
+    ((NOT is_plus_infinity1(x)) AND is_plus_infinity1(y)))))
+  
+  % Why3 lt_lt_finite1
+  lt_lt_finite1: AXIOM FORALL (x:t1, y:t1, z:t1): lt1(x, y) => (lt1(y, z) =>
+    tqtisfinite1(y))
+  
+  % Why3 positive_to_real1
+  positive_to_real1: AXIOM FORALL (x:t1): tqtisfinite1(x) =>
+    (is_positive1(x) => (tqtreal1(x) >= 0))
+  
+  % Why3 to_real_positive1
+  to_real_positive1: AXIOM FORALL (x:t1): tqtisfinite1(x) =>
+    ((tqtreal1(x) >  0) => is_positive1(x))
+  
+  % Why3 negative_to_real1
+  negative_to_real1: AXIOM FORALL (x:t1): tqtisfinite1(x) =>
+    (is_negative1(x) => (tqtreal1(x) <= 0))
+  
+  % Why3 to_real_negative1
+  to_real_negative1: AXIOM FORALL (x:t1): tqtisfinite1(x) =>
+    ((tqtreal1(x) <  0) => is_negative1(x))
+  
+  % Why3 negative_xor_positive1
+  negative_xor_positive1: AXIOM FORALL (x:t1): NOT (is_positive1(x) AND
+    is_negative1(x))
+  
+  % Why3 negative_or_positive1
+  negative_or_positive1: AXIOM FORALL (x:t1): is_not_nan2(x) =>
+    (is_positive1(x) OR is_negative1(x))
+  
+  % Why3 diff_sign_trans1
+  diff_sign_trans1: AXIOM FORALL (x:t1, y:t1, z:t1): (diff_sign1(x, y) AND
+    diff_sign1(y, z)) => same_sign1(x, z)
+  
+  % Why3 diff_sign_product1
+  diff_sign_product1: AXIOM FORALL (x:t1, y:t1): (tqtisfinite1(x) AND
+    (tqtisfinite1(y) AND ((tqtreal1(x) * tqtreal1(y)) <  0))) =>
+    diff_sign1(x, y)
+  
+  % Why3 same_sign_product1
+  same_sign_product1: AXIOM FORALL (x:t1, y:t1): (tqtisfinite1(x) AND
+    (tqtisfinite1(y) AND same_sign1(x, y))) =>
+    ((tqtreal1(x) * tqtreal1(y)) >= 0)
+  
+  % Why3 product_sign1
+  product_sign1(z:t1, x:t1, y:t1): bool = (same_sign1(x, y) =>
+    is_positive1(z)) AND (diff_sign1(x, y) => is_negative1(z))
+  
+  % Why3 overflow_value1
+  overflow_value1(m:mode, x:t1): bool =
+    CASES m OF
+     rtn: IF is_positive1(x) THEN tqtisfinite1(x) AND
+        (tqtreal1(x) = max_real1) ELSE is_infinite1(x) ENDIF,
+     rtp: IF is_positive1(x) THEN is_infinite1(x) ELSE (tqtisfinite1(x) AND
+        (tqtreal1(x) = (-max_real1))) ENDIF,
+     rtz: IF is_positive1(x) THEN tqtisfinite1(x) AND
+        (tqtreal1(x) = max_real1) ELSE (tqtisfinite1(x) AND
+        (tqtreal1(x) = (-max_real1))) ENDIF,
+     rna: is_infinite1(x),
+     rne: is_infinite1(x)
+    ENDCASES
+  
+  % Why3 sign_zero_result1
+  sign_zero_result1(m:mode, x:t1): bool = is_zero1(x) =>
+    CASES m OF
+     rtn: is_negative1(x)
+    ELSE is_positive1(x)
+    ENDCASES
+  
+  % Why3 add_finite1
+  add_finite1: AXIOM FORALL (m:mode, x:t1, y:t1): tqtisfinite1(x) =>
+    (tqtisfinite1(y) => (no_overflow1(m, (tqtreal1(x) + tqtreal1(y))) =>
+    (tqtisfinite1(add2(m, x, y)) AND (tqtreal1(add2(m, x, y)) = round1(m,
+    (tqtreal1(x) + tqtreal1(y)))))))
+  
+  % Why3 add_finite_rev1
+  add_finite_rev1: AXIOM FORALL (m:mode, x:t1, y:t1): tqtisfinite1(add2(m, x,
+    y)) => (tqtisfinite1(x) AND tqtisfinite1(y))
+  
+  % Why3 add_finite_rev_n1
+  add_finite_rev_n1: AXIOM FORALL (m:mode, x:t1, y:t1): to_nearest(m) =>
+    (tqtisfinite1(add2(m, x, y)) => (no_overflow1(m,
+    (tqtreal1(x) + tqtreal1(y))) AND (tqtreal1(add2(m, x, y)) = round1(m,
+    (tqtreal1(x) + tqtreal1(y))))))
+  
+  % Why3 sub_finite1
+  sub_finite1: AXIOM FORALL (m:mode, x:t1, y:t1): tqtisfinite1(x) =>
+    (tqtisfinite1(y) => (no_overflow1(m, (tqtreal1(x) - tqtreal1(y))) =>
+    (tqtisfinite1(sub1(m, x, y)) AND (tqtreal1(sub1(m, x, y)) = round1(m,
+    (tqtreal1(x) - tqtreal1(y)))))))
+  
+  % Why3 sub_finite_rev1
+  sub_finite_rev1: AXIOM FORALL (m:mode, x:t1, y:t1): tqtisfinite1(sub1(m, x,
+    y)) => (tqtisfinite1(x) AND tqtisfinite1(y))
+  
+  % Why3 sub_finite_rev_n1
+  sub_finite_rev_n1: AXIOM FORALL (m:mode, x:t1, y:t1): to_nearest(m) =>
+    (tqtisfinite1(sub1(m, x, y)) => (no_overflow1(m,
+    (tqtreal1(x) - tqtreal1(y))) AND (tqtreal1(sub1(m, x, y)) = round1(m,
+    (tqtreal1(x) - tqtreal1(y))))))
+  
+  % Why3 mul_finite1
+  mul_finite1: AXIOM FORALL (m:mode, x:t1, y:t1): tqtisfinite1(x) =>
+    (tqtisfinite1(y) => (no_overflow1(m, (tqtreal1(x) * tqtreal1(y))) =>
+    (tqtisfinite1(mul1(m, x, y)) AND (tqtreal1(mul1(m, x, y)) = round1(m,
+    (tqtreal1(x) * tqtreal1(y)))))))
+  
+  % Why3 mul_finite_rev1
+  mul_finite_rev1: AXIOM FORALL (m:mode, x:t1, y:t1): tqtisfinite1(mul1(m, x,
+    y)) => (tqtisfinite1(x) AND tqtisfinite1(y))
+  
+  % Why3 mul_finite_rev_n1
+  mul_finite_rev_n1: AXIOM FORALL (m:mode, x:t1, y:t1): to_nearest(m) =>
+    (tqtisfinite1(mul1(m, x, y)) => (no_overflow1(m,
+    (tqtreal1(x) * tqtreal1(y))) AND (tqtreal1(mul1(m, x, y)) = round1(m,
+    (tqtreal1(x) * tqtreal1(y))))))
+  
+  % Why3 div_finite1
+  div_finite1: AXIOM FORALL (m:mode, x:t1, y:t1): tqtisfinite1(x) =>
+    (tqtisfinite1(y) => ((NOT is_zero1(y)) => (no_overflow1(m,
+    real@Real.infix_sl(tqtreal1(x), tqtreal1(y))) => (tqtisfinite1(div1(m, x,
+    y)) AND (tqtreal1(div1(m, x, y)) = round1(m,
+    real@Real.infix_sl(tqtreal1(x), tqtreal1(y))))))))
+  
+  % Why3 div_finite_rev1
+  div_finite_rev1: AXIOM FORALL (m:mode, x:t1, y:t1): tqtisfinite1(div1(m, x,
+    y)) => ((tqtisfinite1(x) AND (tqtisfinite1(y) AND NOT is_zero1(y))) OR
+    (tqtisfinite1(x) AND (is_infinite1(y) AND (tqtreal1(div1(m, x,
+    y)) = 0))))
+  
+  % Why3 div_finite_rev_n1
+  div_finite_rev_n1: AXIOM FORALL (m:mode, x:t1, y:t1): to_nearest(m) =>
+    (tqtisfinite1(div1(m, x, y)) => (tqtisfinite1(y) => (no_overflow1(m,
+    real@Real.infix_sl(tqtreal1(x), tqtreal1(y))) AND (tqtreal1(div1(m, x,
+    y)) = round1(m, real@Real.infix_sl(tqtreal1(x), tqtreal1(y)))))))
+  
+  % Why3 neg_finite1
+  neg_finite1: AXIOM FORALL (x:t1): tqtisfinite1(x) =>
+    (tqtisfinite1(neg1(x)) AND (tqtreal1(neg1(x)) = (-tqtreal1(x))))
+  
+  % Why3 neg_finite_rev1
+  neg_finite_rev1: AXIOM FORALL (x:t1): tqtisfinite1(neg1(x)) =>
+    (tqtisfinite1(x) AND (tqtreal1(neg1(x)) = (-tqtreal1(x))))
+  
+  % Why3 abs_finite1
+  abs_finite1: AXIOM FORALL (x:t1): tqtisfinite1(x) =>
+    (tqtisfinite1(abs2(x)) AND ((tqtreal1(abs2(x)) = abs(tqtreal1(x))) AND
+    is_positive1(abs2(x))))
+  
+  % Why3 abs_finite_rev1
+  abs_finite_rev1: AXIOM FORALL (x:t1): tqtisfinite1(abs2(x)) =>
+    (tqtisfinite1(x) AND (tqtreal1(abs2(x)) = abs(tqtreal1(x))))
+  
+  % Why3 abs_universal1
+  abs_universal1: AXIOM FORALL (x:t1): NOT is_negative1(abs2(x))
+  
+  % Why3 fma_finite1
+  fma_finite1: AXIOM FORALL (m:mode, x:t1, y:t1, z:t1): tqtisfinite1(x) =>
+    (tqtisfinite1(y) => (tqtisfinite1(z) => (no_overflow1(m,
+    ((tqtreal1(x) * tqtreal1(y)) + tqtreal1(z))) => (tqtisfinite1(fma1(m, x,
+    y, z)) AND (tqtreal1(fma1(m, x, y, z)) = round1(m,
+    ((tqtreal1(x) * tqtreal1(y)) + tqtreal1(z))))))))
+  
+  % Why3 fma_finite_rev1
+  fma_finite_rev1: AXIOM FORALL (m:mode, x:t1, y:t1, z:t1):
+    tqtisfinite1(fma1(m, x, y, z)) => (tqtisfinite1(x) AND
+    (tqtisfinite1(y) AND tqtisfinite1(z)))
+  
+  % Why3 fma_finite_rev_n1
+  fma_finite_rev_n1: AXIOM FORALL (m:mode, x:t1, y:t1, z:t1):
+    to_nearest(m) => (tqtisfinite1(fma1(m, x, y, z)) => (no_overflow1(m,
+    ((tqtreal1(x) * tqtreal1(y)) + tqtreal1(z))) AND (tqtreal1(fma1(m, x, y,
+    z)) = round1(m, ((tqtreal1(x) * tqtreal1(y)) + tqtreal1(z))))))
+  
+  % Why3 sqrt_finite1
+  sqrt_finite1: AXIOM FORALL (m:mode, x:t1): tqtisfinite1(x) =>
+    ((tqtreal1(x) >= 0) => (tqtisfinite1(sqrt1(m, x)) AND (tqtreal1(sqrt1(m,
+    x)) = round1(m, real@Square.sqrt(tqtreal1(x))))))
+  
+  % Why3 sqrt_finite_rev1
+  sqrt_finite_rev1: AXIOM FORALL (m:mode, x:t1): tqtisfinite1(sqrt1(m, x)) =>
+    (tqtisfinite1(x) AND ((tqtreal1(x) >= 0) AND (tqtreal1(sqrt1(m,
+    x)) = round1(m, real@Square.sqrt(tqtreal1(x))))))
+  
+  % Why3 same_sign_real1
+  same_sign_real1(x:t1, r:real): bool = (is_positive1(x) AND (r >  0)) OR
+    (is_negative1(x) AND (r <  0))
+  
+  % Why3 add_special1
+  add_special1: AXIOM FORALL (m:mode, x:t1, y:t1): LET r = add2(m, x, y) IN
+    (((is_nan1(x) OR is_nan1(y)) => is_nan1(r)) AND (((tqtisfinite1(x) AND
+    is_infinite1(y)) => (is_infinite1(r) AND same_sign1(r, y))) AND
+    (((is_infinite1(x) AND tqtisfinite1(y)) => (is_infinite1(r) AND
+    same_sign1(r, x))) AND (((is_infinite1(x) AND (is_infinite1(y) AND
+    same_sign1(x, y))) => (is_infinite1(r) AND same_sign1(r, x))) AND
+    (((is_infinite1(x) AND (is_infinite1(y) AND diff_sign1(x, y))) =>
+    is_nan1(r)) AND (((tqtisfinite1(x) AND (tqtisfinite1(y) AND
+    NOT no_overflow1(m, (tqtreal1(x) + tqtreal1(y))))) => (same_sign_real1(r,
+    (tqtreal1(x) + tqtreal1(y))) AND overflow_value1(m, r))) AND
+    ((tqtisfinite1(x) AND tqtisfinite1(y)) => IF same_sign1(x, y)
+    THEN same_sign1(r, x) ELSE sign_zero_result1(m, r) ENDIF)))))))
+  
+  % Why3 sub_special1
+  sub_special1: AXIOM FORALL (m:mode, x:t1, y:t1): LET r = sub1(m, x, y) IN
+    (((is_nan1(x) OR is_nan1(y)) => is_nan1(r)) AND (((tqtisfinite1(x) AND
+    is_infinite1(y)) => (is_infinite1(r) AND diff_sign1(r, y))) AND
+    (((is_infinite1(x) AND tqtisfinite1(y)) => (is_infinite1(r) AND
+    same_sign1(r, x))) AND (((is_infinite1(x) AND (is_infinite1(y) AND
+    same_sign1(x, y))) => is_nan1(r)) AND (((is_infinite1(x) AND
+    (is_infinite1(y) AND diff_sign1(x, y))) => (is_infinite1(r) AND
+    same_sign1(r, x))) AND (((tqtisfinite1(x) AND (tqtisfinite1(y) AND
+    NOT no_overflow1(m, (tqtreal1(x) - tqtreal1(y))))) => (same_sign_real1(r,
+    (tqtreal1(x) - tqtreal1(y))) AND overflow_value1(m, r))) AND
+    ((tqtisfinite1(x) AND tqtisfinite1(y)) => IF diff_sign1(x, y)
+    THEN same_sign1(r, x) ELSE sign_zero_result1(m, r) ENDIF)))))))
+  
+  % Why3 mul_special1
+  mul_special1: AXIOM FORALL (m:mode, x:t1, y:t1): LET r = mul1(m, x, y) IN
+    (((is_nan1(x) OR is_nan1(y)) => is_nan1(r)) AND (((is_zero1(x) AND
+    is_infinite1(y)) => is_nan1(r)) AND (((tqtisfinite1(x) AND
+    (is_infinite1(y) AND NOT is_zero1(x))) => is_infinite1(r)) AND
+    (((is_infinite1(x) AND is_zero1(y)) => is_nan1(r)) AND
+    (((is_infinite1(x) AND (tqtisfinite1(y) AND NOT is_zero1(y))) =>
+    is_infinite1(r)) AND (((is_infinite1(x) AND is_infinite1(y)) =>
+    is_infinite1(r)) AND (((tqtisfinite1(x) AND (tqtisfinite1(y) AND
+    NOT no_overflow1(m, (tqtreal1(x) * tqtreal1(y))))) => overflow_value1(m,
+    r)) AND ((NOT is_nan1(r)) => product_sign1(r, x, y)))))))))
+  
+  % Why3 div_special1
+  div_special1: AXIOM FORALL (m:mode, x:t1, y:t1): LET r = div1(m, x, y) IN
+    (((is_nan1(x) OR is_nan1(y)) => is_nan1(r)) AND (((tqtisfinite1(x) AND
+    is_infinite1(y)) => is_zero1(r)) AND (((is_infinite1(x) AND
+    tqtisfinite1(y)) => is_infinite1(r)) AND (((is_infinite1(x) AND
+    is_infinite1(y)) => is_nan1(r)) AND (((tqtisfinite1(x) AND
+    (tqtisfinite1(y) AND ((NOT is_zero1(y)) AND NOT no_overflow1(m,
+    real@Real.infix_sl(tqtreal1(x), tqtreal1(y)))))) => overflow_value1(m,
+    r)) AND (((tqtisfinite1(x) AND (is_zero1(y) AND NOT is_zero1(x))) =>
+    is_infinite1(r)) AND (((is_zero1(x) AND is_zero1(y)) => is_nan1(r)) AND
+    ((NOT is_nan1(r)) => product_sign1(r, x, y)))))))))
+  
+  % Why3 neg_special1
+  neg_special1: AXIOM FORALL (x:t1): (is_nan1(x) => is_nan1(neg1(x))) AND
+    ((is_infinite1(x) => is_infinite1(neg1(x))) AND ((NOT is_nan1(x)) =>
+    diff_sign1(x, neg1(x))))
+  
+  % Why3 abs_special1
+  abs_special1: AXIOM FORALL (x:t1): (is_nan1(x) => is_nan1(abs2(x))) AND
+    ((is_infinite1(x) => is_infinite1(abs2(x))) AND ((NOT is_nan1(x)) =>
+    is_positive1(abs2(x))))
+  
+  % Why3 fma_special1
+  fma_special1: AXIOM FORALL (m:mode, x:t1, y:t1, z:t1): LET r = fma1(m, x,
+    y, z) IN (((is_nan1(x) OR (is_nan1(y) OR is_nan1(z))) => is_nan1(r)) AND
+    (((is_zero1(x) AND is_infinite1(y)) => is_nan1(r)) AND
+    (((is_infinite1(x) AND is_zero1(y)) => is_nan1(r)) AND
+    (((tqtisfinite1(x) AND ((NOT is_zero1(x)) AND (is_infinite1(y) AND
+    tqtisfinite1(z)))) => (is_infinite1(r) AND product_sign1(r, x, y))) AND
+    (((tqtisfinite1(x) AND ((NOT is_zero1(x)) AND (is_infinite1(y) AND
+    is_infinite1(z)))) => IF product_sign1(z, x, y) THEN is_infinite1(r) AND
+    same_sign1(r, z) ELSE is_nan1(r) ENDIF) AND (((is_infinite1(x) AND
+    (tqtisfinite1(y) AND ((NOT is_zero1(y)) AND tqtisfinite1(z)))) =>
+    (is_infinite1(r) AND product_sign1(r, x, y))) AND (((is_infinite1(x) AND
+    (tqtisfinite1(y) AND ((NOT is_zero1(y)) AND is_infinite1(z)))) =>
+    IF product_sign1(z, x, y) THEN is_infinite1(r) AND same_sign1(r, z)
+    ELSE is_nan1(r) ENDIF) AND (((is_infinite1(x) AND (is_infinite1(y) AND
+    tqtisfinite1(z))) => (is_infinite1(r) AND product_sign1(r, x, y))) AND
+    (((tqtisfinite1(x) AND (tqtisfinite1(y) AND is_infinite1(z))) =>
+    (is_infinite1(r) AND same_sign1(r, z))) AND (((is_infinite1(x) AND
+    (is_infinite1(y) AND is_infinite1(z))) => IF product_sign1(z, x, y)
+    THEN is_infinite1(r) AND same_sign1(r, z) ELSE is_nan1(r) ENDIF) AND
+    (((tqtisfinite1(x) AND (tqtisfinite1(y) AND (tqtisfinite1(z) AND
+    NOT no_overflow1(m, ((tqtreal1(x) * tqtreal1(y)) + tqtreal1(z)))))) =>
+    (same_sign_real1(r, ((tqtreal1(x) * tqtreal1(y)) + tqtreal1(z))) AND
+    overflow_value1(m, r))) AND ((tqtisfinite1(x) AND (tqtisfinite1(y) AND
+    tqtisfinite1(z))) => IF product_sign1(z, x, y) THEN same_sign1(r, z)
+    ELSE ((((tqtreal1(x) * tqtreal1(y)) + tqtreal1(z)) = 0) => IF (m = rtn)
+    THEN is_negative1(r) ELSE is_positive1(r) ENDIF) ENDIF))))))))))))
+  
+  % Why3 sqrt_special1
+  sqrt_special1: AXIOM FORALL (m:mode, x:t1): LET r = sqrt1(m, x) IN
+    ((is_nan1(x) => is_nan1(r)) AND ((is_plus_infinity1(x) =>
+    is_plus_infinity1(r)) AND ((is_minus_infinity1(x) => is_nan1(r)) AND
+    (((tqtisfinite1(x) AND (tqtreal1(x) <  0)) => is_nan1(r)) AND
+    ((is_zero1(x) => same_sign1(r, x)) AND ((tqtisfinite1(x) AND
+    (tqtreal1(x) >  0)) => is_positive1(r)))))))
+  
+  % Why3 of_int_add_exact1
+  of_int_add_exact1: AXIOM FORALL (m:mode, n:mode, i:int, j:int):
+    in_safe_int_range1(i) => (in_safe_int_range1(j) =>
+    (in_safe_int_range1((i + j)) => eq2(of_int1(m, (i + j)), add2(n,
+    of_int1(m, i), of_int1(m, j)))))
+  
+  % Why3 of_int_sub_exact1
+  of_int_sub_exact1: AXIOM FORALL (m:mode, n:mode, i:int, j:int):
+    in_safe_int_range1(i) => (in_safe_int_range1(j) =>
+    (in_safe_int_range1((i - j)) => eq2(of_int1(m, (i - j)), sub1(n,
+    of_int1(m, i), of_int1(m, j)))))
+  
+  % Why3 of_int_mul_exact1
+  of_int_mul_exact1: AXIOM FORALL (m:mode, n:mode, i:int, j:int):
+    in_safe_int_range1(i) => (in_safe_int_range1(j) =>
+    (in_safe_int_range1((i * j)) => eq2(of_int1(m, (i * j)), mul1(n,
+    of_int1(m, i), of_int1(m, j)))))
+  
+  % Why3 min_r1
+  min_r1: AXIOM FORALL (x:t1, y:t1): infix_dtlseq1(y, x) =>
+    infix_dteq1(min2(x, y), y)
+  
+  % Why3 min_l1
+  min_l1: AXIOM FORALL (x:t1, y:t1): infix_dtlseq1(x, y) =>
+    infix_dteq1(min2(x, y), x)
+  
+  % Why3 max_r1
+  max_r1: AXIOM FORALL (x:t1, y:t1): infix_dtlseq1(y, x) =>
+    infix_dteq1(max2(x, y), x)
+  
+  % Why3 max_l1
+  max_l1: AXIOM FORALL (x:t1, y:t1): infix_dtlseq1(x, y) =>
+    infix_dteq1(max2(x, y), y)
+  
+  % Why3 is_int1
+  is_int1(x:t1): bool
+  
+  % Why3 zerof_is_int1
+  zerof_is_int1: AXIOM is_int1(zerof1)
+  
+  % Why3 of_int_is_int1
+  of_int_is_int1: AXIOM FORALL (m:mode, x:int): in_int_range1(x) =>
+    is_int1(of_int1(m, x))
+  
+  % Why3 big_float_is_int1
+  big_float_is_int1: AXIOM FORALL (m:mode, i:t1): tqtisfinite1(i) =>
+    ((infix_dtlseq1(i, neg1(of_int1(m, pow2sb1))) OR infix_dtlseq1(of_int1(m,
+    pow2sb1), i)) => is_int1(i))
+  
+  % Why3 roundtointegral_is_int1
+  roundtointegral_is_int1: AXIOM FORALL (m:mode, x:t1): tqtisfinite1(x) =>
+    is_int1(roundtointegral1(m, x))
+  
+  % Why3 eq_is_int1
+  eq_is_int1: AXIOM FORALL (x:t1, y:t1): eq2(x, y) => (is_int1(x) =>
+    is_int1(y))
+  
+  % Why3 add_int1
+  add_int1: AXIOM FORALL (x:t1, y:t1, m:mode): is_int1(x) => (is_int1(y) =>
+    (tqtisfinite1(add2(m, x, y)) => is_int1(add2(m, x, y))))
+  
+  % Why3 sub_int1
+  sub_int1: AXIOM FORALL (x:t1, y:t1, m:mode): is_int1(x) => (is_int1(y) =>
+    (tqtisfinite1(sub1(m, x, y)) => is_int1(sub1(m, x, y))))
+  
+  % Why3 mul_int1
+  mul_int1: AXIOM FORALL (x:t1, y:t1, m:mode): is_int1(x) => (is_int1(y) =>
+    (tqtisfinite1(mul1(m, x, y)) => is_int1(mul1(m, x, y))))
+  
+  % Why3 fma_int1
+  fma_int1: AXIOM FORALL (x:t1, y:t1, z:t1, m:mode): is_int1(x) =>
+    (is_int1(y) => (is_int1(z) => (tqtisfinite1(fma1(m, x, y, z)) =>
+    is_int1(fma1(m, x, y, z)))))
+  
+  % Why3 neg_int1
+  neg_int1: AXIOM FORALL (x:t1): is_int1(x) => is_int1(neg1(x))
+  
+  % Why3 abs_int1
+  abs_int1: AXIOM FORALL (x:t1): is_int1(x) => is_int1(abs2(x))
+  
+  % Why3 is_int_of_int1
+  is_int_of_int1: AXIOM FORALL (x:t1, m:mode, mqt:mode): is_int1(x) => eq2(x,
+    of_int1(mqt, to_int1(m, x)))
+  
+  % Why3 is_int_to_int1
+  is_int_to_int1: AXIOM FORALL (m:mode, x:t1): is_int1(x) =>
+    in_int_range1(to_int1(m, x))
+  
+  % Why3 is_int_is_finite1
+  is_int_is_finite1: AXIOM FORALL (x:t1): is_int1(x) => tqtisfinite1(x)
+  
+  % Why3 int_to_real1
+  int_to_real1: AXIOM FORALL (m:mode, x:t1): is_int1(x) =>
+    (tqtreal1(x) = (to_int1(m, x) :: real))
+  
+  % Why3 truncate_int2
+  truncate_int2: AXIOM FORALL (m:mode, i:t1): is_int1(i) =>
+    infix_dteq1(roundtointegral1(m, i), i)
+  
+  % Why3 truncate_neg1
+  truncate_neg1: AXIOM FORALL (x:t1): tqtisfinite1(x) => (is_negative1(x) =>
+    (roundtointegral1(rtz, x) = roundtointegral1(rtp, x)))
+  
+  % Why3 truncate_pos1
+  truncate_pos1: AXIOM FORALL (x:t1): tqtisfinite1(x) => (is_positive1(x) =>
+    (roundtointegral1(rtz, x) = roundtointegral1(rtn, x)))
+  
+  % Why3 ceil_le1
+  ceil_le1: AXIOM FORALL (x:t1): tqtisfinite1(x) => infix_dtlseq1(x,
+    roundtointegral1(rtp, x))
+  
+  % Why3 ceil_lest1
+  ceil_lest1: AXIOM FORALL (x:t1, y:t1): (infix_dtlseq1(x, y) AND
+    is_int1(y)) => infix_dtlseq1(roundtointegral1(rtp, x), y)
+  
+  % Why3 ceil_to_real1
+  ceil_to_real1: AXIOM FORALL (x:t1): tqtisfinite1(x) =>
+    (tqtreal1(roundtointegral1(rtp, x)) = (ceil(tqtreal1(x)) :: real))
+  
+  % Why3 ceil_to_int1
+  ceil_to_int1: AXIOM FORALL (m:mode, x:t1): tqtisfinite1(x) => (to_int1(m,
+    roundtointegral1(rtp, x)) = ceil(tqtreal1(x)))
+  
+  % Why3 floor_le1
+  floor_le1: AXIOM FORALL (x:t1): tqtisfinite1(x) =>
+    infix_dtlseq1(roundtointegral1(rtn, x), x)
+  
+  % Why3 floor_lest1
+  floor_lest1: AXIOM FORALL (x:t1, y:t1): (infix_dtlseq1(y, x) AND
+    is_int1(y)) => infix_dtlseq1(y, roundtointegral1(rtn, x))
+  
+  % Why3 floor_to_real1
+  floor_to_real1: AXIOM FORALL (x:t1): tqtisfinite1(x) =>
+    (tqtreal1(roundtointegral1(rtn, x)) = (floor(tqtreal1(x)) :: real))
+  
+  % Why3 floor_to_int1
+  floor_to_int1: AXIOM FORALL (m:mode, x:t1): tqtisfinite1(x) => (to_int1(m,
+    roundtointegral1(rtn, x)) = floor(tqtreal1(x)))
+  
+  % Why3 rna_down1
+  rna_down1: AXIOM FORALL (x:t1): infix_dtls1(infix_dtmn1(x,
+    roundtointegral1(rtn, x)), infix_dtmn1(roundtointegral1(rtp, x), x)) =>
+    (roundtointegral1(rna, x) = roundtointegral1(rtn, x))
+  
+  % Why3 rna_up1
+  rna_up1: AXIOM FORALL (x:t1): infix_dtgt1(infix_dtmn1(x,
+    roundtointegral1(rtn, x)), infix_dtmn1(roundtointegral1(rtp, x), x)) =>
+    (roundtointegral1(rna, x) = roundtointegral1(rtp, x))
+  
+  % Why3 rna_down_tie1
+  rna_down_tie1: AXIOM FORALL (x:t1): infix_dteq1(infix_dtmn1(x,
+    roundtointegral1(rtn, x)), infix_dtmn1(roundtointegral1(rtp, x), x)) =>
+    (is_negative1(x) => (roundtointegral1(rna, x) = roundtointegral1(rtn,
+    x)))
+  
+  % Why3 rna_up_tie1
+  rna_up_tie1: AXIOM FORALL (x:t1):
+    infix_dteq1(infix_dtmn1(roundtointegral1(rtp, x), x), infix_dtmn1(x,
+    roundtointegral1(rtn, x))) => (is_positive1(x) => (roundtointegral1(rna,
+    x) = roundtointegral1(rtp, x)))
+  
+  % Why3 to_int_roundtointegral1
+  to_int_roundtointegral1: AXIOM FORALL (m:mode, x:t1): (to_int1(m,
+    x) = to_int1(m, roundtointegral1(m, x)))
+  
+  % Why3 to_int_monotonic1
+  to_int_monotonic1: AXIOM FORALL (m:mode, x:t1, y:t1): tqtisfinite1(x) =>
+    (tqtisfinite1(y) => (le1(x, y) => (to_int1(m, x) <= to_int1(m, y))))
+  
+  % Why3 to_int_of_int1
+  to_int_of_int1: AXIOM FORALL (m:mode, i:int): in_safe_int_range1(i) =>
+    (to_int1(m, of_int1(m, i)) = i)
+  
+  % Why3 eq_to_int1
+  eq_to_int1: AXIOM FORALL (m:mode, x:t1, y:t1): tqtisfinite1(x) =>
+    (infix_dteq1(x, y) => (to_int1(m, x) = to_int1(m, y)))
+  
+  % Why3 neg_to_int1
+  neg_to_int1: AXIOM FORALL (m:mode, x:t1): is_int1(x) => (to_int1(m,
+    neg1(x)) = (-to_int1(m, x)))
+  
+  % Why3 roundtointegral_is_finite1
+  roundtointegral_is_finite1: AXIOM FORALL (m:mode, x:t1): tqtisfinite1(x) =>
+    tqtisfinite1(roundtointegral1(m, x))
+  
+  % Why3 round_bound_ne1
+  round_bound_ne1: AXIOM FORALL (x:real): no_overflow1(rne, x) =>
+    ((((x - ((1 / 9007199254740992) * abs(x))) - (1 / 404804506614621236704990693437834614099113299528284236713802716054860679135990693783920767402874248990374155728633623822779617474771586953734026799881477019843034848553132722728933815484186432682479535356945490137124014966849385397236206711298319112681620113024717539104666829230461005064372655017292012526615415482186989568)) <= round1(rne,
+    x)) AND (round1(rne,
+    x) <= ((x + ((1 / 9007199254740992) * abs(x))) + (1 / 404804506614621236704990693437834614099113299528284236713802716054860679135990693783920767402874248990374155728633623822779617474771586953734026799881477019843034848553132722728933815484186432682479535356945490137124014966849385397236206711298319112681620113024717539104666829230461005064372655017292012526615415482186989568))))
+  
+  % Why3 round_bound1
+  round_bound1: AXIOM FORALL (m:mode, x:real): no_overflow1(m, x) =>
+    ((((x - ((1 / 4503599627370496) * abs(x))) - (1 / 202402253307310618352495346718917307049556649764142118356901358027430339567995346891960383701437124495187077864316811911389808737385793476867013399940738509921517424276566361364466907742093216341239767678472745068562007483424692698618103355649159556340810056512358769552333414615230502532186327508646006263307707741093494784)) <= round1(m,
+    x)) AND (round1(m,
+    x) <= ((x + ((1 / 4503599627370496) * abs(x))) + (1 / 202402253307310618352495346718917307049556649764142118356901358027430339567995346891960383701437124495187077864316811911389808737385793476867013399940738509921517424276566361364466907742093216341239767678472745068562007483424692698618103355649159556340810056512358769552333414615230502532186327508646006263307707741093494784))))
+  
+  % Why3 to_float64
+  to_float64(x:mode, x1:t): t1
+  
+  % Why3 to_float32
+  to_float32(x:mode, x1:t1): t
+  
+  % Why3 round_double_single
+  round_double_single: AXIOM FORALL (m1:mode, m2:mode, x:real): (round1(m1,
+    round(m2, x)) = round(m2, x))
+  
+  % Why3 to_float64_exact
+  to_float64_exact: AXIOM FORALL (m:mode, x:t): tqtisfinite(x) =>
+    (tqtisfinite1(to_float64(m, x)) AND (tqtreal1(to_float64(m,
+    x)) = tqtreal(x)))
+  
+  % Why3 to_float32_conv
+  to_float32_conv: AXIOM FORALL (m:mode, x:t1): tqtisfinite1(x) =>
+    (no_overflow(m, tqtreal1(x)) => (tqtisfinite(to_float32(m, x)) AND
+    (tqtreal(to_float32(m, x)) = round(m, tqtreal1(x)))))
+  
+  % Why3 f32
+  f32: TYPE+ = t
+  
+  % Why3 f64
+  f64: TYPE+ = t1
+  
+  % Why3 of_f32
+  of_f32(f:t): real = tqtreal(f)
+  
+  % Why3 of_f64
+  of_f64(d:t1): real = tqtreal1(d)
+  
+  % Why3 is_finite_f32
+  is_finite_f32(f:t): bool = tqtisfinite(f)
+  
+  % Why3 is_nan_f32
+  is_nan_f32(f:t): bool = is_nan(f)
+  
+  % Why3 is_infinite_f32
+  is_infinite_f32(f:t): bool = is_infinite(f)
+  
+  % Why3 is_positive_infinite_f32
+  is_positive_infinite_f32(f:t): bool = is_plus_infinity(f)
+  
+  % Why3 is_negative_infinite_f32
+  is_negative_infinite_f32(f:t): bool = is_minus_infinity(f)
+  
+  % Why3 is_finite_f64
+  is_finite_f64(d:t1): bool = tqtisfinite1(d)
+  
+  % Why3 is_nan_f64
+  is_nan_f64(d:t1): bool = is_nan1(d)
+  
+  % Why3 is_infinite_f64
+  is_infinite_f64(d:t1): bool = is_infinite1(d)
+  
+  % Why3 is_positive_infinite_f64
+  is_positive_infinite_f64(d:t1): bool = is_plus_infinity1(d)
+  
+  % Why3 is_negative_infinite_f64
+  is_negative_infinite_f64(d:t1): bool = is_minus_infinity1(d)
+  
+  % Why3 to_f32
+  to_f32(x:real): t
+  
+  % Why3 to_f64
+  to_f64(x:real): t1
+  
+  % Why3 to_float_is_finite_32
+  to_float_is_finite_32: AXIOM FORALL (f:t): is_finite_f32(f) =>
+    eq1(to_f32(of_f32(f)), f)
+  
+  % Why3 to_f32_range_round
+  to_f32_range_round: AXIOM FORALL (x:real): in_range(x) =>
+    (of_f32(to_f32(x)) = round(rne, x))
+  
+  % Why3 to_f32_range_finite
+  to_f32_range_finite: AXIOM FORALL (x:real): in_range(x) =>
+    is_finite_f32(to_f32(x))
+  
+  % Why3 to_f32_minus_infinity
+  to_f32_minus_infinity: AXIOM FORALL (x:real): (x <  (-max_real)) =>
+    is_negative_infinite_f32(to_f32(x))
+  
+  % Why3 to_f32_plus_infinity
+  to_f32_plus_infinity: AXIOM FORALL (x:real): (x >  max_real) =>
+    is_positive_infinite_f32(to_f32(x))
+  
+  % Why3 to_float_is_finite_64
+  to_float_is_finite_64: AXIOM FORALL (f:t1): is_finite_f64(f) =>
+    eq2(to_f64(of_f64(f)), f)
+  
+  % Why3 to_f64_range_round
+  to_f64_range_round: AXIOM FORALL (x:real): in_range1(x) =>
+    (of_f64(to_f64(x)) = round1(rne, x))
+  
+  % Why3 to_f64_range_finite
+  to_f64_range_finite: AXIOM FORALL (x:real): in_range1(x) =>
+    is_finite_f64(to_f64(x))
+  
+  % Why3 to_f64_minus_infinity
+  to_f64_minus_infinity: AXIOM FORALL (x:real): (x <  (-max_real1)) =>
+    is_negative_infinite_f64(to_f64(x))
+  
+  % Why3 to_f64_plus_infinity
+  to_f64_plus_infinity: AXIOM FORALL (x:real): (x >  max_real1) =>
+    is_positive_infinite_f64(to_f64(x))
+  
+  % Why3 round_float
+  round_float(m:mode, r:real): t = to_f32(round(m, r))
+  
+  % Why3 round_double
+  round_double(m:mode, r:real): t1 = to_f64(round1(m, r))
+  
+  % Why3 is_zero_to_f32_zero
+  is_zero_to_f32_zero: AXIOM is_zero(to_f32(0))
+  
+  % Why3 is_zero_to_f64_zero
+  is_zero_to_f64_zero: AXIOM is_zero1(to_f64(0))
+  
+  % Why3 real_0_is_zero_f32
+  real_0_is_zero_f32: AXIOM FORALL (f:t): (0 = of_f32(f)) => is_zero(f)
+  
+  % Why3 real_0_is_zero_f64
+  real_0_is_zero_f64: AXIOM FORALL (f:t1): (0 = of_f64(f)) => is_zero1(f)
+  
+  % Why3 f32_to_f64
+  f32_to_f64: AXIOM FORALL (f:t): (to_f64(of_f32(f)) = to_float64(rne, f))
+  
+  % Why3 f64_to_f32
+  f64_to_f32: AXIOM FORALL (f:t1): (to_f32(of_f64(f)) = to_float32(rne, f))
+  
+  % Why3 finite
+  finite(x:real): bool = is_finite_f32(to_f32(x)) AND
+    is_finite_f64(to_f64(x))
+  
+  % Why3 eq_f32
+  eq_f32(x:t, y:t): bool = eq1(x, y)
+  
+  % Why3 eq_f64
+  eq_f64(x:t1, y:t1): bool = eq2(x, y)
+  
+  % Why3 eq_f32b
+  eq_f32b(x:t, y:t): bool = IF eq_f32(x, y) THEN TRUE ELSE FALSE ENDIF
+  
+  % Why3 eq_f64b
+  eq_f64b(x:t1, y:t1): bool = IF eq_f64(x, y) THEN TRUE ELSE FALSE ENDIF
+  
+  % Why3 ne_f32
+  ne_f32(x:t, y:t): bool = NOT eq_f32(x, y)
+  
+  % Why3 ne_f64
+  ne_f64(x:t1, y:t1): bool = NOT eq_f64(x, y)
+  
+  % Why3 ne_f32b
+  ne_f32b(x:t, y:t): bool = IF ne_f32(x, y) THEN TRUE ELSE FALSE ENDIF
+  
+  % Why3 ne_f64b
+  ne_f64b(x:t1, y:t1): bool = IF ne_f64(x, y) THEN TRUE ELSE FALSE ENDIF
+  
+  % Why3 le_f32
+  le_f32(x:t, y:t): bool = le(x, y)
+  
+  % Why3 le_f64
+  le_f64(x:t1, y:t1): bool = le1(x, y)
+  
+  % Why3 le_f32b
+  le_f32b(x:t, y:t): bool = IF le_f32(x, y) THEN TRUE ELSE FALSE ENDIF
+  
+  % Why3 le_f64b
+  le_f64b(x:t1, y:t1): bool = IF le_f64(x, y) THEN TRUE ELSE FALSE ENDIF
+  
+  % Why3 lt_f32
+  lt_f32(x:t, y:t): bool = lt(x, y)
+  
+  % Why3 lt_f64
+  lt_f64(x:t1, y:t1): bool = lt1(x, y)
+  
+  % Why3 lt_f32b
+  lt_f32b(x:t, y:t): bool = IF lt_f32(x, y) THEN TRUE ELSE FALSE ENDIF
+  
+  % Why3 lt_f64b
+  lt_f64b(x:t1, y:t1): bool = IF lt_f64(x, y) THEN TRUE ELSE FALSE ENDIF
+  
+  % Why3 neg_f32
+  neg_f32(x:t): t = neg(x)
+  
+  % Why3 neg_f64
+  neg_f64(x:t1): t1 = neg1(x)
+  
+  % Why3 add_f32
+  add_f32(x:t, y:t): t = infix_dtpl(x, y)
+  
+  % Why3 add_f64
+  add_f64(x:t1, y:t1): t1 = infix_dtpl1(x, y)
+  
+  % Why3 sub_f32
+  sub_f32(x:t, y:t): t = infix_dtmn(x, y)
+  
+  % Why3 sub_f64
+  sub_f64(x:t1, y:t1): t1 = infix_dtmn1(x, y)
+  
+  % Why3 mul_f32
+  mul_f32(x:t, y:t): t = infix_dtas(x, y)
+  
+  % Why3 mul_f64
+  mul_f64(x:t1, y:t1): t1 = infix_dtas1(x, y)
+  
+  % Why3 div_f32
+  div_f32(x:t, y:t): t = infix_dtsl(x, y)
+  
+  % Why3 div_f64
+  div_f64(x:t1, y:t1): t1 = infix_dtsl1(x, y)
+  
+  % Why3 sqrt_f32
+  sqrt_f32(x:t): t = sqrt(rne, x)
+  
+  % Why3 sqrt_f64
+  sqrt_f64(x:t1): t1 = sqrt1(rne, x)
+  
+  % Why3 model_f32
+  model_f32(x:t): real
+  
+  % Why3 delta_f32
+  delta_f32(f:t): real = abs((of_f32(f) - model_f32(f)))
+  
+  % Why3 error_f32
+  error_f32(f:t): real = real@Real.infix_sl(delta_f32(f), abs(model_f32(f)))
+  
+  % Why3 model_f64
+  model_f64(x:t1): real
+  
+  % Why3 delta_f64
+  delta_f64(f:t1): real = abs((of_f64(f) - model_f64(f)))
+  
+  % Why3 error_f64
+  error_f64(f:t1): real = real@Real.infix_sl(delta_f64(f), abs(model_f64(f)))
+  
+  % Why3 abs_f32
+  abs_f32(x:t): t = abs1(x)
+  
+  % Why3 abs_f64
+  abs_f64(x:t1): t1 = abs2(x)
+  
+  % Why3 ulp_f32
+  ulp_f32(x:real): real = (round(rtp, x) - round(rtn, x))
+  
+  % Why3 ulp_f64
+  ulp_f64(x:real): real = (round1(rtp, x) - round1(rtn, x))
+  
+  % Why3 s11_maybebool
+  s11_maybebool: DATATYPE
+   BEGIN
+    s11_maybebool1(x:int, x1:int): s11_maybebool1?
+   END s11_maybebool
+  
+  % Why3 f11_maybebool_value
+  f11_maybebool_value(v:s11_maybebool): int =
+    CASES v OF
+     s11_maybebool1(x, x1): x1
+    ENDCASES
+  
+  % Why3 f11_maybebool_isvalid
+  f11_maybebool_isvalid(v:s11_maybebool): int =
+    CASES v OF
+     s11_maybebool1(x, x1): x
+    ENDCASES
+  
+  % Why3 max_uint8
+  max_uint8: int = 256
+  
+  % Why3 max_sint8
+  max_sint8: int = 128
+  
+  % Why3 max_uint16
+  max_uint16: int = 65536
+  
+  % Why3 max_sint16
+  max_sint16: int = 32768
+  
+  % Why3 max_uint32
+  max_uint32: int = 4294967296
+  
+  % Why3 max_sint32
+  max_sint32: int = 2147483648
+  
+  % Why3 max_uint64
+  max_uint64: int = 18446744073709551616
+  
+  % Why3 max_sint64
+  max_sint64: int = 9223372036854775808
+  
+  % Why3 is_bool
+  is_bool(x:int): bool = (x = 0) OR (x = 1)
+  
+  % Why3 is_uint8
+  is_uint8(x:int): bool = (0 <= x) AND (x <  max_uint8)
+  
+  % Why3 is_sint8
+  is_sint8(x:int): bool = ((-max_sint8) <= x) AND (x <  max_sint8)
+  
+  % Why3 is_uint16
+  is_uint16(x:int): bool = (0 <= x) AND (x <  max_uint16)
+  
+  % Why3 is_sint16
+  is_sint16(x:int): bool = ((-max_sint16) <= x) AND (x <  max_sint16)
+  
+  % Why3 is_uint32
+  is_uint32(x:int): bool = (0 <= x) AND (x <  max_uint32)
+  
+  % Why3 is_sint32
+  is_sint32(x:int): bool = ((-max_sint32) <= x) AND (x <  max_sint32)
+  
+  % Why3 is_uint64
+  is_uint64(x:int): bool = (0 <= x) AND (x <  max_uint64)
+  
+  % Why3 is_sint64
+  is_sint64(x:int): bool = ((-max_sint64) <= x) AND (x <  max_sint64)
+  
+  % Why3 is_bool0
+  is_bool0: AXIOM is_bool(0)
+  
+  % Why3 is_bool1
+  is_bool1: AXIOM is_bool(1)
+  
+  % Why3 to_bool
+  to_bool(x:int): int = IF (x = 0) THEN 0 ELSE 1 ENDIF
+  
+  % Why3 to_uint8
+  to_uint8(x:int): int
+  
+  % Why3 to_sint8
+  to_sint8(x:int): int
+  
+  % Why3 to_uint16
+  to_uint16(x:int): int
+  
+  % Why3 to_sint16
+  to_sint16(x:int): int
+  
+  % Why3 to_uint32
+  to_uint32(x:int): int
+  
+  % Why3 to_sint32
+  to_sint32(x:int): int
+  
+  % Why3 to_uint64
+  to_uint64(x:int): int
+  
+  % Why3 to_sint64
+  to_sint64(x:int): int
+  
+  % Why3 two_power_abs
+  two_power_abs(x:int): int
+  
+  % Why3 two_power_abs_is_positive
+  two_power_abs_is_positive: AXIOM FORALL (n:int): (0 <  two_power_abs(n))
+  
+  % Why3 two_power_abs_plus_pos
+  two_power_abs_plus_pos: AXIOM FORALL (n:int, m:int): (0 <= n) =>
+    ((0 <= m) =>
+    (two_power_abs((n + m)) = (two_power_abs(n) * two_power_abs(m))))
+  
+  % Why3 two_power_abs_plus_one
+  two_power_abs_plus_one: AXIOM FORALL (n:int): (0 <= n) =>
+    (two_power_abs((n + 1)) = (2 * two_power_abs(n)))
+  
+  % Why3 is_uint
+  is_uint(n:int, x:int): bool = (0 <= x) AND (x <  two_power_abs(n))
+  
+  % Why3 is_sint
+  is_sint(n:int, x:int): bool = ((-two_power_abs(n)) <= x) AND
+    (x <  two_power_abs(n))
+  
+  % Why3 to_uint
+  to_uint(x:int, x1:int): int
+  
+  % Why3 to_sint
+  to_sint(x:int, x1:int): int
+  
+  % Why3 is_to_uint
+  is_to_uint: AXIOM FORALL (n:int, x:int): is_uint(n, to_uint(n, x))
+  
+  % Why3 is_to_sint
+  is_to_sint: AXIOM FORALL (n:int, x:int): is_sint(n, to_sint(n, x))
+  
+  % Why3 is_to_uint8
+  is_to_uint8: AXIOM FORALL (x:int): is_uint8(to_uint8(x))
+  
+  % Why3 is_to_sint8
+  is_to_sint8: AXIOM FORALL (x:int): is_sint8(to_sint8(x))
+  
+  % Why3 is_to_uint16
+  is_to_uint16: AXIOM FORALL (x:int): is_uint16(to_uint16(x))
+  
+  % Why3 is_to_sint16
+  is_to_sint16: AXIOM FORALL (x:int): is_sint16(to_sint16(x))
+  
+  % Why3 is_to_uint32
+  is_to_uint32: AXIOM FORALL (x:int): is_uint32(to_uint32(x))
+  
+  % Why3 is_to_sint32
+  is_to_sint32: AXIOM FORALL (x:int): is_sint32(to_sint32(x))
+  
+  % Why3 is_to_uint64
+  is_to_uint64: AXIOM FORALL (x:int): is_uint64(to_uint64(x))
+  
+  % Why3 is_to_sint64
+  is_to_sint64: AXIOM FORALL (x:int): is_sint64(to_sint64(x))
+  
+  % Why3 id_uint
+  id_uint: AXIOM FORALL (n:int, x:int): is_uint(n, x) <=> (to_uint(n, x) = x)
+  
+  % Why3 id_sint
+  id_sint: AXIOM FORALL (n:int, x:int): is_sint(n, x) <=> (to_sint(n, x) = x)
+  
+  % Why3 id_uint8
+  id_uint8: AXIOM FORALL (x:int): is_uint8(x) => (to_uint8(x) = x)
+  
+  % Why3 id_sint8
+  id_sint8: AXIOM FORALL (x:int): is_sint8(x) => (to_sint8(x) = x)
+  
+  % Why3 id_uint16
+  id_uint16: AXIOM FORALL (x:int): is_uint16(x) => (to_uint16(x) = x)
+  
+  % Why3 id_sint16
+  id_sint16: AXIOM FORALL (x:int): is_sint16(x) => (to_sint16(x) = x)
+  
+  % Why3 id_uint32
+  id_uint32: AXIOM FORALL (x:int): is_uint32(x) => (to_uint32(x) = x)
+  
+  % Why3 id_sint32
+  id_sint32: AXIOM FORALL (x:int): is_sint32(x) => (to_sint32(x) = x)
+  
+  % Why3 id_uint64
+  id_uint64: AXIOM FORALL (x:int): is_uint64(x) => (to_uint64(x) = x)
+  
+  % Why3 id_sint64
+  id_sint64: AXIOM FORALL (x:int): is_sint64(x) => (to_sint64(x) = x)
+  
+  % Why3 proj_uint
+  proj_uint: AXIOM FORALL (n:int, x:int): (to_uint(n, to_uint(n,
+    x)) = to_uint(n, x))
+  
+  % Why3 proj_sint
+  proj_sint: AXIOM FORALL (n:int, x:int): (to_sint(n, to_sint(n,
+    x)) = to_sint(n, x))
+  
+  % Why3 proj_uint8
+  proj_uint8: AXIOM FORALL (x:int): (to_uint8(to_uint8(x)) = to_uint8(x))
+  
+  % Why3 proj_sint8
+  proj_sint8: AXIOM FORALL (x:int): (to_sint8(to_sint8(x)) = to_sint8(x))
+  
+  % Why3 proj_uint16
+  proj_uint16: AXIOM FORALL (x:int): (to_uint16(to_uint16(x)) = to_uint16(x))
+  
+  % Why3 proj_sint16
+  proj_sint16: AXIOM FORALL (x:int): (to_sint16(to_sint16(x)) = to_sint16(x))
+  
+  % Why3 proj_uint32
+  proj_uint32: AXIOM FORALL (x:int): (to_uint32(to_uint32(x)) = to_uint32(x))
+  
+  % Why3 proj_sint32
+  proj_sint32: AXIOM FORALL (x:int): (to_sint32(to_sint32(x)) = to_sint32(x))
+  
+  % Why3 proj_uint64
+  proj_uint64: AXIOM FORALL (x:int): (to_uint64(to_uint64(x)) = to_uint64(x))
+  
+  % Why3 proj_sint64
+  proj_sint64: AXIOM FORALL (x:int): (to_sint64(to_sint64(x)) = to_sint64(x))
+  
+  % Why3 proj_su
+  proj_su: AXIOM FORALL (n:int, x:int): (to_sint(n, to_uint(n,
+    x)) = to_uint(n, x))
+  
+  % Why3 incl_su
+  incl_su: AXIOM FORALL (n:int, x:int): is_uint(n, x) => is_sint(n, x)
+  
+  % Why3 proj_su_uint
+  proj_su_uint: AXIOM FORALL (n:int, m:int, x:int): (0 <= n) => ((0 <= m) =>
+    (to_sint((m + n), to_uint(n, x)) = to_uint(n, x)))
+  
+  % Why3 proj_su_sint
+  proj_su_sint: AXIOM FORALL (n:int, m:int, x:int): (0 <= n) => ((0 <= m) =>
+    (to_sint(n, to_uint((m + (n + 1)), x)) = to_sint(n, x)))
+  
+  % Why3 proj_int8
+  proj_int8: AXIOM FORALL (x:int): (to_sint8(to_uint8(x)) = to_sint8(x))
+  
+  % Why3 proj_int16
+  proj_int16: AXIOM FORALL (x:int): (to_sint16(to_uint16(x)) = to_sint16(x))
+  
+  % Why3 proj_int32
+  proj_int32: AXIOM FORALL (x:int): (to_sint32(to_uint32(x)) = to_sint32(x))
+  
+  % Why3 proj_int64
+  proj_int64: AXIOM FORALL (x:int): (to_sint64(to_uint64(x)) = to_sint64(x))
+  
+  % Why3 proj_us_uint
+  proj_us_uint: AXIOM FORALL (n:int, m:int, x:int): (0 <= n) => ((0 <= m) =>
+    (to_uint((n + 1), to_sint((m + n), x)) = to_uint((n + 1), x)))
+  
+  % Why3 incl_uint
+  incl_uint: AXIOM FORALL (n:int, x:int, i:int): (0 <= n) => ((0 <= i) =>
+    (is_uint(n, x) => is_uint((n + i), x)))
+  
+  % Why3 incl_sint
+  incl_sint: AXIOM FORALL (n:int, x:int, i:int): (0 <= n) => ((0 <= i) =>
+    (is_sint(n, x) => is_sint((n + i), x)))
+  
+  % Why3 incl_int
+  incl_int: AXIOM FORALL (n:int, x:int, i:int): (0 <= n) => ((0 <= i) =>
+    (is_uint(n, x) => is_sint((n + i), x)))
+  
+  % Why3 iss11_maybebool
+  iss11_maybebool(s:s11_maybebool): bool =
+    is_bool(f11_maybebool_isvalid(s)) AND is_bool(f11_maybebool_value(s))
+  
+  % Why3 l_ulp_dp
+  l_ulp_dp(x:real): real = (of_f64(round_double(rtp,
+    x)) + ((- 1) * of_f64(round_double(rtn, x))))
+  
+  % Why3 l_dmul
+  l_dmul(x:t1, y:t1): t1 = to_f64((of_f64(x) * of_f64(y)))
+  
+  % Why3 fliteral
+  fliteral: t1
+  
+  % Why3 fliteral_axiom
+  fliteral_axiom: AXIOM tqtisfinite1(fliteral) AND (tqtreal1(fliteral) = 0)
+  
+  % Why3 l_ddiv
+  l_ddiv(x:t1, y:t1): t1 = LET r = of_f64(y) IN IF (r = 0) THEN fliteral
+    ELSE to_f64(real@Real.infix_sl(of_f64(x), r)) ENDIF
+  
+  % Why3 l_dneg
+  l_dneg(x:t1): t1 = to_f64(((- 1) * of_f64(x)))
+  
+  % Why3 l_dsub
+  l_dsub(x:t1, y:t1): t1 = to_f64((of_f64(x) + ((- 1) * of_f64(y))))
+  
+  % Why3 l_dabs
+  l_dabs(x:t1): t1 = x
+  
+  % Why3 l_tcoa
+  l_tcoa(sz:real, vz:real): real = IF ((sz * vz) <  0)
+    THEN ((- 1) * real@Real.infix_sl(sz, vz)) ELSE 0 ENDIF
+  
+  % Why3 l_vertical_wcv
+  l_vertical_wcv(sz:real, vz:real, zthr:real, tcoa:real): bool = LET r =
+    l_tcoa(sz, vz) IN (rleq(abs(sz), zthr) OR (rleq(r, tcoa) AND rleq(0, r)))
+  
+  % Why3 l_tcoa_fp
+  l_tcoa_fp(sz_double:t1, vz_double:t1): t1 = IF (of_f64(l_dmul(sz_double,
+    vz_double)) <  0) THEN l_dneg(l_ddiv(sz_double, vz_double))
+    ELSE fliteral ENDIF
+  
+  % Why3 l_vertical_wcv_fp
+  l_vertical_wcv_fp(sz_double:t1, vz_double:t1, zthr_double:t1,
+    tcoa_double:t1): bool = LET a = l_tcoa_fp(sz_double, vz_double) IN
+    (rleq(of_f64(l_dsub(l_dabs(sz_double), zthr_double)), 0) OR (rleq(0,
+    of_f64(a)) AND rleq(of_f64(l_dsub(a, tcoa_double)), 0)))
+  
+  % Why3 p_vertical_wcv_tauminus_stable_paths
+  p_vertical_wcv_tauminus_stable_paths(sz:real, vz:real, sz_double:t1,
+    vz_double:t1): bool = LET r = (sz * vz) IN LET r1 =
+    of_f64(l_dmul(sz_double, vz_double)) IN (((0 <= r) AND (0 <= r1)) OR
+    ((((NOT (vz = 0)) AND NOT (of_f64(vz_double) = 0)) AND (r <  0)) AND
+    (r1 <  0)))
+  
+  % Why3 fliteral1
+  fliteral1: t1
+  
+  % Why3 fliteral_axiom1
+  fliteral_axiom1: AXIOM tqtisfinite1(fliteral1) AND
+    (tqtreal1(fliteral1) = (260 / 2251799813685248))
+  
+  % Why3 fliteral2
+  fliteral2: t1
+  
+  % Why3 fliteral_axiom2
+  fliteral_axiom2: AXIOM tqtisfinite1(fliteral2) AND
+    (tqtreal1(fliteral2) = (6876345720111303 / 2475880078570760549798248448))
+  
+  % Why3 fliteral3
+  fliteral3: t1
+  
+  % Why3 fliteral_axiom3
+  fliteral_axiom3: AXIOM tqtisfinite1(fliteral3) AND
+    (tqtreal1(fliteral3) = (7021481254977735 / 2475880078570760549798248448))
+  
+  % Why3 fliteral4
+  fliteral4: t1
+  
+  % Why3 fliteral_axiom4
+  fliteral_axiom4: AXIOM tqtisfinite1(fliteral4) AND
+    (tqtreal1(fliteral4) = (6649846324789249 / 38685626227668133590597632))
+  
+  % Why3 vertical_wcv_tauminus_num_ensures
+  vertical_wcv_tauminus_num_ensures: THEOREM LET a = fliteral1 IN LET a1 = fliteral2 IN LET a2 =
+    fliteral3 IN LET a3 = fliteral4 IN FORALL (f:t1, f1:t1, r:real, r1:real,
+    r2:real, r3:real, f2:t1, m:s11_maybebool, f3:t1): LET a4 = l_tcoa_fp(f2,
+    f3) IN ((NOT (f11_maybebool_isvalid(m) = 0)) =>
+    ((NOT (f11_maybebool_value(m) = 0)) => ((r3 <= 20) => ((r2 <= 20) =>
+    ((r1 <= 1000) => ((r <= 1000) => ((0 <= r3) => ((0 <= r2) =>
+    ((1 <= r1) => ((1 <= r) =>
+    ((abs((of_f64(f) + ((- 1) * r3))) <= real@Real.infix_sl(l_ulp_dp(r3),
+    2)) =>
+    ((abs((of_f64(f1) + ((- 1) * r2))) <= real@Real.infix_sl(l_ulp_dp(r2),
+    2)) =>
+    ((abs((of_f64(f3) + ((- 1) * r1))) <= real@Real.infix_sl(l_ulp_dp(r1),
+    2)) =>
+    ((abs((of_f64(f2) + ((- 1) * r))) <= real@Real.infix_sl(l_ulp_dp(r),
+    2)) => (iss11_maybebool(m) => (is_finite_f64(f3) => (is_finite_f64(f2) =>
+    (is_finite_f64(f1) => (is_finite_f64(f) => ((FORALL (r4:real, r5:real,
+    r6:real, r7:real): is_finite_f64(a) => (is_finite_f64(a1) =>
+    (is_finite_f64(a2) => (is_finite_f64(a3) => ((NOT (l_vertical_wcv(r4, r5,
+    r6, r7) = TRUE)) AND NOT (l_vertical_wcv_fp(f2, f3, f1,
+    f) = TRUE)))))) => ((FORALL (r4:real, r5:real, r6:real, r7:real):
+    LET r8 = ((- 1) * l_tcoa(r4, r5)) IN
+    ((abs((of_f64(a4) + r8)) <= real@Real.infix_sl(6876345720111303,
+    2475880078570760549798248448)) => ((abs((of_f64(l_dmul(f2,
+    f3)) + ((- 1) * (r4 * r5)))) <= real@Real.infix_sl(6649846324789249,
+    38685626227668133590597632)) => ((abs(((r6 + of_f64(l_dsub(l_dabs(f2),
+    f1))) + ((- 1) * abs(r4)))) <= real@Real.infix_sl(65,
+    562949953421312)) => ((abs(((r7 + of_f64(l_dsub(a4,
+    f))) + r8)) <= real@Real.infix_sl(7021481254977735,
+    2475880078570760549798248448)) => (is_finite_f64(a) =>
+    (is_finite_f64(a1) => (is_finite_f64(a2) => (is_finite_f64(a3) =>
+    p_vertical_wcv_tauminus_stable_paths(r4, r5, f2, f3)))))))))) =>
+    NOT (l_vertical_wcv(r, r1, r2, r3) = TRUE))))))))))))))))))))))
+  
+  
+ END vertical_wcv_tauminus_num_ensures
+ 

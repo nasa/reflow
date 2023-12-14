@@ -1,0 +1,49 @@
+(Abs
+ (abs_sum 0
+  (abs_sum-1 nil 3551212620 ("" (default-strategy))
+   ((abs const-decl "{n: nonneg_real | n >= m AND n >= -m}" real_defs
+         nil)
+    (minus_real_is_real application-judgement "real" reals nil)
+    (real_lt_is_strict_total_order name-judgement
+     "(strict_total_order?[real])" real_props nil)
+    (real_plus_real_is_real application-judgement "real" reals nil)
+    (real nonempty-type-from-decl nil reals nil)
+    (real_pred const-decl "[number_field -> boolean]" reals nil)
+    (number_field nonempty-type-from-decl nil number_fields nil)
+    (number_field_pred const-decl "[number -> boolean]" number_fields
+     nil)
+    (number nonempty-type-decl nil numbers nil)
+    (NOT const-decl "[bool -> bool]" booleans nil)
+    (bool nonempty-type-eq-decl nil booleans nil)
+    (boolean nonempty-type-decl nil booleans nil))
+   shostak))
+ (abs_prod 0
+  (abs_prod-1 nil 3551212620
+   ("" (default-strategy)
+    (("1" (grind)
+      (("1" (auto-rewrite-theory "real_props") (("1" (grind) nil nil))
+        nil))
+      nil)
+     ("2" (postpone) nil nil) ("3" (postpone) nil nil)
+     ("4" (postpone) nil nil))
+    nil)
+   nil shostak))
+ (triangular_inequality 0
+  (triangular_inequality-1 nil 3551212620 ("" (default-strategy))
+   ((abs const-decl "{n: nonneg_real | n >= m AND n >= -m}" real_defs
+         nil)
+    (minus_real_is_real application-judgement "real" reals nil)
+    (real_lt_is_strict_total_order name-judgement
+     "(strict_total_order?[real])" real_props nil)
+    (real_minus_real_is_real application-judgement "real" reals nil)
+    (real nonempty-type-from-decl nil reals nil)
+    (real_pred const-decl "[number_field -> boolean]" reals nil)
+    (number_field nonempty-type-from-decl nil number_fields nil)
+    (number_field_pred const-decl "[number -> boolean]" number_fields
+     nil)
+    (number nonempty-type-decl nil numbers nil)
+    (NOT const-decl "[bool -> bool]" booleans nil)
+    (bool nonempty-type-eq-decl nil booleans nil)
+    (boolean nonempty-type-decl nil booleans nil))
+   shostak)))
+

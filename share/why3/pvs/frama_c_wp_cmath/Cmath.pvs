@@ -1,0 +1,17 @@
+Cmath: THEORY
+ BEGIN
+  IMPORTING int@Int
+  IMPORTING int@Abs
+  IMPORTING real@Real
+  % do not edit above this line
+  % surround new declarations you insert below with blank lines
+  
+  % Why3 unit
+  unit: TYPE+ = []
+  
+  % Obsolete chunk abs_def
+  % abs_def: LEMMA FORALL (x:int): IF (x >= 0) THEN (abs(x) = x)
+  %   ELSE (abs(x) = (-x)) ENDIF
+  
+ END Cmath
+ 

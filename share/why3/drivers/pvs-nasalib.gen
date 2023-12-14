@@ -1,0 +1,151 @@
+theory real.Truncate
+  meta "realized_theory" "real.Truncate", ""
+
+  syntax function truncate "floor(%1)"
+  syntax function floor "floor(%1)"
+  syntax function ceil "ceiling(%1)"
+
+  remove allprops
+end
+
+theory bv.Pow2int
+  meta "realized_theory" "bv.Pow2int", "bv_Pow2int"
+  
+  (* requires lnexp@lnexp_safe_ops *)
+  syntax function pow2 "expt_safe(2,%1)"
+
+  remove allprops
+end
+
+  (* Homonymous elements are included in order to make Why3 to omit the
+     definition for it in the realized theory. *)
+theory ieee_float.GenericFloat
+(*
+  syntax predicate  is_finite "soyyo_is_finite?(%1)"
+  syntax predicate  is_infinite "is_finite?(%1)"
+  syntax predicate  is_plus_infinity "is_pos_inf?(%1)"
+  syntax predicate  is_minus_infinity "is_neg_inf?(%1)"
+*)
+  remove allprops
+end
+
+theory ieee_float.Float32
+  syntax type t   "single"
+
+  syntax function t'real "safe_proj_single(%1)"
+  syntax constant t'eb "ieee754_single_exponent_size"
+  syntax constant t'sb "ieee754_single_precision"
+
+  syntax predicate t'isFinite "finite?_single(%1)"
+
+  syntax constant zeroF "pZero_single"
+  (* M320220810 I'm omitting the rounding mode FIXME TODO *)
+  syntax function add  "add_single(%2,%3)" (* "add_single(%1,%2,%3)" *)
+  syntax function sub  "sub_single(%2,%3)" (* "sub_single(%1,%2,%3)" *)
+  syntax function mul  "mul_single(%2,%3)" (* "mul_single(%1,%2,%3)" *)
+  syntax function div  "div_single(%2,%3)" (* "div_single(%1,%2,%3)" *)
+  syntax function min  "min_single(%1,%2)"
+  syntax function max  "max_single(%1,%2)"
+  syntax function abs  "abs_single(%1)"
+  syntax function neg  "neg_single(%1)"
+  syntax function sqrt "sqt_single(%2)" (* "sqt_single(%1,%2)" *)
+
+  (* According to the Why3 stdlib, these two predicates are only used to define the basic arithmetic operations,
+     TODO include a definition when needed *)
+  syntax predicate overflow_value ""
+  syntax predicate sign_zero_result ""
+
+  syntax predicate lt "qlt_single(%1,%2)"
+  syntax predicate gt "qgt_single(%1,%2)"
+  syntax predicate le "qle_single(%1,%2)"
+  syntax predicate ge "qge_single(%1,%2)"
+  syntax predicate eq "qeq_single(%1,%2)"
+
+  syntax predicate is_normal "TODO_MISSING_ELEMENT(%1)"
+  syntax predicate is_subnormal "TODO_MISSING_ELEMENT(%1)"
+  syntax predicate is_zero "zero?_single(%1)"
+  syntax predicate is_nan "NaN?_single(%1)"
+  syntax predicate is_positive "positive?_single(%1)"
+  syntax predicate is_negative "negative?_single(%1)"
+
+  (* M320220810 I'm omitting the rounding mode FIXME TODO *)
+  syntax function round "proj_single(round_single(%2))" (* "round_single(%1,%2)" *)
+
+  remove allprops
+end
+
+theory ieee_float.Float64
+  syntax type t   "double"
+
+  syntax function t'real "safe_proj_double(%1)"
+  syntax constant t'eb "ieee754_double_exponent_size"
+  syntax constant t'sb "ieee754_double_precision"
+
+  syntax predicate t'isFinite "finite?_double(%1)"
+
+  syntax constant zeroF "pZero_double"
+  (* M320220810 I'm omitting the rounding mode FIXME TODO *)
+  syntax function add  "add_double(%2,%3)" (* "add_double(%1,%2,%3)" *)
+  syntax function sub  "sub_double(%2,%3)" (* "sub_double(%1,%2,%3)" *)
+  syntax function mul  "mul_double(%2,%3)" (* "mul_double(%1,%2,%3)" *)
+  syntax function div  "div_double(%2,%3)" (* "div_double(%1,%2,%3)" *)
+  syntax function min  "min_double(%1,%2)"
+  syntax function max  "max_double(%1,%2)"
+  syntax function abs  "abs_double(%1)"
+  syntax function neg  "neg_double(%1)"
+  syntax function sqrt "sqt_double(%2)" (* "sqt_double(%1,%2)" *)
+
+  (* According to the Why3 stdlib, these two predicates are only used to define the basic arithmetic operations,
+     TODO include a definition when needed *)
+  syntax predicate overflow_value ""
+  syntax predicate sign_zero_result ""
+
+  syntax predicate lt "qlt_double(%1,%2)"
+  syntax predicate gt "qgt_double(%1,%2)"
+  syntax predicate le "qle_double(%1,%2)"
+  syntax predicate ge "qge_double(%1,%2)"
+  syntax predicate eq "qeq_double(%1,%2)"
+
+  syntax predicate is_normal "TODO_MISSING_ELEMENT(%1)"
+  syntax predicate is_subnormal "TODO_MISSING_ELEMENT(%1)"
+  syntax predicate is_zero "zero?_double(%1)"
+  syntax predicate is_nan "NaN?_double(%1)"
+  syntax predicate is_positive "positive?_double(%1)"
+  syntax predicate is_negative "negative?_double(%1)"
+
+  (* M320220810 I'm omitting the rounding mode FIXME TODO *)
+  syntax function round "proj_double(round_double(%2))" (* "round_double(%1,%2)" *)
+
+  remove allprops
+end
+
+theory ieee_float.FloatConverter
+  syntax function to_float64 "singleToDouble(%1,%2)"
+  syntax function to_float32 "doubleToSingle(%1,%2)"
+  
+  remove allprops
+end
+
+(* realizations *)
+theory real.RealInfix meta "realized_theory" "real.RealInfix", "real.RealInfix2" end
+
+theory ieee_float.Float32 meta "realized_theory" "ieee_float.Float32", "ieee_float_Float32" end
+theory ieee_float.Float64 meta "realized_theory" "ieee_float.Float64", "ieee_float_Float64" end
+
+theory ieee_float.RoundingMode meta "realized_theory" "ieee_float.RoundingMode", "" end
+
+theory ieee_float.FloatConverter meta "realized_theory" "ieee_float.FloatConverter", "ieee_float_FloatConverter" end
+
+theory frama_c_wp.cfloat.Cfloat meta "realized_theory" "frama_c_wp.cfloat.Cfloat", "frama_c_wp_cfloat" end 
+
+theory frama_c_wp.qed.Qed meta "realized_theory" "frama_c_wp.qed.Qed", "frama_c_wp_qed" end
+theory frama_c_wp.cint.Cint meta "realized_theory" "frama_c_wp.cint.Cint", "frama_c_wp_cint" end
+theory frama_c_wp.cmath.ExpLog meta "realized_theory" "frama_c_wp.cmath.ExpLog", "frama_c_wp_cmath" end
+theory frama_c_wp.cmath.Square meta "realized_theory" "frama_c_wp.cmath.Square", "frama_c_wp_cmath" end
+theory frama_c_wp.cmath.Cmath meta "realized_theory" "frama_c_wp.cmath.Cmath", "frama_c_wp_cmath" end
+
+theory map.Map meta "realized_theory" "map.Map", "structures" end
+
+theory frama_c_wp.reflow.Interface meta "realized_theory" "frama_c_wp.reflow.Interface", "" end
+
+theory real.PowerReal meta "realized_theory" "real.PowerReal", "" end

@@ -1,0 +1,80 @@
+sgn_fp_stable_paths_ensures: THEORY
+ BEGIN
+  IMPORTING int@Int
+  IMPORTING int@Abs
+  IMPORTING int@ComputerDivision
+  IMPORTING real@Real
+  IMPORTING real@RealInfix
+  IMPORTING real@Abs
+  IMPORTING real@FromInt
+  IMPORTING real@Truncate
+  IMPORTING real@Square
+  IMPORTING frama_c_wp_qed@Qed
+  IMPORTING frama_c_wp_reflow@Interface
+  IMPORTING map@Map
+  IMPORTING frama_c_wp_cmath@Cmath
+  IMPORTING frama_c_wp_cmath@Square
+  IMPORTING frama_c_wp_cfloat@Cfloat
+  IMPORTING ieee_float@RoundingMode
+  IMPORTING bv@Pow2int
+  IMPORTING ieee_float@Float32
+  IMPORTING ieee_float@Float64
+  IMPORTING ieee_float@FloatConverter
+  IMPORTING frama_c_wp_cint@Cint
+  % do not edit above this line
+  % surround new declarations you insert below with blank lines
+  
+  % Why3 string
+  string: TYPE+
+  
+  % Why3 unit
+  unit: TYPE+ = []
+  
+  % Why3 s8_maybeint
+  s8_maybeint: DATATYPE
+   BEGIN
+    s8_maybeint1(x:int, x1:int): s8_maybeint1?
+   END s8_maybeint
+  
+  % Why3 f8_maybeint_value
+  f8_maybeint_value(v:s8_maybeint): int =
+    CASES v OF
+     s8_maybeint1(x, x1): x1
+    ENDCASES
+  
+  % Why3 f8_maybeint_isvalid
+  f8_maybeint_isvalid(v:s8_maybeint): int =
+    CASES v OF
+     s8_maybeint1(x, x1): x
+    ENDCASES
+  
+  % Why3 iss8_maybeint
+  iss8_maybeint(s:s8_maybeint): bool =
+    frama_c_wp_cint@Cint.is_bool(f8_maybeint_isvalid(s)) AND
+    frama_c_wp_cint@Cint.is_sint32(f8_maybeint_value(s))
+  
+  % Why3 p_sgn_stable_paths
+  p_sgn_stable_paths(x:real, x_double:double): bool = ((x <  0) AND
+    (safe_proj_double(x_double) <  0)) OR ((0 <= x) AND
+    (0 <= safe_proj_double(x_double)))
+  
+  % Why3 sgn_fp_stable_paths_ensures
+  sgn_fp_stable_paths_ensures: THEOREM FORALL (f:double, r:real, m:s8_maybeint, f1:double):
+    (NOT (f8_maybeint_isvalid(m) = 0)) => ((0 <= safe_proj_double(f)) =>
+    ((abs((safe_proj_double(f1) + ((- 1) * r))) <= safe_proj_double(f)) =>
+    (iss8_maybeint(m) => (finite?_double(f1) => (finite?_double(f) =>
+    ((IF qle_double(f, f1) THEN (f8_maybeint_value(m) = 1)
+    ELSE ((f8_maybeint_value(m) = (- 1)) AND
+    qlt_double(f1, neg_double(f))) ENDIF) => p_sgn_stable_paths(r, f1)))))))
+  
+  % Obsolete chunk sgn_fp_stable_paths_ensures
+  % sgn_fp_stable_paths_ensures: THEOREM FORALL (f:double, r:real, m:s8_maybeint, f1:double):
+  %   (NOT (f8_maybeint_isvalid(m) = 0)) => ((0 <= safe_proj_double(f)) =>
+  %   ((abs((safe_proj_double(f1) + ((- 1) * r))) <= safe_proj_double(f)) =>
+  %   (iss8_maybeint(m) => (finite?_double(f1) => (finite?_double(f) =>
+  %   ((IF qle_double(f, f1) THEN (f8_maybeint_value(m) = 1)
+  %   ELSE ((f8_maybeint_value(m) = (- 1)) AND
+  %   qlt_double(f1, neg_double(f))) ENDIF) => p_sgn_stable_paths(r, f1)))))))
+  
+ END sgn_fp_stable_paths_ensures
+ 

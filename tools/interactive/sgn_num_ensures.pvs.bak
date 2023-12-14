@@ -1,0 +1,96 @@
+sgn_num_ensures: THEORY
+ BEGIN
+  IMPORTING int@Int
+  IMPORTING int@Abs
+  IMPORTING int@MinMax
+  IMPORTING int@ComputerDivision
+  IMPORTING real@Real
+  IMPORTING real@RealInfix
+  IMPORTING real@Abs
+  IMPORTING real@FromInt
+  IMPORTING real@Truncate
+  IMPORTING real@Square
+  IMPORTING real@ExpLog
+  IMPORTING real@PowerReal
+  IMPORTING frama_c_wp_qed@Qed
+  IMPORTING frama_c_wp_reflow@Interface
+  IMPORTING map@Map
+  IMPORTING frama_c_wp_cint@Cint
+  IMPORTING frama_c_wp_cmath@Cmath
+  IMPORTING frama_c_wp_cmath@Square
+  IMPORTING frama_c_wp_cmath@ExpLog
+  IMPORTING frama_c_wp_cfloat@Cfloat
+  IMPORTING ieee_float@RoundingMode
+  IMPORTING bv@Pow2int
+  IMPORTING ieee_float@Float32
+  IMPORTING ieee_float@Float64
+  IMPORTING ieee_float@FloatConverter
+  % do not edit above this line
+  % surround new declarations you insert below with blank lines
+  
+  % Why3 string
+  string: TYPE+
+  
+  % Why3 unit
+  unit: TYPE+ = []
+  
+  % Why3 s8_maybeint
+  s8_maybeint: DATATYPE
+   BEGIN
+    s8_maybeint1(x:int, x1:int): s8_maybeint1?
+   END s8_maybeint
+  
+  % Why3 f8_maybeint_value
+  f8_maybeint_value(v:s8_maybeint): int =
+    CASES v OF
+     s8_maybeint1(x, x1): x1
+    ENDCASES
+  
+  % Why3 f8_maybeint_isvalid
+  f8_maybeint_isvalid(v:s8_maybeint): int =
+    CASES v OF
+     s8_maybeint1(x, x1): x
+    ENDCASES
+  
+  % Why3 iss8_maybeint
+  iss8_maybeint(s:s8_maybeint): bool =
+    frama_c_wp_cint@Cint.is_bool(f8_maybeint_isvalid(s)) AND
+    frama_c_wp_cint@Cint.is_sint32(f8_maybeint_value(s))
+  
+  % Why3 l_ulp_dp
+  l_ulp_dp(x:real): real = IF (x = 0) THEN (2 ^ (- 1074))
+    ELSE (2 ^ (((- 52) + max((- 1022), floor(reals@reals_safe_ops.div_safe(real@ExpLog.log(abs(x)),real@ExpLog.log(2))))))) ENDIF
+  
+  % Why3 l_sgn_fp
+  l_sgn_fp(x_double:double): int = IF (0 <= safe_proj_double(x_double))
+    THEN 1 ELSE (- 1) ENDIF
+  
+  % Why3 p_sgn_stable_paths
+  p_sgn_stable_paths(x:real, x_double:double): bool = ((x <  0) AND
+    (safe_proj_double(x_double) <  0)) OR ((0 <= x) AND
+    (0 <= safe_proj_double(x_double)))
+  
+  % Why3 l_sgn
+  l_sgn(x:real): int = IF (0 <= x) THEN 1 ELSE (- 1) ENDIF
+  
+  % Why3 fliteral
+  fliteral: double
+  
+  % Why3 fliteral_axiom
+  fliteral_axiom: AXIOM finite?_double(fliteral) AND
+    (safe_proj_double(fliteral) = (1 / 274877906944))
+  
+  % Why3 sgn_num_ensures
+  sgn_num_ensures: THEOREM FORALL (r:real, m:s8_maybeint, f:double):
+    (NOT (f8_maybeint_isvalid(m) = 0)) => ((r <= 60000) =>
+    (((- 60000) <= r) =>
+    ((abs((safe_proj_double(f) + ((- 1) * r))) <= reals@reals_safe_ops.div_safe(l_ulp_dp(r),2)) =>
+    (iss8_maybeint(m) => (finite?_double(f) => ((finite?_double(fliteral) =>
+    (f8_maybeint_value(m) = l_sgn_fp(f))) => ((FORALL (r1:real):
+    (abs((safe_proj_double(f) + ((- 1) * r1))) <= reals@reals_safe_ops.div_safe(1,274877906944)) =>
+    (finite?_double(fliteral) => p_sgn_stable_paths(r1, f))) =>
+    ((abs((((- 1) * l_sgn(r)) + f8_maybeint_value(m)))) <= 0))))))))
+  
+  
+ END sgn_num_ensures
+ 

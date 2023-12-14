@@ -1,0 +1,7 @@
+packages: /Users/ltitolo/Desktop/precisa/public/PRECiSA /Users/ltitolo/Desktop/reflow/public/ReFlow
+ignore-project: False
+
+optimization: True
+
+package precisa
+      extra-lib-dirs: /Users/ltitolo/Libraries/kodiak/build

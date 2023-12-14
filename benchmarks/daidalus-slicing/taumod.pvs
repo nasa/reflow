@@ -1,0 +1,10 @@
+taumod: THEORY
+BEGIN
+
+    taumod(sx,vx,sy,vy,DTHR:real) : real =
+    IF (sx*vx)+(sy*vy) < 0
+    THEN (DTHR*DTHR - (sx*sx + sy*sy))/(sx*vx + sy*vy)
+    ELSE -1
+    ENDIF
+
+END taumod

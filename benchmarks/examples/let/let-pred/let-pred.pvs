@@ -1,0 +1,10 @@
+let_pred: THEORY
+BEGIN
+
+  f(a:real):real = IF a - 6 > 0 THEN a * 3 - 7 ELSE a * 2 ENDIF
+
+  p(a :real): bool =
+    LET aux = f(a) IN
+      aux < 0
+
+ END let_pred

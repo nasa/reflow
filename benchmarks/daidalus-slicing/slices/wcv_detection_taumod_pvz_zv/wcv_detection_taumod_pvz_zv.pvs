@@ -1,0 +1,122 @@
+wcv_detection_taumod_pvz_zv: THEORY
+BEGIN
+    %IMPORTING wcv
+    %%%%%%%%%%%%%%%%%% begin wcv file %%%%%%%%%%%%%%%%%%%%%%%
+    %  tcoa(sz,vz:real): real = IF (sz*vz < 0) THEN -(sz/vz)
+    %                    ELSE -1
+	% 	       ENDIF
+
+    % assuming vx*vx + vy*vy \= 0
+    tcpa(sx,vx,sy,vy:real) : real =
+    LET a_ = vx*vx + vy*vy IN
+        -(sx*vx + sy*vy) % / a_ % -> division is causing problems with Kodiak [M3]
+
+    % assuming vx*vx + vy*vy \= 0
+    taumod(sx,vx,sy,vy,DTHR:real) : real =
+    LET a_ = (sx*vx)+(sy*vy) IN
+        (DTHR*DTHR - (sx*sx + sy*sy)) % / a_ % -> division is causing problems with Kodiak [M3]
+
+    horizontal_wcv(sx,sy,vx,vy, DTHR,TTHR:real): bool =
+    LET tc = 2, %  tcpa(sx,vx,sy,vy),
+        tm = taumod(sx,vx,sy,vy,DTHR)
+        IN
+    (sx*sx) + (sy*sy) - DTHR*DTHR <= 0
+    OR
+    (((sx+tc*vx)*(sx+tc*vx) + (sy+tc*vy)*(sy+tc*vy)) - DTHR * DTHR <= 0  AND
+    0 <= tm AND tm - TTHR <= 0)
+
+    % vertical_WCV(sz,vz,ZTHR,TCOA:real): bool =
+    % abs(sz) - ZTHR <= 0 OR
+    % (0 <= tcoa(sz,vz) AND tcoa(sz,vz) - TCOA <= 0)
+
+    % WCV(sx,sy,sz,vx,vy,vz,DTHR,TTHR,ZTHR,TCOA:real): bool =
+    % horizontal_wcv(sx,sy,vx,vy,DTHR,TTHR)
+    % AND
+    % vertical_WCV(sz,vz,ZTHR,TCOA)
+
+     %%%%%%%%%%%%%%%%%% end wcv file %%%%%%%%%%%%%%%%%%%%%%%%
+
+    % % get sign of real (copied form nasalib reals@sign)
+    % sign(x:real): int = IF x >= 0 THEN 1 ELSE -1 ENDIF
+
+    % get max between 2 values
+    max_(a, b: real): real = IF a - b < 0 THEN b ELSE a ENDIF
+
+    % get max between 2 values
+    min_(a, b: real): real = IF a - b > 0 THEN b ELSE a ENDIF
+
+    % IMPORTING reals@sqrt
+    % uncomment this to type check this file
+    % definition of sqrt (copied from nasalib reals@sqrt)
+    sqrt(nnx: real| nnx >= 0): {nnz : nnreal | nnz*nnz = nnx}
+
+    % disctiminant (copied from nasalib reals@quadratic)
+    discr(a, b, c: real) : real = b*b - 4*a*c
+
+    % root of quadratic equation using + sign
+    % assuming  b*b - 4*a*c >= 0 AND a /= 0 T
+    root_pos(a, b, c: real): real =
+        (-b + sqrt(abs(b*b - 4*a*c))) / (2*a)
+
+    % root of quadratic equation using - sign
+    % assuming  b*b - 4*a*c >= 0 AND a /= 0 T
+    root_neg(a, b, c: real): real =
+        (-b - sqrt(abs(b*b - 4*a*c))) / (2*a)
+
+
+    % inner product between vectors (sx, sy) and (vx, vy)
+    inner_product(sx, sy, vx, vy: real): real =
+        sx*vx + sy*vy
+
+    % cross product between vectors (sx, sy) and (vx, vy)
+    cross_product(sx, sy, vx, vy: real): real =
+        sx*vy - sy*vx
+
+    % squared norm of vector (sx, sy)
+    sq(sx, sy: real): real =
+        inner_product(sx, sy, sx, sy)
+
+    % Theta H using + sign
+    Theta_H_pos_positive_vz(sz, pvz, H: real): real =
+        (H-sz)/pvz
+
+    coalt_entry_positive_vz(sz, pvz, TCOA, ZTHR: real): real =
+    LET Z_COA = abs(pvz)*TCOA
+      IN IF ZTHR - Z_COA <= 0
+         THEN (-Z_COA-sz)/pvz
+         ELSE (-ZTHR-sz)/pvz
+         ENDIF
+
+    coalt_exit_positive_vz(sz, pvz, ZTHR: real): real =
+        Theta_H_pos_positive_vz(sz, pvz, ZTHR)
+
+
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % others cases:
+    % vz = 0 -> abs(sz) <= ZTHR OR nvz and positive vz -> sign in theta_h (change coalt_entry and exit)
+    % vxy = 0 -> ventry > vexit AND sq(sx, sy) <= DTHR*DTHR
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+    % Assuming:
+    % 1) pvz > 0
+    % 2) nzvx = 0 AND nzvy = 0
+    % 3) B < T
+    WCV_interval_positive_vz_zero_velocity(B, T, sx, sy, sz, nzvx, nzvy, pvz, TCOA, DTHR, ZTHR: real): bool
+    =   LET centry1 = coalt_entry_positive_vz(sz, pvz, TCOA, ZTHR),
+            cexit1 = coalt_exit_positive_vz(sz, pvz, ZTHR)
+        IN T - centry1 >= 0 AND cexit1 - B >= 0 AND sq(sx, sy) - DTHR*DTHR<= 0
+
+
+    % WCV_detection(sx, sy, sz, vx, vy, vz, B, T: real): bool =
+    %     LET TAUMOD = 1.0, TCOA = 1.0, DTHR = 1.0, TTHR = 1.0, ZTHR = 1.0
+    %     IN
+    %         LET proj_x = sx + vx * B,
+    %             proj_y = sy + vy * B,
+    %             proj_z = sz + vz * B
+    %         IN  IF B - T > 0 THEN WCV_interval(B, T, sx, sy, sz, vx, vy, vz)
+    %             ELSIF (T - B) < 0 THEN FALSE
+    %             ELSE
+    %                 WCV(proj_x, proj_y, proj_z, vx ,vy ,vz , DTHR, TAUMOD, ZTHR, TCOA)
+    %             ENDIF
+
+ END wcv_detection_taumod_pvz_zv
