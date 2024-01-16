@@ -13,7 +13,7 @@ module TransformationUtils where
 
 import Transformation
 import AbsPVSLang
-import AbstractSemantics (LocalEnv,emptyEnv,symbolicErrorStable, Interpretation)
+import AbstractSemantics (emptyEnv,symbolicErrorStable, Interpretation,unfoldFunCallInEExprRec)
 import Translation.Float2Real
 import AbsSpecLang
 import NumericalError
@@ -25,16 +25,17 @@ computeErrorGuards :: CUInt
                    -> CUInt
                    -> Spec
                    -> Interpretation
+                   -> [(String,Double)]
                    -> (Decl, ErrVarEnv,LocalEnv,[(FAExpr,AExpr)])
                    ->  IO (Decl,[(VarName,FAExpr,AExpr,FBExpr,EExpr,Double,[FAExpr],[AExpr],[EExpr],[VarBind])])
-computeErrorGuards maximumDepth minimumPrecision (Spec spec) interp (d@(Decl _ _ f _ _), exprList, _,_) = do
-  aeErrs <- mapM (computeErrorVarValue maximumDepth minimumPrecision varBinds interp) exprList
+computeErrorGuards maxDepth minPrec (Spec spec) interp funErrors (d@(Decl _ _ f args _), exprList, _,_) = do
+  aeErrs <- mapM (computeErrorVarValue maxDepth minPrec varBinds interp args funErrors) exprList
   return (d, aeErrs)
   where
     varBinds = fromMaybe (error $ "computeErrorGuards: function " ++ show f ++ " not found in " ++ show spec) (findOrigFunInSpec f spec)
 
-computeErrorGuards maximumDepth minimumPrecision (Spec spec) interp (d@(Pred _ _ f _ _), exprList, _,_) = do
-  aeErrs <- mapM (computeErrorVarValue maximumDepth minimumPrecision varBinds interp) exprList
+computeErrorGuards maxDepth minPrec (Spec spec) interp funErrors (d@(Pred _ _ f args _), exprList, _,_) = do
+  aeErrs <- mapM (computeErrorVarValue maxDepth minPrec varBinds interp args funErrors) exprList
   return (d, aeErrs)
   where
     varBinds = fromMaybe (error $ "computeErrorGuards: function " ++ show f ++ " not found in " ++ show spec) (findOrigFunInSpec f spec)
@@ -43,14 +44,17 @@ computeErrorVarValue :: CUInt
                      -> CUInt
                      -> [VarBind]
                      -> Interpretation
+                     -> [Arg]
+                     -> [(String,Double)]
                      -> (VarName,FAExpr,FBExpr)
                      -> IO (VarName,FAExpr,AExpr,FBExpr,EExpr,Double,[FAExpr],[AExpr],[EExpr],[VarBind])
-computeErrorVarValue maximumDepth minimumPrecision varBinds interp (errorVariable, fae, be) = do
-  err <- computeNumRoundOffError maximumDepth minimumPrecision varBinds symbErr
+computeErrorVarValue maximumDepth minimumPrecision varBinds interp args funErrors (errorVariable, fae, be)  = do
+  err <- computeNumRoundOffError True maximumDepth minimumPrecision varBinds funErrors3 symbErr
   return (errorVariable,fae,fae2real fae,be,symbErr,err,faeVarList,realVarList,errVarList,varBinds)
   where
-     faeVarList  = varList fae
-     errVarList  = map errVar  faeVarList
-     realVarList = map realVar faeVarList
-     symbErr = simplAExpr $ symbolicErrorStable interp emptyEnv fae
+    funErrors3 = map (\(a,b) -> (a,b,Nothing)) funErrors
+    faeVarList  = varList fae
+    errVarList  = map errVar  faeVarList
+    realVarList = map realVar faeVarList
+    symbErr = unfoldFunCallInEExprRec interp $ simplAExpr $ symbolicErrorStable interp emptyEnv args fae
 

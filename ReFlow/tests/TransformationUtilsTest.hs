@@ -51,7 +51,7 @@ computeErrorGuards__tests = testGroup "computeErrorGuards tests"
 
 computeErrorGuards__test1 =
   testCase "" $
-    computeErrorGuards 7 14 spec [] (decl, errVarEnv,localEnv',forMap)
+    computeErrorGuards 7 14 spec [] [] (decl, errVarEnv,localEnv',forMap)
     `checkOutputIs`
     (decl
     ,[("E_x"
@@ -74,7 +74,7 @@ computeErrorGuards__test1 =
 
 computeErrorGuards__test2 =
   testCase "" $
-    computeErrorGuards 7 14 spec [] (decl, errVarEnv,localEnv',forMap)
+    computeErrorGuards 7 14 spec [] [] (decl, errVarEnv,localEnv',forMap)
     `checkOutputIs`
     (decl
     ,[("E_x"
@@ -114,7 +114,7 @@ computeErrorVarValue_tests = testGroup "computeErrorVarValue tests"
   ]
 computeErrorVarValue__test1 =
   testCase "test1" $
-    computeErrorVarValue 7 14 [VarBind "x" FPDouble (LBDouble 2) (UBDouble 5)] [] ("E_x", FVar FPDouble "x", FBTrue)
+    computeErrorVarValue 7 14 [VarBind "x" FPDouble (LBDouble 2) (UBDouble 5)] [] [] [] ("E_x", FVar FPDouble "x", FBTrue)
     `checkOutputIs`
     ("E_x"
     ,FVar FPDouble "x"
@@ -129,7 +129,7 @@ computeErrorVarValue__test1 =
 
 computeErrorVarValue__test2 =
   testCase "test2" $
-    computeErrorVarValue 7 14 [VarBind "x" FPDouble (LBDouble 2) (UBDouble 5), VarBind "y" FPDouble (LBDouble 2) (UBDouble 5)] [] ("E_x", FVar FPDouble "x", FBTrue)
+    computeErrorVarValue 7 14 [VarBind "x" FPDouble (LBDouble 2) (UBDouble 5), VarBind "y" FPDouble (LBDouble 2) (UBDouble 5)] [] [] [] ("E_x", FVar FPDouble "x", FBTrue)
     `checkOutputIs`
     ("E_x"
     ,FVar FPDouble "x"
@@ -144,7 +144,7 @@ computeErrorVarValue__test2 =
 
 computeErrorVarValue__test3 =
   testCase "test3" $
-    computeErrorVarValue 7 14 [VarBind "x" FPDouble (LBDouble 2) (UBDouble 5), VarBind "y" FPDouble (LBDouble 2) (UBDouble 5)] [] ("E_x", BinaryFPOp AddOp FPDouble (FVar FPDouble "x") (FVar FPDouble "y"), FBTrue)
+    computeErrorVarValue 7 14 [VarBind "x" FPDouble (LBDouble 2) (UBDouble 5), VarBind "y" FPDouble (LBDouble 2) (UBDouble 5)] [] [] [] ("E_x", BinaryFPOp AddOp FPDouble (FVar FPDouble "x") (FVar FPDouble "y"), FBTrue)
     `checkOutputIs`
     ("E_x"
     ,BinaryFPOp AddOp FPDouble (FVar FPDouble "x") (FVar FPDouble "y")

@@ -14,7 +14,7 @@ module FramaC.PrettyPrint where
 import AbsPVSLang
 import AbsSpecLang
 import AbstractDomain (Condition)
-import AbstractSemantics (Interpretation,LocalEnv)
+import AbstractSemantics (Interpretation)
 import Common.TypesUtils
 import Common.TypeConversions (fprec2acsl)
 import Data.Maybe (fromMaybe)
@@ -141,16 +141,16 @@ printNumDeclWithACSL :: HasConditionals
                      -> [FAExpr]
                      -> Doc
 printNumDeclWithACSL hasConds isMaybe predAbs fp f realArgs initArgs forIdx
-                                         decl varBinds roErr numErrExprs isFiniteExprList =
+                     decl varBinds roErr numErrExprs isFiniteExprList =
   text "/*@"
   $$
   prettyDoc assignsNothing
   $$
-  prettyDoc (generateNumericProp hasConds predAbs fp f forIdx realArgs roErr localVariables varBinds isFiniteExprList)
+  prettyDoc (generateNumericProp isMaybe predAbs fp f forIdx realArgs roErr localVariables varBinds isFiniteExprList)
   $$
   text "*/"
   $$
-  prettyDoc (generateNumericFunction hasConds predAbs fpFun f initArgs  errArgs numErrExprs)
+  prettyDoc (generateNumericFunction isMaybe predAbs fpFun f initArgs  errArgs numErrExprs)
     where
       (_, errArgs) =  splitAt (length initArgs) args
       fpFun = declType decl
@@ -232,7 +232,7 @@ printSymbDeclWithACSL hasConds isMaybe fp interp rDecl@(RPred f realArgs _ )
   $$
   printFPSymbPrecondPred hasConds isMaybe targetFPType predAbs f realArgs fpargs errVars localVariables isFiniteExprList
   $$
-  prettyDoc (pred2C hasConds interp taudecl isMaybe)
+  prettyDoc (pred2C isMaybe interp taudecl isMaybe)
     where
       targetFPType = fprec2acsl fp
       axiomaticTransformationPredicatesDoc =

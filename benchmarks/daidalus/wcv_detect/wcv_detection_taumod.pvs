@@ -3,7 +3,7 @@ BEGIN
 
     %IMPORTING wcv
     %%%%%%%%%%%%%%%%%% begin wcv file %%%%%%%%%%%%%%%%%%%%%%%
-     tcoa(sz,vz:real): real = IF (sz*vz < 0) THEN -(sz/vz)
+    tcoa(sz,vz:real): real = IF (sz*vz < 0) THEN -(sz/vz)
                        ELSE -1
 		       ENDIF
 
@@ -36,7 +36,7 @@ BEGIN
     AND
     vertical_WCV(sz,vz,ZTHR,TCOA)
 
-     %%%%%%%%%%%%%%%%%% end wcv file %%%%%%%%%%%%%%%%%%%%%%%%
+    %  %%%%%%%%%%%%%%%%%% end wcv file %%%%%%%%%%%%%%%%%%%%%%%%
 
     % get sign of real (copied form nasalib reals@sign)
     sign(x:real): int = IF x >= 0 THEN 1 ELSE -1 ENDIF
@@ -109,6 +109,7 @@ BEGIN
         (-sign(nzvz)*H-sz)/nzvz
 
 
+
     horizontal_WCV_taumod_interval(T, sx, sy, vx, vy, TAUMOD, DTHR: real): bool =
     LET a = sq(vx, vy),
         b = 2 * inner_product(sx, sy, vx, vy) + TAUMOD * sq(vx, vy),
@@ -125,7 +126,6 @@ BEGIN
             ELSE FALSE
             ENDIF
 
-
     coalt_entry(sz, nzvz, TCOA, ZTHR: real): real =
         LET Z_COA = abs(nzvz)*TCOA IN
             IF ZTHR - Z_COA <= 0 THEN
@@ -136,7 +136,6 @@ BEGIN
 
     coalt_exit(sz, nzvz, ZTHR: real): real =
         Theta_H_pos(sz, nzvz, ZTHR)
-
 
 
     vertical_WCV_entry(B, T, sz, vz, TCOA, ZTHR: real): real =
@@ -163,45 +162,31 @@ BEGIN
     ENDIF
 
 
-    % WCV_interval(B, T, sx, sy, sz, vx, vy, vz, TAUMOD, TCOA, DTHR, TTHR, ZTHR :real): bool =
-    %   LET vexit_minus_ventry = vertical_WCV_exit_minus_entry(B, T, sz, vz, TCOA, ZTHR),
-    %       ventry = vertical_WCV_entry(B, T, sz, vz, TCOA, ZTHR) IN
-    %   LET proj_x = sx + vx * ventry,
-    %       proj_y = sy + vy * ventry IN
-    %   IF vertical_WCV_exit_minus_entry(B, T, sz, vz, TCOA, ZTHR) < 0 THEN
-    %     FALSE
-    %   ELSIF vertical_WCV_exit_minus_entry(B, T, sz, vz, TCOA, ZTHR) > 0 THEN
-    %     horizontal_WCV_taumod_interval(vexit_minus_ventry, proj_x, proj_y, vx, vy, TAUMOD, DTHR)
-    %   ELSIF horizontal_wcv(proj_x, proj_y, vx, vy, DTHR, TTHR) THEN
-    %     TRUE
-    %   ELSE FALSE
-    %   ENDIF
+    WCV_interval(B, T, sx, sy, sz, vx, vy, vz, TAUMOD, TCOA, DTHR, TTHR, ZTHR :real): bool =
+      LET vexit_minus_ventry = vertical_WCV_exit_minus_entry(B, T, sz, vz, TCOA, ZTHR),
+          ventry = vertical_WCV_entry(B, T, sz, vz, TCOA, ZTHR) IN
+      LET proj_x = sx + vx * ventry,
+          proj_y = sy + vy * ventry IN
+      IF vertical_WCV_exit_minus_entry(B, T, sz, vz, TCOA, ZTHR) < 0 THEN
+        FALSE
+      ELSIF vertical_WCV_exit_minus_entry(B, T, sz, vz, TCOA, ZTHR) > 0 THEN
+        horizontal_WCV_taumod_interval(vexit_minus_ventry, proj_x, proj_y, vx, vy, TAUMOD, DTHR)
+      ELSIF horizontal_wcv(proj_x, proj_y, vx, vy, DTHR, TTHR) THEN
+        TRUE
+      ELSE
+        FALSE
+      ENDIF
 
-    % WCV_interval(B, T, sx, sy, sz, vx, vy, vz, TAUMOD, TCOA, DTHR, TTHR, ZTHR :real): bool =
-    % %   LET vexit_minus_ventry = vertical_WCV_exit_minus_entry(B, T, sz, vz, TCOA, ZTHR) IN
-    % %       ventry = vertical_WCV_entry(B, T, sz, vz, TCOA, ZTHR) IN
-    % %   LET proj_x = sx + vx * ventry,
-    % %       proj_y = sy + vy * ventry IN
-    %   IF vertical_WCV_exit_minus_entry(B, T, sz, vz, TCOA, ZTHR) < 0 THEN
-    %     FALSE
-    %   ELSIF vertical_WCV_exit_minus_entry(B, T, sz, vz, TCOA, ZTHR) > 0 THEN
-    %     % TRUE
-    %     horizontal_WCV_taumod_interval(vertical_WCV_exit_minus_entry(B, T, sz, vz, TCOA, ZTHR), B, B, vx, vy, TAUMOD, DTHR)
-    %   ELSIF horizontal_wcv(B, B, vx, vy, DTHR, TTHR) THEN
-    %     TRUE
-    %   ELSE FALSE
-    %   ENDIF
-
-    % WCV_detection(sx, sy, sz, vx, vy, vz, B, T, TAUMOD, TCOA, DTHR, TTHR, ZTHR: real): bool =
-    %     LET proj_x = sx + vx * B,
-    %         proj_y = sy + vy * B,
-    %         proj_z = sz + vz * B
-    %     IN  IF B - T /= 0 THEN
-    %             IF (T - B) <= 0 THEN FALSE
-    %             ELSE  WCV_interval(B, T, sx, sy, sz, vx, vy, vz, TAUMOD, TCOA, DTHR, TTHR, ZTHR)
-    %             ENDIF
-    %         ELSE
-    %             WCV(proj_x, proj_y, proj_z, vx ,vy ,vz , DTHR, TAUMOD, ZTHR, TCOA)
-    %         ENDIF
+    WCV_detection(sx, sy, sz, vx, vy, vz, B, T, TAUMOD, TCOA, DTHR, TTHR, ZTHR: real): bool =
+        LET proj_x = sx + vx * B,
+            proj_y = sy + vy * B,
+            proj_z = sz + vz * B
+        IN  IF B - T /= 0 THEN
+                IF (T - B) <= 0 THEN FALSE
+                ELSE  WCV_interval(B, T, sx, sy, sz, vx, vy, vz, TAUMOD, TCOA, DTHR, TTHR, ZTHR)
+                ENDIF
+            ELSE
+                WCV(proj_x, proj_y, proj_z, vx ,vy ,vz , DTHR, TAUMOD, ZTHR, TCOA)
+            ENDIF
 
  END wcv_detection_taumod

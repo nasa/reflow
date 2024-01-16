@@ -12,17 +12,15 @@ IMPORTING let11
 %|- (precisa-gen-cert-tcc)
 %|- QED
 
-% Floating-Point Result: LET x:double=d
-                         IN x
-% Control Flow: Stable
 g_fp_0 : LEMMA
 FORALL(e_d: nonneg_real, r_d: real, d: double):
-finite?(d) AND
+finite?(d) AND finite?(x) AND finite?(LET x:double=d
+                                      IN x) AND
 abs(DtoR(d) - r_d)<=e_d
 IMPLIES
-abs(DtoR(g_fp(d)) - g(r_d))<=LET x:real=r_d,
-                                 Err_x:real=e_d
-                             IN Err_x
+abs(DtoR(g_fp(d)) - g(r_d)) <= LET x:real=r_d,
+                                   Err_x:real=e_d
+                               IN Err_x
 
 
 %|- g_fp_0: PROOF

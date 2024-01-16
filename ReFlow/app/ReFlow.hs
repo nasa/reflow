@@ -18,7 +18,7 @@ module ReFlow
 where
 
 import AbsPVSLang (RProgram,FunName,Decl(..),Arg,AExpr,FAExpr)
-import AbstractSemantics (SemanticConfiguration(..),fixpointSemantics,botInterp,semantics,stableConditions,maxRoundOffError,unfoldSemantics)
+import AbstractSemantics (SemanticConfiguration(..),fixpointSemantics,botInterp,semantics,stableConditions,maxRoundOffError,unfoldSemantics,)
 import AbstractDomain (Conditions)
 import Common.DecisionPath (LDecisionPath)
 import Common.ControlFlow (ControlFlow(..))
@@ -38,7 +38,7 @@ import Transformation (transformProgramSymb)
 import TransformationUtils (computeErrorGuards)
 import Translation.Real2Float (real2fpProg)
 
-import qualified PRECiSA (computeAllErrorsInKodiak)
+import qualified PRECiSA (computeAllErrorsInKodiak,computeAllErrorsInKodiakMap)
 
 main :: IO ()
 main = do
@@ -63,6 +63,8 @@ generateCProg
     "single" ->  real2FPC maxDepth minPrec prog inputs FPSingle
     _ -> error ""
 
+normalizeBoolExpr :: Bool
+normalizeBoolExpr = True
 
 real2FPC :: Int -> Int ->  FilePath -> FilePath -> PVSType -> IO ()
 real2FPC maxBBDepth prec fileprog filespec fp = do
@@ -72,7 +74,7 @@ real2FPC maxBBDepth prec fileprog filespec fp = do
 
   -- fp progam
   putStrLn "Generating symbolic transformed program..."
-  let decls = real2fpProg fp realProg
+  let decls = real2fpProg normalizeBoolExpr fp realProg
   errparseSpec <- parseFileToSpec decls filespec
   spec <- errify fail errparseSpec
   let dpsNone = map initDpsToNone decls
@@ -84,24 +86,32 @@ real2FPC maxBBDepth prec fileprog filespec fp = do
   putStrLn "Computing the round-off errors..."
 
   let progSem = fixpointSemantics decls (botInterp decls) 3 semConf dpsNone
+  let maxDepth = fromInteger . toInteger $ maxBBDepth
+  let minPrec = fromInteger . toInteger $ prec
+  let searchParams = SP { maximumDepth = maxDepth
+                        , minimumPrecision = minPrec}
+  let unfoldedPgmSem = unfoldSemantics progSem
 
+  let optUnfoldFuns = False
+
+  results <- if optUnfoldFuns
+              then PRECiSA.computeAllErrorsInKodiakMap unfoldedPgmSem spec searchParams
+              else PRECiSA.computeAllErrorsInKodiak True unfoldedPgmSem spec searchParams
+  -- let resultSummary = summarizeAllErrors (getKodiakResults results)
+
+  putStrLn "..done!\n"
+
+    -- numerical round-off errors declarations
+  let numROErrorsDecl = summarizeAllStableErrors (getKodiakResults results)
   let progStableConds = map (stableConditions . semantics) progSem
   let progSymbRoundOffErrs = map (maxRoundOffError . semantics) progSem
-  let searchParams = SP { maximumDepth = fromInteger . toInteger $ maxBBDepth
-                        , minimumPrecision = fromInteger . toInteger $ prec }
-  let maxDepth = maximumDepth searchParams
-  let minPrec = minimumPrecision searchParams
-  let progSemUnfolded = unfoldSemantics progSem
-  results <- PRECiSA.computeAllErrorsInKodiak progSemUnfolded spec searchParams
-
-  -- numerical round-off errors declarations
-  let numROErrorsDecl = summarizeAllStableErrors (getKodiakResults results)
-
   -- symbolic round-off errors error vars
   let roErrorsDecl = zip (map fst progSem) (zip progSymbRoundOffErrs progStableConds)
 
+  putStrLn "Computing the new conditions..."
+
   -- numerical round-off errors error vars
-  funErrEnv <- mapM (computeErrorGuards maxDepth minPrec spec progSem) tranProgTuples
+  funErrEnv <- mapM (computeErrorGuards maxDepth minPrec spec unfoldedPgmSem numROErrorsDecl) tranProgTuples
   putStrLn "..done!\n"
 
   putStrLn "Generating Frama-C program..."
@@ -141,6 +151,7 @@ real2FPC maxBBDepth prec fileprog filespec fp = do
       certFile =  filePath ++ certFileName ++ ".pvs"
       numCertFile =  filePath ++ numCertFileName ++ ".pvs"
       semConf = SemConf { improveError = False
+                        , unfoldFunCalls = False
                         , assumeTestStability = True
                         , mergeUnstables = True}
 

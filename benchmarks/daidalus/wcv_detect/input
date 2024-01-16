@@ -1,4 +1,4 @@
-tcoa(sz,vz): sz in [0,1000], vz in [400,600]
+tcoa(sz,vz): sz in [1,1000], vz in [400,600]
 
 tcpa(sx,vx,sy,vy): sx in [1,2], vx in [1,2], sy in [1,2], vy in [1,2]
 
@@ -48,10 +48,10 @@ coalt_exit(sz, nzvz, ZTHR): sz in [1,2], nzvz in [1,2], ZTHR in [1,3]
 
 vertical_WCV_entry(B, T, sz, vz, TCOA, ZTHR): B in [1,10], T in [1,10], sz in [1,2], vz in [1,2], TCOA in [2,3], ZTHR in [2,3]
 
-vertical_WCV_exit_minus_entry(B, T, sz, vz, TCOA, ZTHR): B in [1,10], T in [1,10], sz in [1,2], vz in [1,2], TCOA in [2,3], ZTHR in [2,3]
+vertical_WCV_exit_minus_entry(B, T, sz, vz, TCOA, ZTHR): B in [20,20], T in [1,1], sz in [1,2], vz in [1,2], TCOA in [2,3], ZTHR in [2,3]
 
 WCV_interval(B, T, sx, sy, sz, vx, vy, vz, TAUMOD, TCOA, DTHR, TTHR, ZTHR):
-B in [1,10], T in [1,10], sx in [1,2], vx in [1,2], sy in [1,2], vy in [1,2], sz in [1,2], vz in [1,2], TCOA in [2,3], ZTHR in [2,3], TAUMOD in [2,3], DTHR in [2,3], TTHR in [2,3]
+B in [100,100], T in [1,1], sx in [1,2], vx in [1,1], sy in [1,2], vy in [1,1], sz in [1,1], vz in [1,2], TCOA in [20,30], ZTHR in [20,30], TAUMOD in [2,3], DTHR in [2,3], TTHR in [2,3]
 
 WCV_detection(sx, sy, sz, vx, vy, vz, B, T, TAUMOD, TCOA, DTHR, TTHR, ZTHR):
-sx in [1,2], vx in [1,2], sy in [1,2], vy in [1,2], sz in [1,2], vz in [1,2], B in [1,10], T in [1,10], TAUMOD in [1,2], TCOA in [2,3], DTHR in [1,2], TTHR in [1,2], ZTHR in [2,3]
+sx in [1,2], vx in [1,1], sy in [1,2], vy in [1,1], sz in [1,2], vz in [1,2], B in [100,100], T in [1,1], TAUMOD in [2,3], TCOA in [20,30], DTHR in [2,3], TTHR in [2,3], ZTHR in [20,30]

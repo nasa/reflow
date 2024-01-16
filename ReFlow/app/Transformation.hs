@@ -33,7 +33,7 @@ import AbsPVSLang
 import PVSTypes
 import AbstractSemantics
 import Control.Monad.State
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe,isJust,fromJust)
 import Data.List (isSuffixOf)
 import Utils
 import Operators
@@ -73,6 +73,11 @@ origDeclName :: FunName -> FunName
 origDeclName f | suffixTauPlus  `isSuffixOf` f = take (length f - length suffixTauPlus)  f
                | suffixTauMinus `isSuffixOf` f = take (length f - length suffixTauMinus) f
                | otherwise = f
+
+findInErrVarEnv :: ErrVarEnv -> FAExpr -> Maybe VarName
+findInErrVarEnv [] _ = Nothing
+findInErrVarEnv ((varName, ae, _):rest) ae1 | ae == ae1 = Just varName
+                                          | otherwise = findInErrVarEnv rest ae1
 
 findInTranStateInterp :: FunName -> TranStateInterp -> TransformationState
 findInTranStateInterp f interp = fromMaybe
@@ -123,6 +128,7 @@ addToForExprMap f realFor tranFor = map addForExprPair
   where
     addForExprPair (g,transSt) | f == g    = (g, transSt { forExprMap = (tranFor,realFor):(forExprMap transSt)} )
                                | otherwise = (g, transSt)
+
 
 declareLocalVars :: LocalEnv -> FAExpr -> FAExpr
 declareLocalVars locEnv fae = if null locVars then fae else Let locVars fae
@@ -437,13 +443,18 @@ replaceLocVars :: [(VarName, FAExpr)] -> FAExpr -> FAExpr
 replaceLocVars locVars = argsBindFAExpr (map ((`Arg` FPDouble) . fst) locVars) (map snd locVars)
 
 generateErrVarArg :: FunName -> FBExpr -> FAExpr -> State TranStateInterp FAExpr
-generateErrVarArg f be ae = do
+generateErrVarArg g be ae = do
   currentStateEnv <- get
-  let currentState = findFreshErrsInTranStateInterp f currentStateEnv
+  let currentState = findFreshErrsInTranStateInterp g currentStateEnv
   let locEnv = localEnv currentState
-  let (freshName,newEnv,newCount) = generateVarName (declareLocalVars locEnv ae) (env currentState) (count currentState) be
-  put $ updateFreshErrVars f (FreshErrVar { env = newEnv, count = newCount, localEnv = locEnv}) currentStateEnv
-  return $ FVar FPDouble freshName
+  let gEnv = env currentState
+  let varName = findInErrVarEnv gEnv ae
+  if isJust varName
+  then return $ FVar FPDouble (fromJust varName)
+  else do
+    let (freshName,newEnv,newCount) = generateVarName (declareLocalVars locEnv ae) gEnv (count currentState) be
+    put $ updateFreshErrVars g (FreshErrVar { env = newEnv, count = newCount, localEnv = locEnv}) currentStateEnv
+    return $ FVar FPDouble freshName
 
 generateVarName :: FAExpr -> [(VarName, FAExpr, FBExpr)] -> Int -> FBExpr -> (String, ErrVarEnv,Int)
 generateVarName ae environment counter be =
@@ -464,13 +475,17 @@ findInEnv ae ((ev, ae', be):environment) | ae == ae'      = Just (ev, ae, be)
                                          | otherwise = findInEnv ae environment
 
 updateBetaState :: FunName -> FBExpr -> FAExpr -> State TranStateInterp VarName
-updateBetaState f pathCond ae1 = do
+updateBetaState f pathCond ae = do
   currentStateEnv <- get
   let fCurrentState = findFreshErrsInTranStateInterp f currentStateEnv
-  let locEnv = localEnv fCurrentState
-  let (freshName,newEnv,newCount) = generateVarName (declareLocalVars locEnv ae1) (env fCurrentState) (count fCurrentState) pathCond
-  put $ updateFreshErrVars f (FreshErrVar { env = newEnv, count = newCount, localEnv = locEnv}) currentStateEnv
-  return freshName
+  let varName = findInErrVarEnv (env fCurrentState) ae
+  if isJust varName
+  then return (fromJust varName)
+  else do
+    let locEnv = localEnv fCurrentState
+    let (freshName,newEnv,newCount) =  generateVarName (declareLocalVars locEnv ae) (env fCurrentState) (count fCurrentState) pathCond
+    put $ updateFreshErrVars f (FreshErrVar { env = newEnv, count = newCount, localEnv = locEnv}) currentStateEnv
+    return freshName
 
 betaPlusVar :: RProgram -> FunName -> FBExpr -> [Decl] -> FBExpr -> State TranStateInterp FBExpr
 betaPlusVar _ _ _ _ FBTrue  = return FBTrue

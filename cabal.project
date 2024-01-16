@@ -1,4 +1,4 @@
-packages: ReFlow deps/precisa/PRECiSA
+packages: ReFlow deps/precisa/public/PRECiSA
 
 package ReFlow
   shared: True

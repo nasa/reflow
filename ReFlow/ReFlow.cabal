@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               ReFlow
-version:            1.0.0
+version:            1.0.1
 synopsis:           ReFlow is a tool that extract floating-point C code from a PVS real numbers specification.
 
 description:        ReFlow takes as input a PVS real number specification and automatically generates a C

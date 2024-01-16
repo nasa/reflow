@@ -32,7 +32,7 @@ logic double g_fp (double d_double) =
 assigns \nothing;
 
 behavior structure:
-ensures (\is_finite(d_double)
+ensures (\result.isValid
          ==> (equal_fp(\result,g_fp(d_double)))) ;
 */
 double g_fp (double d_double) {
@@ -67,19 +67,22 @@ logic boolean h (real s, real d) =
 axiomatic fp_pred_h {
 logic boolean h_fp (double s_double, double d_double) =
 \let x_double = s_double ;
-((Dsub(x_double, g_fp(d_double)) <= (double) (0)));
+((Dle(Dsub(x_double, g_fp(d_double)),(double) (0))));
 }
 */
 
 
 /*@
-requires (0 <= E_0_double) ;
+requires (Dle((double) (0),E_0_double)) ;
 assigns \nothing;
 
 behavior structure:
-ensures \forall real s, real d; ((((\is_finite(s_double) && \is_finite(d_double)) && \is_finite(E_0_double))
-                                  ==> ((\result
-                                        ==> ((h(s, d) && h_fp(s_double, d_double))))))) ;
+ensures \forall real s, real d; (((\result.isValid && \is_finite(E_0_double))
+                                  ==> ((\let x_double = s_double;
+                                        (\let x = s;
+                                         (\abs(Dsub(x_double, g_fp(d_double)) - (x - g(d))) <= E_0_double))
+                                        ==> ((\result
+                                              ==> ((h(s, d) && h_fp(s_double, d_double))))))))) ;
 */
 bool h_tauplus_fp (double s_double, double d_double, double E_0_double) {
   bool res;
@@ -104,13 +107,16 @@ bool h_tauplus_num (double s_double, double d_double) {
 
 
 /*@
-requires (0 <= E_0_double) ;
+requires (Dle((double) (0),E_0_double)) ;
 assigns \nothing;
 
 behavior structure:
-ensures \forall real s, real d; ((((\is_finite(s_double) && \is_finite(d_double)) && \is_finite(E_0_double))
-                                  ==> ((\result
-                                        ==> ((! (h(s, d)) && ! (h_fp(s_double, d_double)))))))) ;
+ensures \forall real s, real d; (((\result.isValid && \is_finite(E_0_double))
+                                  ==> ((\let x_double = s_double;
+                                        (\let x = s;
+                                         (\abs(Dsub(x_double, g_fp(d_double)) - (x - g(d))) <= E_0_double))
+                                        ==> ((\result
+                                              ==> ((! (h(s, d)) && ! (h_fp(s_double, d_double)))))))))) ;
 */
 bool h_tauminus_fp (double s_double, double d_double, double E_0_double) {
   bool res;

@@ -411,19 +411,19 @@ generateNumericProp :: HasConditionals
                     -> [VarBind]
                     -> [FAExpr]
                     -> ACSL.Pred
-generateNumericProp hasConds predAbs fp f indexList fpArgs roErr locVars varBinds isFiniteExprList =
+generateNumericProp isMaybe predAbs fp f indexList fpArgs roErr locVars varBinds isFiniteExprList =
   ACSL.Ensures (defineLocalandErrVars [] locVars $
                 (quantifyVar $ ACSL.Implies (ACSL.PredAnd (initRangesProp varBinds indexList)
-                                            (ACSL.PredAnd ((if (hasConds f)
+                                            (ACSL.PredAnd ((if (isMaybe f)
                                                 then (ACSL.PredAnd (ACSL.IsValid ACSL.Result))
                                                 else id)
                                                 (isFiniteHypothesis isFiniteExprList))
                                                (listInputVarErr notIntArgs) ))
                                             postCond))
   where
-    postCond | isPredicate = predPostCond hasConds (fromJust predAbs) f actArgs
+    postCond | isPredicate = predPostCond isMaybe (fromJust predAbs) f actArgs
              | otherwise   = ACSL.PredBExpr $ ACSL.Rel LtE err (ACSL.ErrorCnst roErr)
-    err = ACSL.UnaryOp AbsOp (ACSL.BinaryOp SubOp (if (hasConds f) then ACSL.Value ACSL.Result else ACSL.Result) (ACSL.EFun f ACSL.Real actArgs) )
+    err = ACSL.UnaryOp AbsOp (ACSL.BinaryOp SubOp (if (isMaybe f) then ACSL.Value ACSL.Result else ACSL.Result) (ACSL.EFun f ACSL.Real actArgs) )
     actArgs = map (ACSL.arg2var . args2ACSL) fpArgs
     notIntArgs = filter (not . isArgInt) fpArgs
     quantifyVar = ACSL.Forall (map (\(ACSL.Var t x) -> (x,t)) actArgs)
@@ -436,12 +436,12 @@ generateNumericProp hasConds predAbs fp f indexList fpArgs roErr locVars varBind
     isPredicate = predAbs /= Nothing
 
 predPostCond :: HasConditionals -> PredAbs -> ACSL.FunName -> [ACSL.AExpr] -> ACSL.Pred
-predPostCond hasConds predAbs f actArgs
-  | isTauPlus  predAbs = ACSL.Implies (ACSL.AExprPred $ (if (hasConds f) then ACSL.Value else id) ACSL.Result)
+predPostCond isMaybe predAbs f actArgs
+  | isTauPlus  predAbs = ACSL.Implies (ACSL.AExprPred $ (if (isMaybe f) then ACSL.Value else id) ACSL.Result)
                                       (ACSL.AExprPred $ ACSL.EFun f ACSL.Real actArgs)
-  | isTauMinus predAbs = ACSL.Implies (ACSL.AExprPred $ (if (hasConds f) then ACSL.Value else id) ACSL.Result)
+  | isTauMinus predAbs = ACSL.Implies (ACSL.AExprPred $ (if (isMaybe f) then ACSL.Value else id) ACSL.Result)
                                       (ACSL.PredNot $ ACSL.AExprPred $ ACSL.EFun f ACSL.Real actArgs)
-  | otherwise = ACSL.Iff (ACSL.AExprPred $ (if (hasConds f) then ACSL.Value else id) ACSL.Result)
+  | otherwise = ACSL.Iff (ACSL.AExprPred $ (if (isMaybe f) then ACSL.Value else id) ACSL.Result)
                          (ACSL.AExprPred $ ACSL.EFun f ACSL.Real actArgs)
 
 initRangesProp :: [VarBind] -> [(VarName, FAExpr, FAExpr)] -> ACSL.Pred
