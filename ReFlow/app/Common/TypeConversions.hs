@@ -14,7 +14,7 @@ module Common.TypeConversions where
 import Common.TypesUtils
 import qualified FramaC.Types as C
 import qualified FramaC.ACSLTypes as ACSL
-import PVSTypes
+import AbsPVSLang
 
 type2acsl :: C.Type -> ACSL.Type
 type2acsl C.Real = ACSL.Real
@@ -32,9 +32,9 @@ fprec2type FPSingle = C.Float SinglePrec
 fprec2type FPDouble = C.Float DoublePrec
 fprec2type TInt = C.Int
 fprec2type Real = C.Real
-fprec2type (Array fp (Just (ArraySizeInt n))) = C.Array (fprec2type fp) (Just $ ArraySizeInt n)
-fprec2type (Array fp (Just (ArraySizeVar s))) = C.Array (fprec2type fp) (Just $ ArraySizeVar s)
-fprec2type (Array fp Nothing) = C.Array (fprec2type fp) Nothing
+-- fprec2type (Array fp (Just (ArraySizeInt n))) = C.Array (fprec2type fp) (Just $ ArraySizeInt n)
+-- fprec2type (Array fp (Just (ArraySizeVar s))) = C.Array (fprec2type fp) (Just $ ArraySizeVar s)
+-- fprec2type (Array fp Nothing) = C.Array (fprec2type fp) Nothing
 fprec2type Boolean = C.Boolean
 
 fprec2RealType :: PVSType -> ACSL.Type

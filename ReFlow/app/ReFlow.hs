@@ -17,14 +17,13 @@ module ReFlow
   )
 where
 
-import AbsPVSLang (RProgram,FunName,Decl(..),Arg,AExpr,FAExpr)
-import AbstractSemantics (SemanticConfiguration(..),fixpointSemantics,botInterp,semantics,stableConditions,maxRoundOffError,unfoldSemantics,)
+import AbsPVSLang (RProgram,FunName,Decl(..),Arg,AExpr,FAExpr,ResultField(..),PVSType(..))
+import AbstractSemantics (SemanticConfiguration(..),fixpointSemantics,botInterp,stableConditions,maxRoundOffError,unfoldSemantics,)
 import AbstractDomain (Conditions)
 import Common.DecisionPath (LDecisionPath)
 import Common.ControlFlow (ControlFlow(..))
 import ErrM (errify)
-import PVSTypes (PVSType(..))
-import FramaC.PrettyPrint (genFramaCFile)
+import FramaC.PrettyPrint (genFramaCFile, genCFile)
 import FramaC.PrecisaPrelude (precisaPreludeContent)
 import Options (Options(..),parseOptions)
 import PPExt (render,vcat)
@@ -37,8 +36,9 @@ import System.FilePath (dropFileName,takeBaseName)
 import Transformation (transformProgramSymb)
 import TransformationUtils (computeErrorGuards)
 import Translation.Real2Float (real2fpProg)
+import qualified Data.Map as Map
 
-import qualified PRECiSA (computeAllErrorsInKodiak,computeAllErrorsInKodiakMap)
+import qualified PRECiSA (computeAllErrorsInKodiakMap)
 
 main :: IO ()
 main = do
@@ -57,84 +57,83 @@ generateCProg
     , optRealInputRangeFile  = inputs
     , targetFormat           = fprec
     , optMaxDepth            = maxDepth
-    , optMinPrec             = minPrec}
+    , optMinPrec             = minPrec
+    , unfoldFunctionCalls    = unfoldFunCalls
+    , noInstrumentation      = noInstr}
   = case fprec of
-    "double" ->  real2FPC maxDepth minPrec prog inputs FPDouble
-    "single" ->  real2FPC maxDepth minPrec prog inputs FPSingle
+    "double" ->  real2FPC unfoldFunCalls noInstr maxDepth minPrec prog inputs FPDouble
+    "single" ->  real2FPC unfoldFunCalls noInstr maxDepth minPrec prog inputs FPSingle
     _ -> error ""
 
 normalizeBoolExpr :: Bool
 normalizeBoolExpr = True
 
-real2FPC :: Int -> Int ->  FilePath -> FilePath -> PVSType -> IO ()
-real2FPC maxBBDepth prec fileprog filespec fp = do
+real2FPC :: Bool -> Bool -> Int -> Int ->  FilePath -> FilePath -> PVSType -> IO ()
+real2FPC optUnfoldFuns noInstr maxBBDepth prec fileprog filespec fp = do
   putStrLn "Parsing..."
   realProg <- parseRealProg fileprog
   putStrLn "..done!\n"
 
-  -- fp progam
   putStrLn "Generating symbolic transformed program..."
   let decls = real2fpProg normalizeBoolExpr fp realProg
-  errparseSpec <- parseFileToSpec decls filespec
-  spec <- errify fail errparseSpec
-  let dpsNone = map initDpsToNone decls
-  -- transfromed program --
-  let tranProgTuples = transformProgramSymb realProg decls
-  putStrLn "..done!\n"
 
-  -- program semantics
-  putStrLn "Computing the round-off errors..."
+  if noInstr
+    then do
+      putStrLn "Generating Frama-C program..."
+      let framaCfileContent = genCFile fp decls
+      writeFile framaCfile (render framaCfileContent)
+      putStrLn "..done!\n"
+    else do
+      putStrLn "Generating symbolic transformed program..."
+      errparseSpec <- parseFileToSpec decls filespec
+      spec <- errify fail errparseSpec
+      let dpsNone = map initDpsToNone decls
+      let tranProgTuples = transformProgramSymb realProg decls
+      putStrLn "..done!\n"
 
-  let progSem = fixpointSemantics decls (botInterp decls) 3 semConf dpsNone
-  let maxDepth = fromInteger . toInteger $ maxBBDepth
-  let minPrec = fromInteger . toInteger $ prec
-  let searchParams = SP { maximumDepth = maxDepth
-                        , minimumPrecision = minPrec}
-  let unfoldedPgmSem = unfoldSemantics progSem
+      putStrLn "Computing the round-off errors with PRECiSA..."
+      let progSem = fixpointSemantics decls (botInterp decls) 3 semConf dpsNone
+      let maxDepth = fromInteger . toInteger $ maxBBDepth
+      let minPrec = fromInteger . toInteger $ prec
+      let searchParams = SP { maximumDepth = maxDepth
+                            , minimumPrecision = minPrec}
+      let config = SemConf{ improveError = False
+                         , assumeTestStability = True
+                         , mergeUnstables = True
+                         , unfoldFunCalls = optUnfoldFuns}
 
-  let optUnfoldFuns = False
+      results <- PRECiSA.computeAllErrorsInKodiakMap optUnfoldFuns decls config progSem spec searchParams
+      putStrLn "..done!\n"
 
-  results <- if optUnfoldFuns
-              then PRECiSA.computeAllErrorsInKodiakMap unfoldedPgmSem spec searchParams
-              else PRECiSA.computeAllErrorsInKodiak True unfoldedPgmSem spec searchParams
-  -- let resultSummary = summarizeAllErrors (getKodiakResults results)
+      let numROErrorsDecl = summarizeAllStableErrors results
+      let progStableConds = Map.map ((\(_,_,_,sem) -> Map.map stableConditions sem)) progSem
+      let progSymbRoundOffErrs = Map.map ((\(_,_,_,sem) -> Map.map maxRoundOffError sem)) progSem
 
-  putStrLn "..done!\n"
+      putStrLn "Computing the new conditions..."
+      funErrEnv <- mapM (computeErrorGuards maxDepth minPrec spec progSem numROErrorsDecl) tranProgTuples
+      putStrLn "..done!\n"
 
-    -- numerical round-off errors declarations
-  let numROErrorsDecl = summarizeAllStableErrors (getKodiakResults results)
-  let progStableConds = map (stableConditions . semantics) progSem
-  let progSymbRoundOffErrs = map (maxRoundOffError . semantics) progSem
-  -- symbolic round-off errors error vars
-  let roErrorsDecl = zip (map fst progSem) (zip progSymbRoundOffErrs progStableConds)
+      putStrLn "Generating Frama-C program..."
+      let framaCfileContent = genFramaCFile fp spec realProg decls tranProgTuples progSymbRoundOffErrs progStableConds numROErrorsDecl funErrEnv progSem
+      writeFile framaCfile (render framaCfileContent)
+      -- writeFile precisaPreludeFile (render precisaPreludeContent)
+      putStrLn "..done!\n"
 
-  putStrLn "Computing the new conditions..."
+      putStrLn "Generating PVS files..."
+      writeFile pvsProgFile (render $ genFpProgFile fp fpFileName decls)
 
-  -- numerical round-off errors error vars
-  funErrEnv <- mapM (computeErrorGuards maxDepth minPrec spec unfoldedPgmSem numROErrorsDecl) tranProgTuples
-  putStrLn "..done!\n"
+      let symbCertificate = render $ genCertFile fpFileName certFileName inputFileName decls progSem
+      writeFile certFile symbCertificate
 
-  putStrLn "Generating Frama-C program..."
-  let framaCfileContent = genFramaCFile fp spec realProg decls tranProgTuples roErrorsDecl numROErrorsDecl funErrEnv progSem
-  writeFile framaCfile (render framaCfileContent)
-  -- writeFile precisaPreludeFile (render precisaPreludeContent)
-  putStrLn "..done!\n"
+      let numCertificate = render $ genNumCertFile certFileName numCertFileName results decls spec maxBBDepth prec True
+      writeFile numCertFile numCertificate
 
-  putStrLn "Generating PVS files..."
-  writeFile pvsProgFile (render $ genFpProgFile fp fpFileName decls)
+      let guardExpressionsCert = render $ genExprCertFile fp inputFileName fpFileName exprCertFileName
+                                 (vcat (map (printExprFunCert maxBBDepth prec fp) funErrEnv))
+      writeFile exprCertFile guardExpressionsCert
+      putStrLn "..done!\n"
 
-  let symbCertificate = render $ genCertFile fpFileName certFileName inputFileName decls progSem
-  writeFile certFile symbCertificate
-
-  let numCertificate = render $ genNumCertFile certFileName numCertFileName results decls spec maxBBDepth prec True
-  writeFile numCertFile numCertificate
-
-  let guardExpressionsCert = render $ genExprCertFile fp inputFileName fpFileName exprCertFileName
-                             (vcat (map (printExprFunCert maxBBDepth prec fp) funErrEnv))
-  writeFile exprCertFile guardExpressionsCert
-  putStrLn "..done!\n"
-
-  putStrLn $ "PRECiSA: instrumented C code and PVS certificate generated in " ++ filePath ++ "."
+      putStrLn $ "ReFlow: instrumented C code and PVS certificate generated in " ++ filePath ++ "."
 
   return ()
     where
@@ -159,13 +158,16 @@ initDpsToNone :: Decl -> (FunName, [LDecisionPath])
 initDpsToNone (Decl _ _ f _ _) = (f,[])
 initDpsToNone (Pred _ _ f _ _) = (f,[])
 
-getKodiakResults :: [(String,PVSType,[Arg],[(Conditions, LDecisionPath,ControlFlow,KodiakResult,AExpr,[FAExpr],[AExpr])])] -> [(String, [(ControlFlow,KodiakResult)])]
-getKodiakResults = map getKodiakResult
-  where
-     getKodiakResult (f,_,_,errors) = (f, map getKodiakError errors)
-     getKodiakError (_,_,cf,err,_,_,_) = (cf,err)
 
-summarizeAllStableErrors :: [(String, [(ControlFlow, KodiakResult)])] -> [(String, Double)]
-summarizeAllStableErrors errorMap = map aux errorMap
+summarizeAllStableErrors :: [(String,PVSType,[Arg],
+                     [(ResultField, [(Conditions,LDecisionPath,ControlFlow,KodiakResult
+                                      ,AExpr,[FAExpr],[AExpr])])])]
+                    -> Map.Map FunName (Map.Map ResultField Double)
+summarizeAllStableErrors [] = Map.empty
+summarizeAllStableErrors ((f,_,_,res):funMap) = Map.insert f (getKodiakResultField res) (summarizeAllStableErrors funMap)
   where
-    aux (f, results) = (f,maximum $ map (maximumUpperBound . snd) (filter ((== Stable) . fst) results))
+    getKodiakResultField [] = Map.empty
+    getKodiakResultField ((field, kodiakRes):fieldMap) = Map.insert field error (getKodiakResultField fieldMap)
+      where
+        error = maximum $ map (maximumUpperBound . snd) ((filter ((== Stable) . fst)) (map getKodiakError kodiakRes))
+        getKodiakError (_,_,cf,err,_,_,_) = (cf,err)

@@ -30,7 +30,6 @@ module Transformation
 where
 
 import AbsPVSLang
-import PVSTypes
 import AbstractSemantics
 import Control.Monad.State
 import Data.Maybe (fromMaybe,isJust,fromJust)
@@ -40,6 +39,7 @@ import Operators
 import Common.TypesUtils
 import AbsSpecLang
 import Translation.Float2Real (fae2real')
+import qualified Data.Map as Map
 
 type ErrVarEnv = [(VarName,FAExpr,FBExpr)]
 
@@ -101,11 +101,11 @@ findOrigFunInRealProg f decls =
     Just d -> Just d
     Nothing -> findInRealProg (origDeclName f) decls
 
-lookupOrigFun :: FunName -> [(FunName, a)] -> Maybe a
+lookupOrigFun :: FunName -> (Map.Map FunName a) -> Maybe a
 lookupOrigFun f list =
-  case lookup f list of
+  case Map.lookup f list of
     Just e -> Just e
-    Nothing -> lookup (origDeclName f) list
+    Nothing -> Map.lookup (origDeclName f) list
 
 findOrigFunInSpec :: FunName -> [SpecBind] -> Maybe [VarBind]
 findOrigFunInSpec f list =
@@ -301,15 +301,16 @@ transformStmSymb rprog decls f be check forOrig@(ForLoop retType startIdx endIdx
 
 transformStmSymb _ _ _ _ _ UnstWarning = return UnstWarning
 
-transformStmSymb _ decls g be _ (FEFun isTrans f fp actArgs) =  do
+transformStmSymb _ decls g be _ (FEFun isTrans f resultField fp actArgs) =  do
   currentStateEnv  <- get
   let fCurrentState = findFreshErrsInTranStateInterp f currentStateEnv
   let (_,formArgs,body) = fromMaybe (error $ "transformStmSymb: function " ++ show f ++ " not found.") (findInDecls f decls)
   let locVars = case body of
-                  Left stm -> localVars stm
-                  Right _ -> []
+                  AExprBody stm -> localVars stm
+                  BExprBody stm -> localVarsBExprStm stm
+                  CExprBody stm -> localVarsCollExpr stm
   newErrArgs <- mapM (generateErrVarArg g be . argsBindFAExpr formArgs actArgs . replaceLocVarsFix locVars . snd3) (env fCurrentState)
-  return $ FEFun isTrans f fp (actArgs++newErrArgs)
+  return $ FEFun isTrans f resultField fp (actArgs++newErrArgs)
 
 transformStmSymb rprog decls g be check (BinaryFPOp op fp ae1 ae2) = do
   ae1' <- transformStmSymb rprog decls g be False ae1
@@ -557,8 +558,9 @@ betaPlusVar _ g pathCond decls (FEPred isTrans _ f args) = do
   let fCurrentState = findFreshErrsInTranStateInterp f currentStateEnv
   let (_,formArgs,body) = fromMaybe (error $ "betaPlusVar: function " ++ show f ++ " not found.") (findInDecls f decls)
   let locVars = case body of
-                  Left stm -> localVars stm
-                  Right _ -> []
+                  AExprBody stm -> localVars stm
+                  BExprBody stm -> localVarsBExprStm stm
+                  CExprBody stm -> localVarsCollExpr stm
   newErrArgs <- mapM (generateErrVarArg g pathCond . argsBindFAExpr formArgs args . replaceLocVarsFix locVars . snd3) (env fCurrentState)
   return $ FEPred isTrans TauPlus f (args ++ newErrArgs)
 
@@ -635,8 +637,9 @@ betaMinusVar _ g pathCond decls (FEPred isTrans _ f args) = do
   let fCurrentState = findFreshErrsInTranStateInterp f currentStateEnv
   let (_,formArgs,body) = fromMaybe (error $ "betaMinusVar: function " ++ show f ++ "not found.") (findInDecls f decls)
   let locVars = case body of
-                  Left  stm -> localVars stm
-                  Right _ -> []
+                  AExprBody stm -> localVars stm
+                  BExprBody stm -> localVarsBExprStm stm
+                  CExprBody stm -> localVarsCollExpr stm
   newErrArgs <- mapM (generateErrVarArg g pathCond . argsBindFAExpr formArgs args . replaceLocVarsFix locVars . snd3) (env fCurrentState)
   return $ FEPred isTrans TauMinus f (args ++ newErrArgs)
 

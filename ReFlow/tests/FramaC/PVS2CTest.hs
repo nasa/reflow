@@ -15,7 +15,6 @@ import FramaC.PVS2C
 import Test.Tasty
 import Test.Tasty.HUnit
 import AbsPVSLang
-import PVSTypes
 import Operators
 
 testPVS2C = testGroup "PVS2C"
@@ -31,6 +30,6 @@ replaceCallsInBExpr__test1 = testCase "replaceCallsInBExpr__test1" $
   replaceCallsInBExpr (\_ -> True) [] [] FBTrue @?= FBTrue
 
 replaceCallsInBExpr__test2 = testCase "replaceCallsInBExpr__test1" $
-  replaceCallsInBExpr (\_ -> True) [(FEFun False "f" FPDouble [],1)] [] (FRel Gt (FEFun False "f" FPDouble []) (FInt 1))
+  replaceCallsInBExpr (\_ -> True) [(FEFun False "f" ResValue FPDouble [],1)] [] (FRel Gt (FEFun False "f" ResValue FPDouble []) (FInt 1))
   @?=
   FRel Gt (Value $ StructVar FPDouble "aux_1") (FInt 1)

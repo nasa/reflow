@@ -19,6 +19,7 @@ import qualified FramaC.ACSLlang as ACSL (Pred(..))
 import Operators
 import Prelude hiding ((<>))
 import PPExt
+import AbsPVSLang (ResultField(..))
 
 type FunName = String
 type PredName = String
@@ -48,8 +49,8 @@ data AExpr = IntCnst Integer
            | Var Type VarName
            | RealMark VarName
            | TypeCast Type Type AExpr
-           | EFun FunName Type [AExpr]
-           | ArrayElem Type VarName AExpr
+           | EFun FunName ResultField Type [AExpr]
+           | ArrayElem Type VarName [AExpr]
            | BinaryOp  BinOp Type AExpr AExpr
            | UnaryOp   UnOp  Type AExpr
            | Min [AExpr]
@@ -94,8 +95,8 @@ replaceInAExpr aef bef expr = fromMaybe (replaceInAExpr' expr) (aef expr)
   where
     replaceInAExpr' :: AExpr -> AExpr
     replaceInAExpr' (TypeCast fromType toType ae) = TypeCast fromType toType (replaceInAExpr aef bef ae)
-    replaceInAExpr' (EFun f t aes) = EFun f t (map (replaceInAExpr aef bef) aes)
-    replaceInAExpr' (ArrayElem t v ae) = ArrayElem t v (replaceInAExpr aef bef ae)
+    replaceInAExpr' (EFun f field t aes) = EFun f field t (map (replaceInAExpr aef bef) aes)
+    replaceInAExpr' (ArrayElem t v aes) = ArrayElem t v (map (replaceInAExpr aef bef) aes)
     replaceInAExpr' (BinaryOp op t ae1 ae2) = BinaryOp  op t (replaceInAExpr aef bef ae1) (replaceInAExpr aef bef ae2)
     replaceInAExpr' (UnaryOp  op t ae) = UnaryOp  op t (replaceInAExpr aef bef ae)
     replaceInAExpr' (Min aes) = Min (map (replaceInAExpr aef bef) aes)
@@ -126,6 +127,11 @@ getValueFunCallsAExpr = replaceInAExpr getValueFunCallAExpr (Just . getValueFunC
     getValueFunCallAExpr fun@EFun{} = Just $ Value fun
     getValueFunCallAExpr _ = Nothing
 
+prettyResultField :: ResultField -> Doc
+prettyResultField ResValue = emptyDoc
+prettyResultField (ResRecordField field) = text "." <> text field
+prettyResultField (ResTupleIndex idx)  = text "." <> integer idx
+
 instance PPExt Arg where
   prettyDoc (Arg (Array t _) x) = prettyDoc t <+> text "*" <> text x
   prettyDoc (Arg  Real x) = text "real" <+> text x
@@ -138,11 +144,11 @@ instance PPExt AExpr where
   prettyDoc (IntCnst  i) = integer i
   prettyDoc (FPCnst _ rat) = text $ Rat.showFloatC rat
   prettyDoc (ErrorCnst err) = prettyErrorHex err
-  prettyDoc (EFun f _ args) = text f <> text "_fp" <+> parens (docListComma $ map prettyDoc args)
-  prettyDoc (Value (EFun f _ args)) = text f <> text "_fp" <+> parens (docListComma $ map prettyDoc args) <> text ".value"
+  prettyDoc (EFun f field _ args) = text f <> text "_fp" <> prettyResultField field <+> parens (docListComma $ map prettyDoc args)
+  -- prettyDoc (Value (EFun f field _ args)) = text f <> text "_fp" <> prettyResultField field <+> parens (docListComma $ map prettyDoc args) <> text ".value"
   prettyDoc (Value ae) = prettyDoc ae <> text ".value"
   prettyDoc (Var t x) = printVarName t x
-  prettyDoc (ArrayElem _ v idxExpr) = text v <> text "[" <> prettyDoc idxExpr <> text "]"
+  prettyDoc (ArrayElem _ v args) = text v <> parens (docListComma $ map prettyDoc args)
   prettyDoc (Some Int (Left expr)) = text "some" <> parens (prettyDoc expr)
   prettyDoc (Some (Float SinglePrec) (Left expr)) = text "someFloat" <> parens (prettyDoc expr)
   prettyDoc (Some (Float DoublePrec) (Left expr)) = text "someDouble" <> parens (prettyDoc expr)

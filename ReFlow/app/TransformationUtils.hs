@@ -13,19 +13,20 @@ module TransformationUtils where
 
 import Transformation
 import AbsPVSLang
-import AbstractSemantics (emptyEnv,symbolicErrorStable, Interpretation,unfoldFunCallInEExprRec)
+import AbstractSemantics (emptyEnv,symbolicErrorStable, Interpretation,unfoldFunCallInEExprRec, SemanticConfiguration(..))
 import Translation.Float2Real
 import AbsSpecLang
-import NumericalError
 import Data.Maybe (fromMaybe)
 import Common.TypesUtils (VarName)
 import Foreign.C
+import FunctionCallErrorAbstraction (roundOffError)
+import qualified Data.Map as Map
 
 computeErrorGuards :: CUInt
                    -> CUInt
                    -> Spec
                    -> Interpretation
-                   -> [(String,Double)]
+                   -> Map.Map FunName (Map.Map ResultField Double)
                    -> (Decl, ErrVarEnv,LocalEnv,[(FAExpr,AExpr)])
                    ->  IO (Decl,[(VarName,FAExpr,AExpr,FBExpr,EExpr,Double,[FAExpr],[AExpr],[EExpr],[VarBind])])
 computeErrorGuards maxDepth minPrec (Spec spec) interp funErrors (d@(Decl _ _ f args _), exprList, _,_) = do
@@ -45,16 +46,19 @@ computeErrorVarValue :: CUInt
                      -> [VarBind]
                      -> Interpretation
                      -> [Arg]
-                     -> [(String,Double)]
+                     -> Map.Map FunName (Map.Map ResultField Double)
                      -> (VarName,FAExpr,FBExpr)
                      -> IO (VarName,FAExpr,AExpr,FBExpr,EExpr,Double,[FAExpr],[AExpr],[EExpr],[VarBind])
 computeErrorVarValue maximumDepth minimumPrecision varBinds interp args funErrors (errorVariable, fae, be)  = do
-  err <- computeNumRoundOffError True maximumDepth minimumPrecision varBinds funErrors3 symbErr
+  err <- roundOffError config maximumDepth minimumPrecision varBinds interp emptyEnv fae
   return (errorVariable,fae,fae2real fae,be,symbErr,err,faeVarList,realVarList,errVarList,varBinds)
   where
-    funErrors3 = map (\(a,b) -> (a,b,Nothing)) funErrors
     faeVarList  = varList fae
     errVarList  = map errVar  faeVarList
     realVarList = map realVar faeVarList
-    symbErr = unfoldFunCallInEExprRec interp $ simplAExpr $ symbolicErrorStable interp emptyEnv args fae
+    symbErr = unfoldFunCallInEExprRec interp $ simplAExpr $ symbolicErrorStable interp emptyEnv fae
+    config = SemConf{ improveError = False
+                     , assumeTestStability = True
+                     , mergeUnstables = True
+                     , unfoldFunCalls = False}
 

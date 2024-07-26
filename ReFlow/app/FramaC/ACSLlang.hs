@@ -19,6 +19,7 @@ import Common.TypesUtils
 import Common.ShowRational(showFloatC)
 import Data.Maybe (fromMaybe)
 import Data.List.Extra (stripSuffix)
+import AbsPVSLang (ResultField(..))
 
 type FunName  = String
 type PredName = String
@@ -33,9 +34,9 @@ type FLetElem = (VarName, Type,FAExpr)
 
 data FAExpr = FInt  Integer
             | FCnst Type Rational
-            | FEFun String Type [FAExpr]
+            | FEFun String ResultField Type [FAExpr]
             | FVar  Type VarName
-            | FArrayElem Type (Maybe ArraySize) VarName FAExpr
+            | FArrayElem Type (Maybe ArraySize) VarName [FAExpr]
             | FTypeCast Type Type FAExpr
             | ToFloat  Type AExpr
             | FValue FAExpr
@@ -75,8 +76,8 @@ data AExpr = IntCnst Integer
            | RealMark VarName
            | ErrorCnst Double
            | Result
-           | EFun FunName Type [AExpr]
-           | ArrayElem VarName  AExpr
+           | EFun FunName ResultField Type [AExpr]
+           | ArrayElem VarName [AExpr]
            | FromFloat FPFormat AExpr
            | TypeCast Type Type AExpr
            | BinaryOp BinOp AExpr AExpr
@@ -193,6 +194,11 @@ prVarName :: String -> Type -> Doc
 prVarName v (Float fp) = text v <> text "_" <> prettyDoc fp
 prVarName v _ = text v
 
+prettyResultField :: ResultField -> Doc
+prettyResultField ResValue = emptyDoc
+prettyResultField (ResRecordField field) = text "." <> text field
+prettyResultField (ResTupleIndex idx)  = text "." <> integer idx
+
 instance PPExt Arg where
   prettyDoc (Arg (Array t _) x) = prettyDoc t <+> text "*" <> text x
   prettyDoc (Arg  Real x) = text "real" <+> text x
@@ -210,9 +216,9 @@ instance PPExt FAExpr where
     prettyDoc (FValue (FVar _ x)) = text x <> text ".value"
     prettyDoc (FValue FResult)    = text "\\result.value"
     prettyDoc (FValue e) = parens (prettyDoc e) <> text ".value"
-    prettyDoc (FArrayElem _ _ v idx) = text v <> text "[" <> prettyDoc idx <> text "]"
-    prettyDoc (FEFun f _ []) = text f
-    prettyDoc (FEFun f _ args) = text f <> parens (hsep $ punctuate comma $ map prettyDoc args)
+    prettyDoc (FArrayElem _ _ v args) = text v <> parens (hsep $ punctuate comma $ map prettyDoc args)
+    prettyDoc (FEFun f resField _ []) = text f <> prettyResultField resField
+    prettyDoc (FEFun f resField _ args) = text f <> prettyResultField resField <> parens (hsep $ punctuate comma $ map prettyDoc args)
     --
     prettyDoc (ToFloat  (Float SinglePrec)          a) = prettyDoc a --prettyDocUnaryOp "RtoS"   a
     prettyDoc (ToFloat  (Float DoublePrec)          a) = prettyDoc a --prettyDocUnaryOp "RtoD"   a
@@ -303,8 +309,9 @@ instance PPExt AExpr where
   prettyDoc (FromFloat _ (Var _ x)) = text x
   prettyDoc (Value (Var _ x)) = text x <> text ".value"
   prettyDoc (Value Result)    = text "\\result.value"
-  prettyDoc (EFun f _ args) = text f <> parens (docListComma $ map prettyDoc args)
-  prettyDoc (ArrayElem v idx) = text v <> text "[" <> prettyDoc idx <> text "]"
+  prettyDoc (EFun f resField _ []) = text f <> prettyResultField resField
+  prettyDoc (EFun f resField _ args) = text f <> prettyResultField resField <> parens (docListComma $ map prettyDoc args)
+  prettyDoc (ArrayElem v args) = text v <> parens (docListComma $ map prettyDoc args)
   prettyDoc (BinaryOp AddOp   ae1 ae2) = parens $ prettyDoc ae1 <+> text "+" <+> prettyDoc ae2
   prettyDoc (BinaryOp SubOp   ae1 ae2) = parens $ prettyDoc ae1 <+> text "-" <+> prettyDoc ae2
   prettyDoc (BinaryOp MulOp   ae1 ae2) = parens $ prettyDoc ae1 <+> text "*" <+> prettyDoc ae2

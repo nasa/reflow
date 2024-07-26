@@ -20,6 +20,7 @@ import qualified PVSTypes as PVS
 import Test.Tasty
 import Test.Tasty.HUnit
 import Prelude hiding (Eq)
+import AbsPVSLang (ResultField(..))
 
 true = PredBExpr BTrue
 
@@ -49,47 +50,47 @@ behaviorStablePaths__test = testGroup "behaviorStablePaths"
 behaviorStructure__test = testGroup "behaviorStructure"
   [ testCase "no args no conditions no expression list" $
       behaviorStructure (\_ -> False) (Float DoublePrec) "f" [] []
-        @?= Ensures (Implies (IsValid Result) (PredFBExpr (EqualFP FResult (FEFun "f_fp" (Float DoublePrec) [])))),
+        @?= Ensures (Implies (IsValid Result) (PredFBExpr (EqualFP FResult (FEFun "f_fp" ResValue (Float DoublePrec) [])))),
     testCase "no args conditions no expression list" $
       behaviorStructure (\_ -> True) (Float DoublePrec) "f" [] []
-        @?= Ensures (Implies (IsValid Result) (PredFBExpr (EqualFP (FValue FResult) (FEFun "f_fp" (Float DoublePrec) []))))
+        @?= Ensures (Implies (IsValid Result) (PredFBExpr (EqualFP (FValue FResult) (FEFun "f_fp" ResValue (Float DoublePrec) []))))
   ]
 
 behaviorStructurePred__test = testGroup  "behaviorStructurePred"
   [ testCase "tauplus no args no conditions no expression list" $
       behaviorStructurePred (\_ -> False) (Float DoublePrec) TauPlus "f" [] [] []
-        @?= Ensures (Implies (PredAnd (IsValid Result) (PredBExpr BTrue)) (Implies (AExprPred Result) (PredAnd (AExprPred (EFun "f" Real [])) (FAExprPred (FEFun "f_fp" (Float DoublePrec) [])))))
+        @?= Ensures (Implies (PredAnd (IsValid Result) (PredBExpr BTrue)) (Implies (AExprPred Result) (PredAnd (AExprPred (EFun "f" ResValue Real [])) (FAExprPred (FEFun "f_fp" ResValue (Float DoublePrec) [])))))
   , testCase "tauplus no args with conditions no expression list" $
       behaviorStructurePred (\_ -> True) (Float DoublePrec) TauPlus "f" [] [] []
         @?=
           Ensures (Implies (IsValid Result)
             (Implies (AExprPred (Value Result))
-                     (PredAnd (AExprPred (EFun "f" Real []))
-                              (FAExprPred (FEFun "f_fp" (Float DoublePrec) [])))))
+                     (PredAnd (AExprPred (EFun "f" ResValue Real []))
+                              (FAExprPred (FEFun "f_fp" ResValue (Float DoublePrec) [])))))
   , testCase "tauminus no args no conditions no expression list" $
       behaviorStructurePred (\_ -> False) (Float DoublePrec) TauMinus "f" [] [] []
-        @?= Ensures (Implies (PredAnd (IsValid Result) (PredBExpr BTrue)) (Implies (AExprPred Result) (PredAnd (PredNot (AExprPred (EFun "f" Real []))) (PredNot (FAExprPred (FEFun "f_fp" (Float DoublePrec) []))))))
+        @?= Ensures (Implies (PredAnd (IsValid Result) (PredBExpr BTrue)) (Implies (AExprPred Result) (PredAnd (PredNot (AExprPred (EFun "f" ResValue Real []))) (PredNot (FAExprPred (FEFun "f_fp" ResValue (Float DoublePrec) []))))))
   , testCase "tauminus no args with conditions no expression list" $
       behaviorStructurePred (\_ -> True) (Float DoublePrec) TauMinus "f" [] [] []
         @?=
           Ensures (Implies (IsValid Result)
           (Implies (AExprPred (Value Result))
-                   (PredAnd (PredNot $ AExprPred (EFun "f" Real []))
-                            (PredNot $ FAExprPred (FEFun "f_fp" (Float DoublePrec) [])))))
+                   (PredAnd (PredNot $ AExprPred (EFun "f" ResValue Real []))
+                            (PredNot $ FAExprPred (FEFun "f_fp" ResValue (Float DoublePrec) [])))))
   , testCase "original no args no conditions no expression list" $
       behaviorStructurePred (\_ -> False) (Float DoublePrec) Original "f" [] [] []
-        @?= Ensures (Implies (PredAnd (IsValid Result) (PredBExpr BTrue)) (PredAnd (Implies (AExprPred Result) (PredAnd (AExprPred (EFun "f" Real [])) (FAExprPred (FEFun "f_fp" (Float DoublePrec) [])))) (Implies (PredNot (AExprPred Result)) (PredAnd (PredNot (AExprPred (EFun "f" Real []))) (PredNot (FAExprPred (FEFun "f_fp" (Float DoublePrec) [])))))))
+        @?= Ensures (Implies (PredAnd (IsValid Result) (PredBExpr BTrue)) (PredAnd (Implies (AExprPred Result) (PredAnd (AExprPred (EFun "f" ResValue Real [])) (FAExprPred (FEFun "f_fp" ResValue (Float DoublePrec) [])))) (Implies (PredNot (AExprPred Result)) (PredAnd (PredNot (AExprPred (EFun "f" ResValue Real []))) (PredNot (FAExprPred (FEFun "f_fp" ResValue (Float DoublePrec) [])))))))
   , testCase "original no args with conditions no expression list" $
       behaviorStructurePred (\_ -> True) (Float DoublePrec) Original "f" [] [] []
         @?=
           Ensures (Implies (IsValid Result)
           (PredAnd
           (Implies (AExprPred (Value Result))
-                   (PredAnd (AExprPred (EFun "f" Real []))
-                            (FAExprPred (FEFun "f_fp" (Float DoublePrec) []))))
+                   (PredAnd (AExprPred (EFun "f" ResValue Real []))
+                            (FAExprPred (FEFun "f_fp" ResValue (Float DoublePrec) []))))
           (Implies (PredNot $ AExprPred (Value Result))
-                   (PredAnd (PredNot $ AExprPred (EFun "f" Real []))
-                            (PredNot $ FAExprPred (FEFun "f_fp" (Float DoublePrec) []))))))
+                   (PredAnd (PredNot $ AExprPred (EFun "f" ResValue Real []))
+                            (PredNot $ FAExprPred (FEFun "f_fp" ResValue (Float DoublePrec) []))))))
   ]
 
 isFiniteHypothesis__test = testGroup
@@ -110,25 +111,25 @@ predPostCond__test = testGroup "predPostCond"
   [ testCase "no conditions, tauplus and an empty expression list " $
       predPostCond (\_ -> False) TauPlus "f" []
         @?= Implies (AExprPred Result)
-                    (AExprPred $ EFun "f" Real [])
+                    (AExprPred $ EFun "f" ResValue Real [])
   , testCase "no conditions, tauminus and an empty expression list " $
       predPostCond (\_ -> False) TauMinus "f" []
         @?= Implies (AExprPred Result)
-                    (PredNot $ AExprPred $ EFun "f" Real [])
+                    (PredNot $ AExprPred $ EFun "f" ResValue Real [])
   , testCase "no conditions, original and an empty expression list " $
       predPostCond (\_ -> False) Original "f" []
         @?= Iff (AExprPred Result)
-                (AExprPred $ EFun "f" Real [])
+                (AExprPred $ EFun "f" ResValue Real [])
   , testCase "with conditions, tauplus and an empty expression list " $
       predPostCond (\ _ -> True) TauPlus "f" []
         @?= Implies (AExprPred $ Value Result)
-                    (AExprPred $ EFun "f" Real [])
+                    (AExprPred $ EFun "f" ResValue Real [])
   , testCase "with conditions, tauminus and an empty expression list " $
       predPostCond (\_ -> True) TauMinus "f" []
         @?= Implies (AExprPred $ Value Result)
-                    (PredNot $ AExprPred $ EFun "f" Real [])
+                    (PredNot $ AExprPred $ EFun "f" ResValue Real [])
   , testCase "with conditions, original and an empty expression list " $
       predPostCond (\_ -> True) Original "f" []
         @?= Iff (AExprPred $ Value Result)
-                   (AExprPred $ EFun "f" Real [])
+                   (AExprPred $ EFun "f" ResValue Real [])
   ]

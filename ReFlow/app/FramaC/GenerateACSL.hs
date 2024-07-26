@@ -21,12 +21,12 @@ import Data.Bifunctor (bimap)
 import qualified FramaC.ACSLlang as ACSL
 import qualified FramaC.ACSLTypes as ACSL
 import FramaC.Types (HasConditionals,IsMaybeType)
-import PVSTypes
 import Operators
 import Translation.Float2Real (fae2real)
 import Utils (fst3,snd3,elimDuplicates,listFst3)
 import Transformation (isTauMinus, isTauPlus)
 import Data.Maybe (fromJust)
+import qualified Data.Map as Map
 
 conds2pred :: [Condition] -> ACSL.Pred
 conds2pred [] = error "conds2pred: empty list of conditions."
@@ -53,14 +53,17 @@ generateStablePathPred :: Maybe PredAbs
                        -> PVSType
                        -> String
                        -> [Arg]
-                       -> [Condition]
+                       -> Map.Map ResultField [Condition]
                        -> [(VarName, FAExpr, FAExpr)]
                        -> ACSL.PredDecl
-generateStablePathPred predAbs fp f args listStableCond forIdxs =
-  ACSL.PredDecl (namePredStablePaths predAbs f) (realArgs++fpArgs) (quantifyIdx forIdxs $ conds2pred listStableCond)
-  where
-    realArgs = map args2ACSL $ filter (\a -> not (isArgArray a || isArgInt a)) args
-    fpArgs   = map (args2ACSL . argCast fp) args
+generateStablePathPred predAbs fp f args listStableCond forIdxs
+  | Map.keys listStableCond == [ResValue] = ACSL.PredDecl (namePredStablePaths predAbs f) (realArgs++fpArgs)
+                                            (quantifyIdx forIdxs $ conds2pred listStableCondResValue)
+  | otherwise = error "numPostCondition: record field not supported yet"
+    where
+      listStableCondResValue = fromJust $ Map.lookup ResValue listStableCond
+      realArgs = map args2ACSL $ filter (\a -> not (isArgArray a || isArgInt a)) args
+      fpArgs   = map (args2ACSL . argCast fp) args
 
 makeValuePath :: ACSL.Type -> ACeb -> ACSL.FBExpr
 makeValuePath resType aceb = ACSL.FAnd (fbexpr2acsl $ fpConds $ conds aceb) (foldl1 ACSL.FOr (map makeResEq (fDeclRes $ fpExprs aceb)))
@@ -113,7 +116,7 @@ behaviorStructure isMaybe targetFPType f fpArgs errVars
                                 -- (isFiniteHypothesis isFiniteExprList)
     acslResultPrefix = if (isMaybe f) then ACSL.FValue else id
     consequence = ACSL.PredFBExpr $ ACSL.EqualFP (acslResultPrefix ACSL.FResult)
-                                                 (ACSL.FEFun (fpFunName f) targetFPType args)
+                                                 (ACSL.FEFun (fpFunName f) ResValue targetFPType args)
     formula = if isFinitePred == (ACSL.PredBExpr ACSL.BTrue)
               then ACSL.Implies (ACSL.IsValid ACSL.Result) consequence
               else ACSL.Implies (ACSL.PredAnd (ACSL.IsValid ACSL.Result) isFinitePred) consequence
@@ -152,25 +155,25 @@ behaviorStructurePred isMaybe t predAbs f rArgs fpArgs errArgs
     structBehaCons TauPlus =
         (ACSL.Implies
         (ACSL.AExprPred $ res)
-        (ACSL.PredAnd (ACSL.AExprPred (ACSL.EFun  f ACSL.Real realActArgs))
-        (ACSL.FAExprPred $ ACSL.FEFun (fpFunName f) t fpActArgs)))
+        (ACSL.PredAnd (ACSL.AExprPred (ACSL.EFun  f ResValue ACSL.Real realActArgs))
+        (ACSL.FAExprPred $ ACSL.FEFun (fpFunName f) ResValue t fpActArgs)))
 
     structBehaCons TauMinus =
       (ACSL.Implies
         (ACSL.AExprPred $ res)
-        (ACSL.PredAnd (ACSL.PredNot $ ACSL.AExprPred (ACSL.EFun  f ACSL.Real realActArgs))
-                      (ACSL.PredNot $ ACSL.FAExprPred $ ACSL.FEFun (fpFunName f) t fpActArgs)))
+        (ACSL.PredAnd (ACSL.PredNot $ ACSL.AExprPred (ACSL.EFun f ResValue ACSL.Real realActArgs))
+                      (ACSL.PredNot $ ACSL.FAExprPred $ ACSL.FEFun (fpFunName f) ResValue t fpActArgs)))
 
     structBehaCons _ =
       (ACSL.PredAnd
       (ACSL.Implies
         (ACSL.AExprPred $ res)
-        (ACSL.PredAnd (ACSL.AExprPred (ACSL.EFun  f ACSL.Real realActArgs))
-        (ACSL.FAExprPred $ ACSL.FEFun (fpFunName f) t fpActArgs)))
+        (ACSL.PredAnd (ACSL.AExprPred (ACSL.EFun  f ResValue ACSL.Real realActArgs))
+        (ACSL.FAExprPred $ ACSL.FEFun (fpFunName f) ResValue t fpActArgs)))
       (ACSL.Implies
         (ACSL.PredNot $ ACSL.AExprPred $ res)
-        (ACSL.PredAnd (ACSL.PredNot $ ACSL.AExprPred (ACSL.EFun  f ACSL.Real realActArgs))
-                      (ACSL.PredNot $ ACSL.FAExprPred $ ACSL.FEFun (fpFunName f) t fpActArgs))))
+        (ACSL.PredAnd (ACSL.PredNot $ ACSL.AExprPred (ACSL.EFun f ResValue ACSL.Real realActArgs))
+                      (ACSL.PredNot $ ACSL.FAExprPred $ ACSL.FEFun (fpFunName f) ResValue t fpActArgs))))
 
 behaviorStablePaths :: FunName
                     -> Maybe PredAbs
@@ -202,7 +205,7 @@ behaviorSymbolic f fp realArgs errorExpr errArgs locVars = ACSL.Ensures $ defLoc
     realVarArgs = filter (\a -> not (isArgArray a || isArgInt a)) realArgs
     inputVarNames = map argName realVarArgs
     funErrorBound = ACSL.ErrorDiseq (ACSL.FValue ACSL.FResult)
-                                    (ACSL.EFun f ACSL.Real (map (ACSL.arg2var . args2ACSL) realArgs))
+                                    (ACSL.EFun f ResValue ACSL.Real (map (ACSL.arg2var . args2ACSL) realArgs))
                                     (expr2acsl errorExpr)
     acslPred = ACSL.Implies (ACSL.PredAnd (ACSL.PredAnd (inputErrorBounds inputVarNames)
                                                         (errVarConstraints errArgs))
@@ -299,10 +302,10 @@ faexpr2acsl (FInt i)       = ACSL.FInt i
 faexpr2acsl (FCnst fp rat) = ACSL.FCnst (fprec2acsl fp) rat
 faexpr2acsl (FVar  fp x)   = ACSL.FVar  (fprec2acsl fp) x
 faexpr2acsl (Value expr)   = ACSL.FValue (faexpr2acsl expr)
-faexpr2acsl (FArrayElem fp size v idx) = ACSL.FArrayElem (fprec2acsl fp) size v (faexpr2acsl idx)
+-- faexpr2acsl (FArrayElem fp size v exprs) = ACSL.FArrayElem (fprec2acsl fp) size v (map faexpr2acsl exprs)
 faexpr2acsl (TypeCast fp1 fp2 expr) = ACSL.FTypeCast (fprec2acsl fp1) (fprec2acsl fp2) (faexpr2acsl expr)
 faexpr2acsl (ToFloat  fp      expr) = ACSL.ToFloat   (fprec2acsl fp)                   (expr2acsl expr)
-faexpr2acsl (FEFun _ f fp args) = ACSL.FEFun (fpFunName f) (fprec2acsl fp) (map faexpr2acsl args)
+faexpr2acsl (FEFun _ f field fp args) = ACSL.FEFun (fpFunName f) field (fprec2acsl fp) (map faexpr2acsl args)
 faexpr2acsl (BinaryFPOp op fp expr1 expr2) = ACSL.BinaryFPOp op (fprec2acsl fp) (faexpr2acsl expr1) (faexpr2acsl expr2)
 faexpr2acsl (UnaryFPOp  op fp expr)        = ACSL.UnaryFPOp op (fprec2acsl fp) (faexpr2acsl expr)
 faexpr2acsl (FFma fp expr1 expr2 expr3)    = ACSL.FFma (fprec2acsl fp) (faexpr2acsl expr1) (faexpr2acsl expr2) (faexpr2acsl expr3)
@@ -348,10 +351,10 @@ expr2acsl (Int i)                      = ACSL.IntCnst i
 expr2acsl (Rat rat)                    = ACSL.RatCnst rat
 expr2acsl (ErrRat rat)                 = ACSL.ErrorCnst (fromRational rat)
 expr2acsl (Var fp x)                   = ACSL.Var (fprec2acsl fp) x
-expr2acsl (RealMark x)                 = ACSL.Var ACSL.Real x
-expr2acsl (ErrorMark x fp)             = ACSL.ErrorMark x (ACSL.format $ fprec2acsl fp)
-expr2acsl (ArrayElem _ _ v idx)       = ACSL.ArrayElem v (expr2acsl idx)
-expr2acsl (EFun f fp args)             = ACSL.EFun f (fprec2acsl fp) (map expr2acsl args)
+expr2acsl (RealMark x ResValue)        = ACSL.Var ACSL.Real x
+expr2acsl (ErrorMark x ResValue fp)             = ACSL.ErrorMark x (ACSL.format $ fprec2acsl fp)
+-- expr2acsl (ArrayElem _ _ v args)       = ACSL.ArrayElem v (map expr2acsl args)
+expr2acsl (EFun f field fp args)       = ACSL.EFun f field (fprec2acsl fp) (map expr2acsl args)
 expr2acsl (BinaryOp op expr1 expr2)    = ACSL.BinaryOp op (expr2acsl expr1) (expr2acsl expr2)
 expr2acsl (UnaryOp  op expr)           = ACSL.UnaryOp  op (expr2acsl expr)
 expr2acsl (FromFloat fp (FInt i))      = ACSL.FromFloat (ACSL.format $ fprec2acsl fp) (ACSL.IntCnst i)
@@ -386,19 +389,41 @@ varBinds2BExpr :: [VarBind] -> ACSL.BExpr
 varBinds2BExpr [] = ACSL.BTrue
 varBinds2BExpr varBinds = foldl1 ACSL.And (map varBind2BExpr varBinds)
   where
-    varBind2BExpr (VarBind _ _ LInf UInf) = ACSL.BTrue
-    varBind2BExpr (VarBind x fp         LInf   (UBInt    n)) = ACSL.Rel LtE (ACSL.Var (fprec2RealType fp) x) (ACSL.IntCnst n)
-    varBind2BExpr (VarBind x fp         LInf   (UBDouble r)) = ACSL.Rel LtE (ACSL.Var (fprec2RealType fp) x) (ACSL.RatCnst r)
-    varBind2BExpr (VarBind x fp (LBInt     n)         UInf)  = ACSL.Rel LtE (ACSL.IntCnst n) (ACSL.Var (fprec2RealType fp) x)
-    varBind2BExpr (VarBind x fp (LBDouble  r)         UInf)  = ACSL.Rel LtE (ACSL.RatCnst r) (ACSL.Var (fprec2RealType fp) x)
-    varBind2BExpr (VarBind x fp (LBInt    lb) (UBInt    ub)) = ACSL.And (ACSL.Rel LtE (ACSL.IntCnst lb) (ACSL.Var (fprec2RealType fp) x))
-                                                                        (ACSL.Rel LtE (ACSL.Var (fprec2RealType fp) x) (ACSL.IntCnst ub))
-    varBind2BExpr (VarBind x fp (LBDouble lb) (UBDouble ub)) = ACSL.And (ACSL.Rel LtE (ACSL.RatCnst lb) (ACSL.Var (fprec2RealType fp) x))
-                                                                        (ACSL.Rel LtE (ACSL.Var (fprec2RealType fp) x) (ACSL.RatCnst ub))
-    varBind2BExpr (VarBind x fp (LBInt    lb) (UBDouble ub)) = ACSL.And (ACSL.Rel LtE (ACSL.IntCnst lb) (ACSL.Var (fprec2RealType fp) x))
-                                                                        (ACSL.Rel LtE (ACSL.Var (fprec2RealType fp) x) (ACSL.RatCnst ub))
-    varBind2BExpr (VarBind x fp (LBDouble lb) (UBInt    ub)) = ACSL.And (ACSL.Rel LtE (ACSL.RatCnst lb) (ACSL.Var (fprec2RealType fp) x))
-                                                                        (ACSL.Rel LtE (ACSL.Var (fprec2RealType fp) x) (ACSL.IntCnst ub))
+    varBind2BExpr (VarBind _ _ _ LInf UInf)
+      = ACSL.BTrue
+    varBind2BExpr (VarBind x field fp LInf (UBInt n))
+      = ACSL.Rel LtE (ACSL.Var (fprec2RealType fp) x) (ACSL.IntCnst n)
+    varBind2BExpr (VarBind x field fp LInf (UBDouble r))
+      = ACSL.Rel LtE (ACSL.Var (fprec2RealType fp) x) (ACSL.RatCnst r)
+    varBind2BExpr (VarBind x field fp (LBInt n) UInf)
+      = ACSL.Rel LtE (ACSL.IntCnst n) (ACSL.Var (fprec2RealType fp) x)
+    varBind2BExpr (VarBind x field fp (LBDouble r) UInf)
+      = ACSL.Rel LtE (ACSL.RatCnst r) (ACSL.Var (fprec2RealType fp) x)
+    varBind2BExpr (VarBind x field fp (LBInt lb) (UBInt ub))
+      = ACSL.And (ACSL.Rel LtE (ACSL.IntCnst lb) (ACSL.Var (fprec2RealType fp) x))
+                 (ACSL.Rel LtE (ACSL.Var (fprec2RealType fp) x) (ACSL.IntCnst ub))
+    varBind2BExpr (VarBind x field fp (LBDouble lb) (UBDouble ub))
+      = ACSL.And (ACSL.Rel LtE (ACSL.RatCnst lb) (ACSL.Var (fprec2RealType fp) x))
+                 (ACSL.Rel LtE (ACSL.Var (fprec2RealType fp) x) (ACSL.RatCnst ub))
+    varBind2BExpr (VarBind x field fp (LBInt lb) (UBDouble ub))
+      = ACSL.And (ACSL.Rel LtE (ACSL.IntCnst lb) (ACSL.Var (fprec2RealType fp) x))
+                 (ACSL.Rel LtE (ACSL.Var (fprec2RealType fp) x) (ACSL.RatCnst ub))
+    varBind2BExpr (VarBind x field fp (LBDouble lb) (UBInt ub))
+      = ACSL.And (ACSL.Rel LtE (ACSL.RatCnst lb) (ACSL.Var (fprec2RealType fp) x))
+                 (ACSL.Rel LtE (ACSL.Var (fprec2RealType fp) x) (ACSL.IntCnst ub))
+
+numPostCondition :: HasConditionals
+                 -> FunName
+                 -> [ACSL.AExpr]
+                 -> Map.Map ResultField Double
+                 -> ACSL.Pred
+numPostCondition isMaybe f actArgs roErrMap
+  | Map.keys roErrMap == [ResValue] = ACSL.PredBExpr $ ACSL.Rel LtE err (ACSL.ErrorCnst roErr)
+  | otherwise = error "numPostCondition: record field not supported yet"
+    where
+      roErr = fromJust $ Map.lookup ResValue roErrMap
+      err = ACSL.UnaryOp AbsOp (ACSL.BinaryOp SubOp (if (isMaybe f) then ACSL.Value ACSL.Result else ACSL.Result)
+                             (ACSL.EFun f ResValue ACSL.Real actArgs) )
 
 generateNumericProp :: HasConditionals
                     -> Maybe PredAbs
@@ -406,12 +431,12 @@ generateNumericProp :: HasConditionals
                     -> ACSL.FunName
                     -> [(String, FAExpr, FAExpr)]
                     -> [Arg]
-                    -> Double
+                    -> Map.Map ResultField Double
                     -> [(VarName,FAExpr)]
                     -> [VarBind]
                     -> [FAExpr]
                     -> ACSL.Pred
-generateNumericProp isMaybe predAbs fp f indexList fpArgs roErr locVars varBinds isFiniteExprList =
+generateNumericProp isMaybe predAbs fp f indexList fpArgs roErrs locVars varBinds isFiniteExprList =
   ACSL.Ensures (defineLocalandErrVars [] locVars $
                 (quantifyVar $ ACSL.Implies (ACSL.PredAnd (initRangesProp varBinds indexList)
                                             (ACSL.PredAnd ((if (isMaybe f)
@@ -422,8 +447,7 @@ generateNumericProp isMaybe predAbs fp f indexList fpArgs roErr locVars varBinds
                                             postCond))
   where
     postCond | isPredicate = predPostCond isMaybe (fromJust predAbs) f actArgs
-             | otherwise   = ACSL.PredBExpr $ ACSL.Rel LtE err (ACSL.ErrorCnst roErr)
-    err = ACSL.UnaryOp AbsOp (ACSL.BinaryOp SubOp (if (isMaybe f) then ACSL.Value ACSL.Result else ACSL.Result) (ACSL.EFun f ACSL.Real actArgs) )
+             | otherwise   = numPostCondition isMaybe f actArgs roErrs
     actArgs = map (ACSL.arg2var . args2ACSL) fpArgs
     notIntArgs = filter (not . isArgInt) fpArgs
     quantifyVar = ACSL.Forall (map (\(ACSL.Var t x) -> (x,t)) actArgs)
@@ -438,11 +462,11 @@ generateNumericProp isMaybe predAbs fp f indexList fpArgs roErr locVars varBinds
 predPostCond :: HasConditionals -> PredAbs -> ACSL.FunName -> [ACSL.AExpr] -> ACSL.Pred
 predPostCond isMaybe predAbs f actArgs
   | isTauPlus  predAbs = ACSL.Implies (ACSL.AExprPred $ (if (isMaybe f) then ACSL.Value else id) ACSL.Result)
-                                      (ACSL.AExprPred $ ACSL.EFun f ACSL.Real actArgs)
+                                      (ACSL.AExprPred $ ACSL.EFun f ResValue ACSL.Real actArgs)
   | isTauMinus predAbs = ACSL.Implies (ACSL.AExprPred $ (if (isMaybe f) then ACSL.Value else id) ACSL.Result)
-                                      (ACSL.PredNot $ ACSL.AExprPred $ ACSL.EFun f ACSL.Real actArgs)
+                                      (ACSL.PredNot $ ACSL.AExprPred $ ACSL.EFun f ResValue ACSL.Real actArgs)
   | otherwise = ACSL.Iff (ACSL.AExprPred $ (if (isMaybe f) then ACSL.Value else id) ACSL.Result)
-                         (ACSL.AExprPred $ ACSL.EFun f ACSL.Real actArgs)
+                         (ACSL.AExprPred $ ACSL.EFun f ResValue ACSL.Real actArgs)
 
 initRangesProp :: [VarBind] -> [(VarName, FAExpr, FAExpr)] -> ACSL.Pred
 initRangesProp varBinds [] = ACSL.PredBExpr (varBinds2BExpr varBinds)

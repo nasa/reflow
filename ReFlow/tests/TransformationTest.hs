@@ -15,7 +15,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Transformation
 import AbsPVSLang
-import PVSTypes
 import Control.Monad.State
 import Operators
 import Common.TypesUtils
@@ -116,11 +115,11 @@ localVarsInExpr5__test = testCase "localVarsInExpr5" $
 
 localVarsInExpr6__test = testCase "localVarsInExpr6" $
   localVarsInExpr [("X",FPDouble, BinaryFPOp AddOp FPDouble (FInt 5) (FVar FPDouble "Y"))
-                  ,("Y",FPDouble, FEFun False "f" FPDouble [FVar FPDouble "Z"])]
+                  ,("Y",FPDouble, FEFun False "f" ResValue FPDouble [FVar FPDouble "Z"])]
                   (FVar FPDouble "X")
   @?=
   [("X",FPDouble,BinaryFPOp AddOp FPDouble (FInt 5) (FVar FPDouble "Y"))
-  ,("Y",FPDouble,FEFun False "f" FPDouble [FVar FPDouble "Z"])]
+  ,("Y",FPDouble,FEFun False "f" ResValue FPDouble [FVar FPDouble "Z"])]
 
 localVarsInExpr7__test = testCase "localVarsInExpr7" $
   localVarsInExpr [("X", FPDouble, BinaryFPOp AddOp FPDouble (FInt 5) (FVar FPDouble "Y"))
@@ -134,43 +133,43 @@ localVarsInExpr7__test = testCase "localVarsInExpr7" $
 
 localVarsInExpr8__test = testCase "localVarsInExpr8" $
   localVarsInExpr [("X", FPDouble, BinaryFPOp AddOp FPDouble (FVar FPDouble "Z") (FVar FPDouble "Y"))
-                  ,("Y", FPDouble, FEFun False "f" FPDouble [FVar FPDouble "Z"])
+                  ,("Y", FPDouble, FEFun False "f" ResValue FPDouble [FVar FPDouble "Z"])
                   ,("Z", FPDouble, FInt 2)
                   ,("F", FPDouble, FInt 5)]
                   (FVar FPDouble "X")
   @?=
   [("X",FPDouble,BinaryFPOp AddOp FPDouble (FVar FPDouble "Z") (FVar FPDouble "Y"))
-  ,("Y",FPDouble,FEFun False "f" FPDouble [FVar FPDouble "Z"])
+  ,("Y",FPDouble,FEFun False "f" ResValue FPDouble [FVar FPDouble "Z"])
   ,("Z", FPDouble, FInt 2)]
 
 localVarsInExpr9__test = testCase "localVarsInExpr9" $
-  localVarsInExpr [("Y", FPDouble, FEFun False "f" FPDouble [FVar FPDouble "X"])
+  localVarsInExpr [("Y", FPDouble, FEFun False "f" ResValue FPDouble [FVar FPDouble "X"])
                   ,("X", FPDouble, FInt 2)
                   ,("F", FPDouble, FInt 5)]
                   (FVar FPDouble "Y")
   @?=
-  [("Y",FPDouble,FEFun False "f" FPDouble [FVar FPDouble "X"])
+  [("Y",FPDouble,FEFun False "f" ResValue FPDouble [FVar FPDouble "X"])
   ,("X",FPDouble,FInt 2)]
 
 localVarsInExpr10__test = testCase "localVarsInExpr10" $
   localVarsInExpr [("Z", FPDouble, FInt 2)
-                  ,("Y", FPDouble, FEFun False "f" FPDouble [FVar FPDouble "X"])
+                  ,("Y", FPDouble, FEFun False "f" ResValue FPDouble [FVar FPDouble "X"])
                   ,("X", FPDouble, FVar FPDouble "Z")
                   ,("F", FPDouble, FInt 5)]
                   (BinaryFPOp AddOp FPDouble (FVar FPDouble "F") (FVar FPDouble "Y"))
   @?=
   [("Z", FPDouble, FInt 2)
-  ,("Y", FPDouble, FEFun False "f" FPDouble [FVar FPDouble "X"])
+  ,("Y", FPDouble, FEFun False "f" ResValue FPDouble [FVar FPDouble "X"])
   ,("X", FPDouble, FVar FPDouble "Z")
   ,("F", FPDouble, FInt 5)]
 
 localVarsInExpr11__test = testCase "localVarsInExpr11" $
-  localVarsInExpr [("Y", FPDouble, FEFun False "f" FPDouble [FVar FPDouble "X"])
+  localVarsInExpr [("Y", FPDouble, FEFun False "f" ResValue FPDouble [FVar FPDouble "X"])
                   ,("X", FPDouble, FVar FPDouble "Z")
                   ,("F", FPDouble, FInt 5)]
                   (BinaryFPOp AddOp FPDouble (FVar FPDouble "F") (FVar FPDouble "Y"))
   @?=
-  [("Y", FPDouble, FEFun False "f" FPDouble [FVar FPDouble "X"])
+  [("Y", FPDouble, FEFun False "f" ResValue FPDouble [FVar FPDouble "X"])
   ,("X", FPDouble, FVar FPDouble "Z")
   ,("F", FPDouble, FInt 5)]
 
@@ -182,8 +181,8 @@ localVarsInExpr12__test = testCase "localVarsInExpr12" $
                   ,("DISTANCE_x",FPDouble,BinaryFPOp SubOp FPDouble (FVar FPDouble "NEXT_x") (FVar FPDouble "THIS_x"))
                   ,("DISTANCE_y",FPDouble,BinaryFPOp SubOp FPDouble (FVar FPDouble "NEXT_y") (FVar FPDouble "THIS_y"))
                   ,("DET",FPDouble,BinaryFPOp SubOp FPDouble (BinaryFPOp MulOp FPDouble (FVar FPDouble "DISTANCE_x") (FVar FPDouble "THIS_y")) (BinaryFPOp MulOp FPDouble (FVar FPDouble "DISTANCE_y") (FVar FPDouble "THIS_x")))
-                  ,("K",TInt,TypeCast TInt FPDouble (FEFun True "quadrant" TInt [FVar FPDouble "THIS_x",FVar FPDouble "THIS_y"]))
-                  ,("P",TInt,TypeCast TInt FPDouble (FEFun True "quadrant" TInt [FVar FPDouble "NEXT_x",FVar FPDouble "NEXT_y"]))]
+                  ,("K",TInt,TypeCast TInt FPDouble (FEFun True "quadrant" ResValue TInt [FVar FPDouble "THIS_x",FVar FPDouble "THIS_y"]))
+                  ,("P",TInt,TypeCast TInt FPDouble (FEFun True "quadrant" ResValue TInt [FVar FPDouble "NEXT_x",FVar FPDouble "NEXT_y"]))]
                   (FVar FPDouble "DET")
   @?=
   [("THIS_x",FPDouble,BinaryFPOp SubOp FPDouble (FVar FPDouble "P_V1_x") (FVar FPDouble "S_x"))

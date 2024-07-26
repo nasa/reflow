@@ -22,6 +22,8 @@ data Options = Options
    , targetFormat          :: String
    , optMaxDepth           :: Int
    , optMinPrec            :: Int
+   , unfoldFunctionCalls   :: Bool
+   , noInstrumentation     :: Bool
   }
   deriving (Show)
 
@@ -58,7 +60,17 @@ options =
           <> help "Precision"
           <> showDefault
           <> value 14
-          <> metavar "BB_PREC" )
+          <> metavar "BB_PREC"
+          )
+    <*> switch
+          (  long "unfold-fun-calls"
+          <> help "Perform an analysis where the body of each function call is unfolded in the expression and globally optimized. This option may lead to more accurate results."
+          )
+    <*> switch
+          (  long "no-instrumentation"
+          <> help "Perform plain C code generation with no contracts and no instrumentation for unstable conditionals."
+          )
+
 
 parseOptions :: IO Options
 parseOptions = execParser parserOpts

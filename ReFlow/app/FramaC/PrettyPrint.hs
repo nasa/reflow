@@ -25,9 +25,9 @@ import FramaC.PVS2C (decl2C,pred2C,generateNumericFunction)
 import FramaC.Types (HasConditionals,IsMaybeType)
 import Prelude hiding ((<>))
 import PPExt
-import PVSTypes
 import Transformation
 import Utils
+import qualified Data.Map as Map
 
 data TauDeclInfo = TauDeclInfo {
     fpDecl :: Decl,
@@ -35,9 +35,9 @@ data TauDeclInfo = TauDeclInfo {
     tauDecl :: Decl,
     symbErrVars :: [(String, FAExpr, FBExpr)],
     numErrVars  :: [(String, Double)],
-    stableConds :: [Condition],
-    symbError :: EExpr,
-    numError :: Double,
+    stableConds :: Map.Map ResultField [Condition],
+    symbError :: Map.Map ResultField EExpr,
+    numError :: Map.Map ResultField Double,
     initValues ::  [VarBind],
     forMap :: [(FAExpr,AExpr)]
 }
@@ -47,18 +47,34 @@ data TauDeclInfo = TauDeclInfo {
 buildListIsFiniteCheck :: [Arg] -> [FAExpr]
 buildListIsFiniteCheck args = elimDuplicates $ map arg2var (filter isArgFP args)
 
+genCFile :: PVSType -> [Decl] -> Doc
+genCFile fp decls =
+    printHeaderIntrumented
+    $$
+    text (vspace 1)
+    $$
+    vcat (map printDecl decls)
+    $$
+    text (vspace 1)
+    $$
+    printMain
+
+printDecl :: Decl -> Doc
+printDecl decl = prettyDoc (decl2C [] [] decl (const False) (const False))
+
 genFramaCFile :: PVSType
               -> Spec
               -> [RDecl]
               -> [Decl]
               -> [(Decl, ErrVarEnv, LocalEnv, [(FAExpr,AExpr)])]
-              -> [(FunName, (EExpr, [Condition]))]
-              -> [(FunName, Double)]
+              -> Map.Map FunName (Map.Map ResultField EExpr)
+              -> Map.Map FunName (Map.Map ResultField [Condition])
+              -> Map.Map FunName (Map.Map ResultField Double)
               -> [(Decl, [(VarName, b, c, d, e, Double, g, h, i, j)])]
               -> Interpretation
               -> Doc
-genFramaCFile fp (Spec specBinds) realDecls decls tauDecls symbErrs errs funErrEnv semStable =
-    printHeader
+genFramaCFile fp (Spec specBinds) realDecls decls tauDecls progSymbRoundOffErrs progStableConds  errs funErrEnv semStable =
+    printHeaderIntrumented
     $$
     text (vspace 1)
     $$
@@ -76,8 +92,8 @@ genFramaCFile fp (Spec specBinds) realDecls decls tauDecls symbErrs errs funErrE
       tauDecl  = declTau,
       symbErrVars = errVarEnv,
       numErrVars = findInErrEnv f funErrEnv,
-      stableConds = snd $ fromMaybe (errMsg f) (lookupOrigFun f symbErrs),
-      symbError   = fst $ fromMaybe (errMsg f) (lookupOrigFun f symbErrs),
+      stableConds = fromMaybe (errMsg f) (lookupOrigFun f progStableConds),
+      symbError   = fromMaybe (errMsg f) (lookupOrigFun f progSymbRoundOffErrs),
       numError = fromMaybe (errMsg f) (lookupOrigFun f errs),
       initValues = fromMaybe (errMsg f) (findOrigFunInSpec f specBinds),
       forMap = forExprs
@@ -121,8 +137,8 @@ printDeclWithACSL fp hasCondsFun isMaybe semStable tauDeclInfo =
   where
     isFiniteExprList = buildListIsFiniteCheck (declArgs $ fpDecl tauDeclInfo)
     forIdxList decl | isDecl decl = case declBody $ tauDecl tauDeclInfo of
-                                      Left  body -> forIndexes body
-                                      Right _ -> error "printDeclWithACSL: boolean expression expected in predicate body."
+                                      AExprBody body -> forIndexes body
+                                      _ -> error "printDeclWithACSL: arithmetic expression expected in predicate body."
                     | otherwise = []
 
 
@@ -136,7 +152,7 @@ printNumDeclWithACSL :: HasConditionals
                      -> [(VarName, FAExpr, FAExpr)]
                      -> Decl
                      -> [VarBind]
-                     -> Double
+                     -> Map.Map ResultField Double
                      -> [(VarName,Double)]
                      -> [FAExpr]
                      -> Doc
@@ -166,7 +182,7 @@ printSymbDeclWithACSL :: HasConditionals
                       -> Decl
                       -> [(FAExpr,AExpr)]
                       -> [(VarName, FAExpr, FBExpr)]
-                      -> [Condition]
+                      -> Map.Map ResultField [Condition]
                       -> Doc
 printSymbDeclWithACSL hasConds isMaybe fp interp rDecl@(RDecl _ f realArgs _)
                                          fDecl@(Decl _ _ _ fpargs _)
@@ -196,7 +212,7 @@ printSymbDeclWithACSL hasConds isMaybe fp interp rDecl@(RDecl _ f realArgs _)
   $$
   printFPSymbPrecond hasConds isMaybe targetFPType f realArgs fpargs errVars localVariables forIdxs isFiniteExprList
   $$
-  prettyDoc (decl2C forListExpr forVarsMap interp taudecl hasConds isMaybe)
+  prettyDoc (decl2C forListExpr forVarsMap taudecl hasConds isMaybe)
     where
       isFiniteExprList = buildListIsFiniteCheck tauargs
       localVariables = localVarsDecl taudecl
@@ -232,7 +248,7 @@ printSymbDeclWithACSL hasConds isMaybe fp interp rDecl@(RPred f realArgs _ )
   $$
   printFPSymbPrecondPred hasConds isMaybe targetFPType predAbs f realArgs fpargs errVars localVariables isFiniteExprList
   $$
-  prettyDoc (pred2C isMaybe interp taudecl isMaybe)
+  prettyDoc (pred2C hasConds taudecl isMaybe)
     where
       targetFPType = fprec2acsl fp
       axiomaticTransformationPredicatesDoc =
@@ -248,7 +264,7 @@ printAxiomaticTranPreds :: Maybe PredAbs
                         -> PVSType
                         -> String
                         -> [Arg]
-                        -> [Condition]
+                        -> Map.Map ResultField [Condition]
                         -> [(VarName, FAExpr, FAExpr)]
                         -> Doc
 printAxiomaticTranPreds predAbs pvsType f realArgs listStableCond forIdxs =
@@ -314,14 +330,22 @@ printFPSymbPrecondPred hasConds isMaybe targetFPType predAbs f realArgs fpArgs e
             $$ prettyDoc (behaviorStablePaths f (Just predAbs) targetFPType realArgs errVars locVars [] (listFst3 errVars))
         else empty
 
-printHeader :: Doc
-printHeader = text "// This file is automatically generated by PRECiSA \n"
+printHeaderIntrumented :: Doc
+printHeaderIntrumented = text "// This file is automatically generated by ReFlow \n"
       $$ text "#include<stdio.h>"
       $$ text "#include<stdlib.h>"
       $$ text "#include<math.h>"
       $$ text "#include<string.h>"
       $$ text "#include<stdbool.h>"
       $$ text "#include\"precisa_prelude.c\""
+
+printHeader :: Doc
+printHeader = text "// This file is automatically generated by ReFlow \n"
+      $$ text "#include<stdio.h>"
+      $$ text "#include<stdlib.h>"
+      $$ text "#include<math.h>"
+      $$ text "#include<string.h>"
+      $$ text "#include<stdbool.h>"
 
 printMain :: Doc
 printMain = text "int main () { return 0; }"

@@ -16,10 +16,10 @@ import Test.Tasty.HUnit
 import Transformation
 import TransformationUtils
 import AbsPVSLang
-import PVSTypes
 import AbsSpecLang
 import Control.Monad.State
 import Operators
+import qualified Data.Map as Map
 
 returnsValueEqualTo :: (Eq a, Show a) => IO a -> a -> IO ()
 returnsValueEqualTo lhs rhs = lhs >>= (@?= rhs)
@@ -51,59 +51,59 @@ computeErrorGuards__tests = testGroup "computeErrorGuards tests"
 
 computeErrorGuards__test1 =
   testCase "" $
-    computeErrorGuards 7 14 spec [] [] (decl, errVarEnv,localEnv',forMap)
+    computeErrorGuards 7 14 spec Map.empty Map.empty (decl, errVarEnv,localEnv',forMap)
     `checkOutputIs`
     (decl
     ,[("E_x"
       ,FVar FPDouble "x"
-      ,RealMark "x"
+      ,RealMark "x" ResValue
       ,FBTrue
-      ,ErrorMark "y" FPDouble
+      ,ErrorMark "y" ResValue FPDouble
       ,4.440892098500626e-16
       ,[FVar FPDouble "x"]
-      ,[RealMark "x"]
-      ,[ErrorMark "x" FPDouble]
-      ,[VarBind "y" FPDouble (LBDouble 2) (UBDouble 5)])])
+      ,[RealMark "x" ResValue]
+      ,[ErrorMark "x" ResValue FPDouble]
+      ,[VarBind "y" ResValue FPDouble (LBDouble 2) (UBDouble 5)])])
     where
       decl = Decl False FPDouble "f" [] (FInt 5)
       errVarEnv = [("E_x", FVar FPDouble "x", FBTrue)]
-      spec = Spec [SpecBind "f" [VarBind "y" FPDouble (LBDouble 2) (UBDouble 5)]]
+      spec = Spec [SpecBind "f" [VarBind "y" ResValue FPDouble (LBDouble 2) (UBDouble 5)]]
       localEnv' = [("x",FPDouble,FVar FPDouble "y")]
       forMap = []
 
 
 computeErrorGuards__test2 =
   testCase "" $
-    computeErrorGuards 7 14 spec [] [] (decl, errVarEnv,localEnv',forMap)
+    computeErrorGuards 7 14 spec Map.empty Map.empty (decl, errVarEnv,localEnv',forMap)
     `checkOutputIs`
     (decl
     ,[("E_x"
       ,FVar FPDouble "x"
-      ,RealMark "x"
+      ,RealMark "x" ResValue
       ,FBTrue
-      ,ErrorMark "y" FPDouble
+      ,ErrorMark "y" ResValue FPDouble
       ,4.440892098500626e-16
       ,[FVar FPDouble "x"]
-      ,[RealMark "x"]
-      ,[ErrorMark "x" FPDouble]
-      ,[VarBind "y" FPDouble (LBDouble 2) (UBDouble 5)]),
+      ,[RealMark "x" ResValue]
+      ,[ErrorMark "x" ResValue FPDouble]
+      ,[VarBind "y" ResValue FPDouble (LBDouble 2) (UBDouble 5)]),
       ("E_y"
       ,BinaryFPOp AddOp FPDouble (FVar FPDouble "x") (FVar FPDouble "y")
-      ,BinaryOp AddOp (RealMark "x") (RealMark "y")
+      ,BinaryOp AddOp (RealMark "x" ResValue) (RealMark "y" ResValue)
       ,FBTrue
-      ,ErrBinOp AddOp FPDouble (RealMark "y") (ErrorMark "y" FPDouble) (RealMark "y") (ErrorMark "y" FPDouble)
+      ,ErrBinOp AddOp FPDouble (RealMark "y" ResValue) (ErrorMark "y" ResValue FPDouble) (RealMark "y" ResValue) (ErrorMark "y" ResValue FPDouble)
       ,1.7763568394002505e-15
       ,[FVar FPDouble "x",FVar FPDouble "y"]
-      ,[RealMark "x",RealMark "y"]
-      ,[ErrorMark "x" FPDouble,ErrorMark "y" FPDouble]
-      ,[VarBind "y" FPDouble (LBDouble 2) (UBDouble 5)])
+      ,[RealMark "x" ResValue,RealMark "y" ResValue]
+      ,[ErrorMark "x" ResValue FPDouble,ErrorMark "y" ResValue FPDouble]
+      ,[VarBind "y" ResValue FPDouble (LBDouble 2) (UBDouble 5)])
       ])
  where
       decl = Decl False FPDouble "f" [] (FInt 5)
       errVarEnv = [("E_x", FVar FPDouble "x", FBTrue)
                   ,("E_y", BinaryFPOp AddOp FPDouble (FVar FPDouble "x") (FVar FPDouble "y"), FBTrue)]
-      spec = Spec [SpecBind "g" [VarBind "z" FPDouble (LBDouble 7) (UBDouble 12)],
-                   SpecBind "f" [VarBind "y" FPDouble (LBDouble 2) (UBDouble 5)]]
+      spec = Spec [SpecBind "g" [VarBind "z" ResValue FPDouble (LBDouble 7) (UBDouble 12)],
+                   SpecBind "f" [VarBind "y" ResValue FPDouble (LBDouble 2) (UBDouble 5)]]
       localEnv' = [("x",FPDouble,FVar FPDouble "y")]
       forMap = []
 
@@ -114,46 +114,46 @@ computeErrorVarValue_tests = testGroup "computeErrorVarValue tests"
   ]
 computeErrorVarValue__test1 =
   testCase "test1" $
-    computeErrorVarValue 7 14 [VarBind "x" FPDouble (LBDouble 2) (UBDouble 5)] [] [] [] ("E_x", FVar FPDouble "x", FBTrue)
+    computeErrorVarValue 7 14 [VarBind "x" ResValue FPDouble (LBDouble 2) (UBDouble 5)] Map.empty [] Map.empty ("E_x", FVar FPDouble "x", FBTrue)
     `checkOutputIs`
     ("E_x"
     ,FVar FPDouble "x"
-    ,RealMark "x"
+    ,Var Real "x"
     ,FBTrue
-    ,ErrorMark "x" FPDouble
+    ,ErrorMark "x" ResValue FPDouble
     ,4.440892098500626e-16
     ,[FVar FPDouble "x"]
-    ,[RealMark "x"]
-    ,[ErrorMark "x" FPDouble]
-    ,[VarBind "x" FPDouble (LBDouble 2) (UBDouble 5)])
+    ,[RealMark "x" ResValue]
+    ,[ErrorMark "x" ResValue FPDouble]
+    ,[VarBind "x" ResValue FPDouble (LBDouble 2) (UBDouble 5)])
 
 computeErrorVarValue__test2 =
   testCase "test2" $
-    computeErrorVarValue 7 14 [VarBind "x" FPDouble (LBDouble 2) (UBDouble 5), VarBind "y" FPDouble (LBDouble 2) (UBDouble 5)] [] [] [] ("E_x", FVar FPDouble "x", FBTrue)
+    computeErrorVarValue 7 14 [VarBind "x" ResValue FPDouble (LBDouble 2) (UBDouble 5), VarBind "y" ResValue FPDouble (LBDouble 2) (UBDouble 5)] Map.empty [] Map.empty ("E_x", FVar FPDouble "x", FBTrue)
     `checkOutputIs`
     ("E_x"
     ,FVar FPDouble "x"
-    ,RealMark "x"
+    ,Var Real "x"
     ,FBTrue
-    ,ErrorMark "x" FPDouble
+    ,ErrorMark "x" ResValue FPDouble
     ,4.440892098500626e-16
     ,[FVar FPDouble "x"]
-    ,[RealMark "x"]
-    ,[ErrorMark "x" FPDouble]
-    ,[VarBind "x" FPDouble (LBDouble 2) (UBDouble 5),VarBind "y" FPDouble (LBDouble 2) (UBDouble 5)])
+    ,[RealMark "x" ResValue]
+    ,[ErrorMark "x" ResValue FPDouble]
+    ,[VarBind "x" ResValue FPDouble (LBDouble 2) (UBDouble 5),VarBind "y" ResValue FPDouble (LBDouble 2) (UBDouble 5)])
 
 computeErrorVarValue__test3 =
   testCase "test3" $
-    computeErrorVarValue 7 14 [VarBind "x" FPDouble (LBDouble 2) (UBDouble 5), VarBind "y" FPDouble (LBDouble 2) (UBDouble 5)] [] [] [] ("E_x", BinaryFPOp AddOp FPDouble (FVar FPDouble "x") (FVar FPDouble "y"), FBTrue)
+    computeErrorVarValue 7 14 [VarBind "x" ResValue FPDouble (LBDouble 2) (UBDouble 5), VarBind "y" ResValue FPDouble (LBDouble 2) (UBDouble 5)] Map.empty [] Map.empty ("E_x", BinaryFPOp AddOp FPDouble (FVar FPDouble "x") (FVar FPDouble "y"), FBTrue)
     `checkOutputIs`
     ("E_x"
     ,BinaryFPOp AddOp FPDouble (FVar FPDouble "x") (FVar FPDouble "y")
-    ,BinaryOp AddOp (RealMark "x") (RealMark "y")
+    ,BinaryOp AddOp (Var Real "x") (Var Real "y")
     ,FBTrue
-    ,ErrBinOp AddOp FPDouble (RealMark "x") (ErrorMark "x" FPDouble) (RealMark "y") (ErrorMark "y" FPDouble)
+    ,ErrBinOp AddOp FPDouble (RealMark "x" ResValue) (ErrorMark "x" ResValue FPDouble) (RealMark "y" ResValue) (ErrorMark "y" ResValue FPDouble)
     ,1.7763568394002505e-15
     ,[FVar FPDouble "x",FVar FPDouble "y"]
-    ,[RealMark "x",RealMark "y"]
-    ,[ErrorMark "x" FPDouble,ErrorMark "y" FPDouble]
-    ,[VarBind "x" FPDouble (LBDouble 2) (UBDouble 5), VarBind "y" FPDouble (LBDouble 2) (UBDouble 5)])
+    ,[RealMark "x" ResValue,RealMark "y" ResValue]
+    ,[ErrorMark "x" ResValue FPDouble,ErrorMark "y" ResValue FPDouble]
+    ,[VarBind "x" ResValue FPDouble (LBDouble 2) (UBDouble 5), VarBind "y" ResValue FPDouble (LBDouble 2) (UBDouble 5)])
 

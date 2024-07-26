@@ -155,7 +155,7 @@ If you have any question or problem, please contact:
 
 ## Related Publications
 
-- Nikson Bernardes Fernandes Ferreira, Mariano M. Moscato, Laura Titolo, Mauricio Ayala-Rincon:
+- Nikson Bernardes Fernandes Ferreira, Marco A. Feliú, Laura Titolo, Mauricio Ayala-Rincon:
   A provably correct floating-point implementation of Well Clear Avionics Concepts. FMCAD 2023
 
 - 	Laura Titolo, Mariano M. Moscato, Marco A. Feliú, César A. Muñoz:

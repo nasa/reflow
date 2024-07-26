@@ -26,7 +26,6 @@ import qualified FramaC.ACSLlang as ACSL
 import FramaC.GenerateACSL (expr2acsl)
 import FramaC.Types (HasConditionals,IsMaybeType)
 import Operators
-import PVSTypes
 import Translation.Float2Real
 
 resultVar :: String
@@ -53,7 +52,7 @@ removeValueBExpr (C.BValue expr) = expr
 removeValueBExpr expr = expr
 
 declareVar :: HasConditionals -> FAExpr -> Int -> C.Stm
-declareVar hasConds expr@(FEFun _ f _ _) n
+declareVar hasConds expr@(FEFun _ f _ _ _) n
   | hasConds f = C.VarDeclAssign (C.MaybeStruct (fprec2type $ getPVSType expr)) (auxVarName n)
                  (removeValue $ aexpr2inlineC hasConds expr)
   | otherwise = C.VarDeclAssign (fprec2type $ getPVSType expr) (auxVarName n)
@@ -74,67 +73,63 @@ predAbsSuffix TauMinus = "_tauminus"
 
 decl2C :: [(AExpr,AExpr)]
           -> [(FAExpr,AExpr)]
-          -> Interpretation
           -> Decl
           -> HasConditionals
           -> IsMaybeType
           -> C.Decl
-decl2C forListExpr forMap interp (Decl _ fp f args expr) hasConds isMaybeType =
+decl2C forListExpr forMap (Decl _ fp f args expr) hasConds isMaybeType =
   C.Decl returnType (f++"_fp") (map args2C args) (resDecl:stmList++[returnRes])
   where
-    (stmList,_) = runState (aexpr2C f hasConds forListExpr forMap (fprec2type fp) interp emptyEnv args expr) 0
+    (stmList,_) = runState (aexpr2C f hasConds forListExpr forMap (fprec2type fp) emptyEnv args expr) 0
     returnType = if (isMaybeType f) then fprec2MaybeType fp else fprec2type fp
     resDecl   = C.VarDecl returnType resultVar
     returnRes = C.Return (C.Var returnType resultVar)
 
-decl2C _ _ _ Pred{} _ _ = error "decl2C: Expected numerical function declaration but a predicate."
+decl2C _ _ Pred{} _ _ = error "decl2C: Expected numerical function declaration but a predicate."
 
 pred2C :: HasConditionals
-          -> Interpretation
           -> Decl
           -> IsMaybeType
           -> C.Decl
-pred2C hasConds interp (Pred _ predAbs f args expr) isMaybeType =
+pred2C hasConds (Pred _ predAbs f args expr) isMaybeType =
   C.Decl returnType (f ++ (predAbsSuffix predAbs) ++ "_fp") (map args2C args) bodyWithValidityCheck
   where
     returnType = if (isMaybeType f) then (C.MaybeStruct C.Boolean) else C.Boolean
     resDecl = C.VarDecl returnType resultVar
-    (stmList, _) = runState (bexprStm2C f hasConds interp args expr) 0
+    (stmList, _) = runState (bexprStm2C f hasConds args expr) 0
     returnRes = C.Return (C.Var C.Boolean resultVar)
     bodyWithValidityCheck = resDecl : stmList ++ [returnRes]
-pred2C _ _ Decl{} _ = error "pred2C: Expected predicate but got a numerical function declaration."
+pred2C _ Decl{} _ = error "pred2C: Expected predicate but got a numerical function declaration."
 
-letElem2C :: HasConditionals -> Interpretation -> [Arg] -> FLetElem -> ([C.Stm],Env [ACeb]) -> ([C.Stm],Env [ACeb])
-letElem2C hasConds interp args (x,t,expr) (listVarAssign, env) =
+letElem2C :: HasConditionals -> [Arg] -> FLetElem -> ([C.Stm], Env FAExpr) -> ([C.Stm], Env FAExpr)
+letElem2C hasConds args (x,t,expr) (listVarAssign, env) =
   (C.VarDeclAssign (fprec2type t) x (aexpr2inlineC hasConds expr):listVarAssign, env')
   where
-    semx = exprSemantics interp env args expr
-    env' = insertEnv x semx env
+    env' = insertEnv x ResValue expr env
 
 aexpr2C :: FunName
         -> HasConditionals
         -> [(AExpr,AExpr)]
         -> [(FAExpr,AExpr)]
         -> C.Type
-        -> Interpretation
-        -> Env AbstractDomain.ACebS
+        -> Env FAExpr
         -> [Arg]
         -> FAExpr
         -> State Int [C.Stm]
 
-aexpr2C f hasConds forListExpr forMap t interp env args (Let listExpr body) = do
-  let (listVarAssign,env') = foldr (letElem2C hasConds interp args) ([],env) listExpr
-  bodyStm <- aexpr2C f hasConds forListExpr forMap t interp env' args body
+aexpr2C f hasConds forListExpr forMap t env args (Let listExpr body) = do
+  let (listVarAssign,env') = foldr (letElem2C hasConds args) ([],env) listExpr
+  bodyStm <- aexpr2C f hasConds forListExpr forMap t env' args body
   return $ listVarAssign++bodyStm
 
-aexpr2C f hasConds forListExpr forMap t interp env args (Ite bexpr thenExpr elseExpr) = do
+aexpr2C f hasConds forListExpr forMap t env args (Ite bexpr thenExpr elseExpr) = do
   let callList = funCallListFBExpr bexpr
   callListVars <- generateAuxVarList callList
   let predList = predCallListFBExpr bexpr
   predListVars <- generateAuxVarList predList
-  thenStm  <- aexpr2C f hasConds forListExpr forMap t interp env args
+  thenStm  <- aexpr2C f hasConds forListExpr forMap t env args
                      (replaceCallsInAExpr hasConds callListVars predListVars thenExpr)
-  elseStm  <- aexpr2C f hasConds forListExpr forMap t interp env args
+  elseStm  <- aexpr2C f hasConds forListExpr forMap t env args
                      (replaceCallsInAExpr hasConds callListVars predListVars elseExpr)
   return $ map (uncurry $ declareVar hasConds) callListVars
            ++
@@ -142,14 +137,14 @@ aexpr2C f hasConds forListExpr forMap t interp env args (Ite bexpr thenExpr else
            ++
            [C.Ite (bexpr2C hasConds (replaceCallsInBExpr hasConds callListVars predListVars bexpr)) thenStm elseStm]
 
-aexpr2C f hasConds forListExpr forMap t interp env args (ListIte listThen elseExpr) = do
+aexpr2C f hasConds forListExpr forMap t env args (ListIte listThen elseExpr) = do
   let guards = map fst listThen
   let callList = concatMap funCallListFBExpr guards
   callListVars <- generateAuxVarList callList
   let predList = concatMap predCallListFBExpr guards
   predListVars <- generateAuxVarList predList
-  thenListStm <- mapM (aexpr2C f hasConds forListExpr forMap t interp env args . replaceCallsInAExpr hasConds callListVars predListVars . snd) listThen
-  elseStm <- aexpr2C f hasConds forListExpr forMap t interp env args (replaceCallsInAExpr hasConds callListVars  predListVars elseExpr)
+  thenListStm <- mapM (aexpr2C f hasConds forListExpr forMap t env args . replaceCallsInAExpr hasConds callListVars predListVars . snd) listThen
+  elseStm <- aexpr2C f hasConds forListExpr forMap t env args (replaceCallsInAExpr hasConds callListVars  predListVars elseExpr)
   let guardsC = map (bexpr2C hasConds . replaceCallsInBExpr hasConds callListVars predListVars) guards
   return $ map (uncurry $ declareVar hasConds) callListVars
            ++
@@ -157,19 +152,20 @@ aexpr2C f hasConds forListExpr forMap t interp env args (ListIte listThen elseEx
            ++
            [C.ListIte (zip guardsC thenListStm) elseStm]
 
-aexpr2C f hasConds forListExpr forMap t interp env args for@(ForLoop fp n0 n initAcc idx acc forBody) = do
-  forBodyStm <- aexpr2C f hasConds forListExpr forMap t interp env args forBody
-  let accType  = fprec2type fp
-  let forBody' =  [C.Ite (C.IsValid (C.Var accType resultVar)) forBodyStm [C.VarAssign t resultVar (C.None accType)]]
-  return [ C.VarDecl C.Int idx
-         , C.VarDeclAssign accType acc (aexpr2inlineC hasConds initAcc)
-         , C.VarAssign t resultVar (C.Some accType (Left $ C.Var accType acc))
-         , generateForLoopACSL forMap idx acc (type2acsl accType) n n0 for forListExpr interp env args forBody
-         , C.ForLoop idx (aexpr2inlineC hasConds n0) (aexpr2inlineC hasConds n) forBody']
+-- aexpr2C f hasConds forListExpr forMap t env args for@(ForLoop fp n0 n initAcc idx acc forBody) = do
+--   forBodyStm <- aexpr2C f hasConds forListExpr forMap t env args forBody
+--   let accType  = fprec2type fp
+--   let forBody' =  [C.Ite (C.IsValid (C.Var accType resultVar)) forBodyStm [C.VarAssign t resultVar (C.None accType)]]
+--   return [ C.VarDecl C.Int idx
+--          , C.VarDeclAssign accType acc (aexpr2inlineC hasConds initAcc)
+--          , C.VarAssign t resultVar (C.Some accType (Left $ C.Var accType acc))
+--         --  , generateForLoopACSL forMap idx acc (type2acsl accType) n n0 for forListExpr interp env args forBody
+--         -- move the for loop ACSL to another function this one should not depe
+--          , C.ForLoop idx (aexpr2inlineC hasConds n0) (aexpr2inlineC hasConds n) forBody']
 
-aexpr2C _ _ _ _ t _ _ _ UnstWarning = return [resultNone t]
+aexpr2C _ _ _ _ t _ _ UnstWarning = return [resultNone t]
 
-aexpr2C f hasConds _ _ t _ _ _ expr
+aexpr2C f hasConds _ _ t _ _ expr
     | hasConds f = return [C.VarAssign t resultVar (C.Some t (Left returnExpr))]
     | otherwise  = return [C.VarAssign t resultVar returnExpr ]
   where
@@ -184,8 +180,8 @@ aexpr2inlineC _ (FCnst FPSingle rat)    = C.FPCnst SinglePrec rat
 aexpr2inlineC _ (FCnst FPDouble rat)    = C.FPCnst DoublePrec rat
 aexpr2inlineC _ (FVar  fp x)            = C.Var  (fprec2type fp) x
 aexpr2inlineC _ (StructVar fp x)        = C.Var  (fprec2MaybeType fp) x
-aexpr2inlineC hasConds (FArrayElem fp _ v idx) = C.ArrayElem (fprec2type fp) v (aexpr2inlineC hasConds idx)
-aexpr2inlineC hasConds (FEFun _ f fp args) = (if (hasConds f) then C.Value else id) $ C.EFun f (fprec2type fp) (map (aexpr2inlineC hasConds) args)
+-- aexpr2inlineC hasConds (FArrayElem fp _ v args) = C.ArrayElem (fprec2type fp) v (map (aexpr2inlineC hasConds) args)
+aexpr2inlineC hasConds (FEFun _ f field fp args) = (if (hasConds f) then C.Value else id) $ C.EFun f field (fprec2type fp) (map (aexpr2inlineC hasConds) args)
 aexpr2inlineC hasConds (Value expr)            = C.Value (aexpr2inlineC hasConds expr)
 aexpr2inlineC hasConds (TypeCast fp1 fp2 expr) = C.TypeCast (fprec2type fp1) (fprec2type fp2) (aexpr2inlineC hasConds expr)
 aexpr2inlineC hasConds (BinaryFPOp op fp expr1 expr2) = C.BinaryOp op (fprec2type fp) (aexpr2inlineC hasConds expr1)
@@ -198,33 +194,33 @@ aexpr2inlineC _ ae = error $ "aexpr2inlineC not defined for " ++ show ae
 
 
 
-bexprStm2C :: FunName -> HasConditionals -> Interpretation -> [Arg] -> FBExprStm -> State Int [C.Stm]
-bexprStm2C f hasConds interp args (BLet listElem body) = do
-  let (listVarAssign,_) = foldr (letElem2C hasConds interp args) ([],emptyEnv) listElem
-  bodyStm <- bexprStm2C f hasConds interp args body
+bexprStm2C :: FunName -> HasConditionals -> [Arg] -> FBExprStm -> State Int [C.Stm]
+bexprStm2C f hasConds args (BLet listElem body) = do
+  let (listVarAssign,_) = foldr (letElem2C hasConds args) ([],emptyEnv) listElem
+  bodyStm <- bexprStm2C f hasConds args body
   return $ listVarAssign++bodyStm
 
-bexprStm2C f hasConds interp args (BIte bexpr thenExpr elseExpr) = do
+bexprStm2C f hasConds args (BIte bexpr thenExpr elseExpr) = do
   let callList = funCallListFBExpr bexpr
   callListVars <- generateAuxVarList callList
   let predList = predCallListFBExpr bexpr
   predListVars <- generateAuxVarList predList
-  thenStm  <- bexprStm2C f hasConds interp args (replaceCallsInBExprStm hasConds callListVars predListVars thenExpr)
-  elseStm  <- bexprStm2C f hasConds interp args (replaceCallsInBExprStm hasConds callListVars predListVars elseExpr)
+  thenStm  <- bexprStm2C f hasConds args (replaceCallsInBExprStm hasConds callListVars predListVars thenExpr)
+  elseStm  <- bexprStm2C f hasConds args (replaceCallsInBExprStm hasConds callListVars predListVars elseExpr)
   return $ map (uncurry $ declareVar hasConds) callListVars
            ++
            map (uncurry $ declareBoolVar hasConds) predListVars
            ++
            [C.Ite (bexpr2C hasConds (replaceCallsInBExpr hasConds callListVars predListVars bexpr)) thenStm elseStm]
 
-bexprStm2C f hasConds interp args (BListIte listThen elseExpr) = do
+bexprStm2C f hasConds args (BListIte listThen elseExpr) = do
   let guards = map fst listThen
   let callList = concatMap funCallListFBExpr guards
   callListVars <- generateAuxVarList callList
   let predList = concatMap predCallListFBExpr guards
   predListVars <- generateAuxVarList predList
-  thenListStm <- mapM (bexprStm2C f hasConds interp args . replaceCallsInBExprStm hasConds callListVars predListVars . snd) listThen
-  elseStm     <- bexprStm2C f hasConds interp args (replaceCallsInBExprStm hasConds callListVars predListVars elseExpr)
+  thenListStm <- mapM (bexprStm2C f hasConds args . replaceCallsInBExprStm hasConds callListVars predListVars . snd) listThen
+  elseStm     <- bexprStm2C f hasConds args (replaceCallsInBExprStm hasConds callListVars predListVars elseExpr)
   let guardsC = map (bexpr2C hasConds . replaceCallsInBExpr hasConds callListVars predListVars) guards
   return $ map (uncurry $ declareVar hasConds) callListVars
            ++
@@ -232,11 +228,11 @@ bexprStm2C f hasConds interp args (BListIte listThen elseExpr) = do
            ++
            [C.ListIte (zip guardsC thenListStm) elseStm]
 
-bexprStm2C f hasConds _ args (BExpr expr) = return [(if (hasConds f)
+bexprStm2C f hasConds args (BExpr expr) = return [(if (hasConds f)
       then C.VarAssign C.Boolean resultVar (C.Some C.Boolean (Right $ bexpr2C hasConds expr))
       else C.VarAssignBool resultVar (bexpr2C hasConds expr))]
 
-bexprStm2C _ _ _ _ BUnstWarning = return [resultNone C.Boolean]
+bexprStm2C _ _ _ BUnstWarning = return [resultNone C.Boolean]
 
 bexpr2C :: HasConditionals -> FBExpr -> C.BExpr
 bexpr2C _ FBTrue  = C.BTrue
@@ -245,7 +241,7 @@ bexpr2C hasConds (FNot be)      = C.Not (bexpr2C hasConds be)
 bexpr2C hasConds (FOr  be1 be2) = C.Or  (bexpr2C hasConds be1) (bexpr2C hasConds be2)
 bexpr2C hasConds (FAnd be1 be2) = C.And (bexpr2C hasConds be1) (bexpr2C hasConds be2)
 bexpr2C hasConds (FRel rel ae1 ae2) = C.Rel rel (aexpr2inlineC hasConds ae1) (aexpr2inlineC hasConds ae2)
-bexpr2C hasConds (IsValid ae@(FEFun _ _ _ _)) = C.IsValid (aexpr2inlineC hasConds ae)
+bexpr2C hasConds (IsValid ae@(FEFun _ _ _ _ _)) = C.IsValid (aexpr2inlineC hasConds ae)
 bexpr2C hasConds (BIsValid (FEPred _ Original f args)) = C.BIsValid (C.FEPred (f++"_fp") (map (aexpr2inlineC hasConds) args))
 bexpr2C hasConds (BIsValid (FEPred _ TauPlus  f args)) = C.BIsValid (C.FEPred (f++"_tauplus_fp") (map (aexpr2inlineC hasConds) args))
 bexpr2C hasConds (BIsValid (FEPred _ TauMinus f args)) = C.BIsValid (C.FEPred (f++"_tauminus_fp") (map (aexpr2inlineC hasConds) args))
@@ -284,7 +280,7 @@ generateForLoopACSL forMap idx acc accType n n0 for forRecFuns interp env args f
                 (lookup realFor forRecFuns)
     symbROError = if isIntFAExpr forBody
                     then ACSL.IntCnst 0
-                    else expr2acsl $ symbolicErrorStable interp env args (prevIteration idx forBody)
+                    else expr2acsl $ symbolicErrorStable interp env (prevIteration idx forBody)
     variant   = ACSL.BinaryOp SubOp nACSL (ACSL.Var ACSL.Int idx)
     invariant = generateForLoopInvariant n0ACSL nACSL idx acc accType funCall symbROError
 
@@ -320,7 +316,7 @@ generateAuxVarList callList = do
 
 replaceCallsInAExpr :: (FunName -> Bool) -> [(FAExpr,Int)] -> [(FBExpr,Int)] -> FAExpr -> FAExpr
 replaceCallsInAExpr _ [] [] expr = expr
-replaceCallsInAExpr hasConds callList _ funCall@(FEFun _ f fp _) =
+replaceCallsInAExpr hasConds callList _ funCall@(FEFun _ f _ fp _) =
   case lookup funCall callList of
     Just n  -> if hasConds f then (Value $ StructVar fp $ auxVarName n) else (FVar fp $ auxVarName n)
     Nothing -> funCall
@@ -404,7 +400,7 @@ symbFunName _ f = f
 
 generateNumericFunction :: HasConditionals -> Maybe PredAbs -> PVSType -> String -> [Arg] -> [Arg] -> [(VarName, Double)] -> C.Decl
 generateNumericFunction isMaybe predAbs fp f args errArgs numErrExprs =
-  C.Decl (if (isMaybe f) then C.MaybeStruct t else t) (numFunName predAbs f) (map args2C args) [C.Return $ C.EFun (symbFunName predAbs f) t (actArgs++numErrArgs)]
+  C.Decl (if (isMaybe f) then C.MaybeStruct t else t) (numFunName predAbs f) (map args2C args) [C.Return $ C.EFun (symbFunName predAbs f) ResValue t (actArgs++numErrArgs)]
   where
     t = fprec2type fp
     actArgs = map (aexpr2inlineC isMaybe . arg2var) args
