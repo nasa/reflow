@@ -143,15 +143,16 @@ my_example% $REFLOW_HOME/tools/run-framac.sh my_generated_code.c
 ## Contact information
 If you have any question or problem, please contact:
 
-* [Laura Titolo](mailto:laura.titolo@nasa.gov) (for ReFlow)
-* [Mariano Moscato](mailto:mariano.m.moscato@nasa.gov) (for PVS and Frama-C support)
-* [Marco A. Feliu](mailto:marco.feliu@nasa.gov) (for Kodiak and installation issues)
-* [César Muñoz](mailto:cesar.a.munoz@nasa.gov) (for ReFlow at NASA)
+* [Mariano Moscato](mailto:mariano.m.moscato@nasa.gov)
+* [Marco A. Feliu](mailto:marco.feliu@nasa.gov)
+* [César Muñoz](mailto:cesar.a.munoz@nasa.gov)
 
-## Additional Contributors
+## Contributors
 
+* [Laura Titolo](https://lauratitolo.github.io/), NASA/AMA at the time of contribution
 * Nikson Bernardes Fernandes Ferreira, University of Brasilia
 * Caleb Chan, University of Washington
+* Bhargav Kulkarni, University of Utah
 
 ## Related Publications
 
