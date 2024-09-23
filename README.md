@@ -167,6 +167,8 @@ If you have any question or problem, please contact:
 - Laura Titolo, César A. Muñoz, Marco A. Feliú, Mariano M. Moscato:
   Eliminating Unstable Tests in Floating-Point Programs. LOPSTR 2018
 
+## Logo
+The ReFlow logo was designed by Silvia Chittaro.
 
 ## License and Copyright Notice
 
